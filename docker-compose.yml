@@ -1,0 +1,36 @@
+version: '3.9'
+
+services:
+
+  eservice_app: 
+    container_name: eservice
+    build: .
+    ports: 
+      - 3000:3000
+    depends_on:
+      - mongodb
+    volumes:
+      - ./:/app
+    networks:
+      - shared
+    environment:
+      - MONGO_DB_HOST=mongodb
+      - MONGO_DB_PORT=27017
+      - APP_PORT=3000
+
+  mongodb:
+    image: mongo
+    restart: always
+    ports:
+      - 28017:27017
+    volumes:
+      - /var/www/pzentcloud.com/Production-02/db/eservice/mongo:/data/db
+    command: --quiet
+    networks:
+      - shared
+networks:
+  shared:
+    external:
+      name: shared
+volumes:
+  db:

@@ -1,0 +1,1 @@
+import{L as s}from"./index.823c123d.js";import{bk as o}from"./index.49ef7351.js";const a=new s({url:o.api.url+"products/categories"}),e="/assets/no-image.1f538272.jpg",n=new s({url:o.api.url+"products/brands"});export{n as a,e as n,a as u};

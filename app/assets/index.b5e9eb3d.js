@@ -1,0 +1,1 @@
+import{b as e}from"./route-block.6ee55eda.js";import{L as o,o as t,c}from"./index.dc90d0c7.js";const n={};function a(r,i){return t(),c("div",null,"In installation detail page")}typeof e=="function"&&e(n);const l=o(n,[["render",a]]);export{l as default};

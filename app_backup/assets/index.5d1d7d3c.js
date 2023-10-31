@@ -1,0 +1,1 @@
+import{b as e}from"./route-block.6ee55eda.js";import{L as c,o as n,c as t}from"./index.49ef7351.js";const o={};function r(a,i){return n(),t("div",null,"In invoice detail page")}typeof e=="function"&&e(o);const l=c(o,[["render",r]]);export{l as default};
