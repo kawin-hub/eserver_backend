@@ -1,7 +1,8 @@
-const dotenv = require('dotenv')
+const dotenv = require("dotenv");
 
-dotenv.config()
+dotenv.config();
 
 module.exports = {
-    db: process.env.DB_CONN_STRING
-}
+  db: process.env.DB_CONN_STRING,
+  dbName: process.env.DB_NAME,
+};

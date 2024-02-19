@@ -9,12 +9,25 @@ let inventoryLocationSchema = new Schema(
       required: true,
       unique: true,
     },
-    description: {
+    adminName: {
       type: String,
+      required: true,
+    },
+    contactNumber: {
+      type: String,
+      required: true,
+    },
+    address: {
+      type: String,
+      required: true,
+    },
+    googleMap: {
+      type: String,
+      required: true,
     },
     status: {
       type: String,
-      enum: ["active", "inactive", "pending"],
+      enum: ["active", "inactive"],
       default: "inactive",
     },
   },

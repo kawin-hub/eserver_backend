@@ -11,8 +11,9 @@ mongoose.Promise = global.Promise;
 mongoose.set("strictQuery", false);
 mongoose
   .connect(mongodb.db, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
+    dbName: mongodb.dbName,
+    /* useNewUrlParser: true,
+    useUnifiedTopology: true, */
   })
   .then(
     () => {
