@@ -1,54 +1,82 @@
 //User model
 let inventoryModel = require("../models/Inventory");
 let dotenv = require("dotenv");
-let { upload } = require("../middleware");
+let { upload, general } = require("../middleware");
 const fs = require("fs");
-const { filter } = require("compression");
+const { DataResponse } = require("../models/general_data.model");
+const { Validator } = require("node-input-validator");
+const { ObjectId } = require("mongoose").Types;
 
 dotenv.config();
 
 //Inventory Location
 
-const getAllInventoryLocations = async (req, res, next) => {
-  var inventoryLocations = await inventoryModel.getAllInventoryLocations();
+const getAllInventoryLocations = async (req, res) => {
+  var result = new DataResponse();
 
-  res.status(200).send({
-    message: "Get inventory locations successfully!",
-    inventoryLocations,
-  });
-};
+  try {
+    const { _id } = req.query;
 
-const insertInventoryLocation = async (req, res, next) => {
-  var uploadRes = await upload.uploadFiles(req, res); // convert post multi-part
-  console.log(req.body);
-  let { name, description, status } = req.body;
-
-  let result = null;
-  let message = "Insert failed";
-  let statusCode = 400;
-
-  if (name !== undefined) {
-    name = name ? name : "";
-    description = description ? description : "";
-    status = status != "" || status !== undefined ? status : "inactive";
-
-    result = await inventoryModel.insertInventoryLocation({
-      name,
-      description,
-      status,
-    });
-
-    if (result.code != 11000) {
-      statusCode = 200;
-      message = "Insert product category successfully";
+    if (typeof _id != "undefined") {
+      result = await inventoryModel.getInventoryLocationById({
+        _id: new Object(_id),
+      });
     } else {
-      message = "Category name is duplicate!";
+      var pageOption = general.checkPageAndLimit(
+        req.query.page,
+        req.query.limit
+      );
+
+      var params = {
+        page: pageOption.page,
+        limit: pageOption.limit,
+        queryCondition: {},
+      };
+
+      result = await inventoryModel.getAllInventoryLocations(params);
     }
-  } else {
-    message = "name, description, status is required!";
+  } catch (error) {
+    console.log(error);
   }
 
-  res.status(statusCode).send({ message, result });
+  res.json(result);
+};
+
+const insertInventoryLocation = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    const validation = new Validator(req.body, {
+      name: "required",
+      adminName: "required",
+      contactNumber: "required",
+      address: "required",
+      googleMap: "required",
+      status: "required|in:active,inactive",
+    });
+
+    const matched = await validation.check();
+
+    if (matched) {
+      const { name, adminName, contactNumber, address, googleMap, status } =
+        req.body;
+
+      result = await inventoryModel.insertInventoryLocation({
+        name: name,
+        adminName: adminName,
+        contactNumber: contactNumber,
+        address: address,
+        googleMap: googleMap,
+        status: status,
+      });
+    } else {
+      result.doError(2, validation.errors);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+
+  res.json(result);
 };
 
 const updateInventoryLocation = async (req, res, next) => {
@@ -193,5 +221,5 @@ module.exports = {
   insertInventoryLot,
   deleteInventoryLot,
   deleteInventoryLocation,
-  updateInventoryLocation
+  updateInventoryLocation,
 };

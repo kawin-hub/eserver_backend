@@ -11,13 +11,13 @@ const {
   insertInventoryLot,
   deleteInventoryLot,
   deleteInventoryLocation,
-  updateInventoryLocation
+  updateInventoryLocation,
 } = require("../controllers/inventory.controller");
 
 // InventoryLocation
-router.get("/locations", verifyToken, getAllInventoryLocations);
+router.get("/locations", getAllInventoryLocations);
 
-router.post("/locations", verifyToken, insertInventoryLocation);
+router.post("/locations", insertInventoryLocation);
 
 router.put("/locations", verifyToken, updateInventoryLocation);
 
@@ -30,5 +30,6 @@ router.get("/lots", verifyToken, getAllInventoryLots);
 router.post("/lots", verifyToken, insertInventoryLot);
 
 router.delete("/lots", verifyToken, deleteInventoryLot);
+
 
 module.exports = router;
