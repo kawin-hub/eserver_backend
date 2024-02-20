@@ -1,27 +1,38 @@
 const { Schema, model, ObjectId } = require("mongoose");
-
 const collection = "InventoryLots";
 
 let inventoryLotSchema = new Schema(
   {
-    name: {
+    lotNumber: {
       type: String,
       required: true,
-      unique: true,
+      unique: true
     },
-    description: {
-      type: String,
-    },
-    products: [{ type: ObjectId, ref: "ProductModel" }, { type: Number }],
-    receiveDate: {
+    estimatedDate: {
       type: Date,
-      default: Date.now,
+      required: true,
+    },
+    ExpensesNumber: {
+      type: String,
+      required: true,
     },
     status: {
       type: String,
-      enum: ["active", "inactive", "pending"],
-      default: "inactive",
+      enum: ["active", "inactive", "draft"],
+      default: "draft",
     },
+
+    products: [{ type: ObjectId, ref: "ProductModel" }],
+
+    quantity: {
+      type: Number,
+      required: true,
+    },
+    warranty: {
+      type: Number,
+      required: true,
+    },
+
   },
   {
     timestamps: true,
