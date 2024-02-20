@@ -12,18 +12,20 @@ let inventoryLotSchema = new Schema(
       type: Date,
       required: true,
     },
-    ExpensesNumber: {
-      type: String,
-      required: true,
+    expense: {
+      _id: { type: ObjectId, ref: "ExpensesModel" },
+      documentNumber: { type: String }
     },
     status: {
       type: String,
       enum: ["active", "inactive", "draft"],
       default: "draft",
     },
-
-    products: [{ type: ObjectId, ref: "ProductModel" }],
-
+    products: [{
+      _id: { type: ObjectId, ref: "ProductModel" },
+      modelCode: String,
+      name: String,
+    }],
     quantity: {
       type: Number,
       required: true,
@@ -32,7 +34,6 @@ let inventoryLotSchema = new Schema(
       type: Number,
       required: true,
     },
-
   },
   {
     timestamps: true,

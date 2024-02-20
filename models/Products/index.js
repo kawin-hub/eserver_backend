@@ -1,6 +1,7 @@
 const ProductCategory = require("./productCategories.schema");
 const ProductBrand = require("./productBrands.schema");
 const ProductModel = require("./productModels.schema");
+const { DataResponse } = require("../general_data.model");
 
 // ProductCategories
 const getAllProductCategories = async () => {
@@ -145,6 +146,28 @@ const updateProductModel = async (_id, update) => {
   return model;
 };
 
+const getProductsbyArrayId = async (product_ids) => {
+  var result = new DataResponse();
+  try {
+    result.data = await ProductModel.find(
+      { _id: { $in: product_ids } },
+      { _id: 1, modelCode: 1, name: 1 }
+    ).lean();
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e);
+    if (e.kind == "ObjectId") {
+      result.doError(0, "Please check your _id format");
+    } else {
+      result.doError(0);
+    }
+  }
+
+  return result;
+};
+
 module.exports = {
   insertProductCategory,
   getAllProductCategories,
@@ -158,4 +181,5 @@ module.exports = {
   getProductModels,
   deleteProductModel,
   updateProductModel,
+  getProductsbyArrayId
 };

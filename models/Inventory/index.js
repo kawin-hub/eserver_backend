@@ -1,5 +1,6 @@
 const InventoryLocation = require("./inventoryLocation.schema");
 const InventoryLot = require("./inventoryLot.schema");
+const InventoryMove = require("./inventoryMove.schema");
 const { DataResponse } = require("../general_data.model");
 
 // Inventory Location
@@ -66,12 +67,12 @@ const insertInventoryLocation = async (params) => {
   try {
     result.data = await InventoryLocation.create(params);
     result.data == null
-      ? result.doSuccess(2, "_id not found in database")
+      ? result.doSuccess(0, "Can't insert to database, please check your request!")
       : result.doSuccess(1);
   } catch (e) {
     console.log(e);
     e.code == 11000
-      ? result.doError(0, "Inventory index duplicate!")
+      ? result.doError(6, "Lot index duplicate!")
       : result.doError();
   }
 
@@ -102,6 +103,7 @@ const deleteInventoryLocation = async (data) => {
 };
 
 //Inventory Lot
+
 const getAllInventoryLot = async () => {
   var inventoryLot = null;
   try {
@@ -119,31 +121,17 @@ const insertInventoryLot = async (params) => {
   try {
     result.data = await InventoryLot.create(params);
     result.data == null
-      ? result.doSuccess(2, "_id not found in database")
+      ? result.doSuccess(0, "Can't insert to database, please check your request!")
       : result.doSuccess(1);
   } catch (e) {
     console.log(e);
     e.code == 11000
-      ? result.doError(0, "Lot index duplicate!")
+      ? result.doError(6, "Lot index duplicate!")
       : result.doError();
   }
 
   return result;
 };
-
-// อันเก่า
-/* const insertInventoryLot = async (data) => {
-  var inventoryLot = new InventoryLot(data);
-  var lot = null;
-
-  try {
-    lot = await inventoryLot.save();
-  } catch (e) {
-    lot = e;
-  }
-
-  return lot;
-}; */
 
 const deleteInventoryLot = async (data) => {
   var result = null;
@@ -151,6 +139,66 @@ const deleteInventoryLot = async (data) => {
     result = await InventoryLot.findByIdAndRemove(data);
   } catch (e) {
     result = e;
+  }
+
+  return result;
+};
+
+//Inventory Move
+
+const insertInventoryMove = async (params) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await InventoryMove.create(params);
+    result.data == null
+      ? result.doSuccess(0, "Can't insert to database, please check your request!")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e);
+    e.code == 11000
+      ? result.doError(6, "Move index duplicate!")
+      : result.doError();
+  }
+
+  return result;
+};
+
+//Inventory Borrow
+
+const insertInventoryBorrow = async (params) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await InventoryBorrow.create(params);
+    result.data == null
+      ? result.doSuccess(0, "Can't insert to database, please check your request!")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e);
+    e.code == 11000
+      ? result.doError(6, "Borrow index duplicate!")
+      : result.doError();
+  }
+
+  return result;
+};
+
+//Inventory Refund
+
+const insertInventoryRefund = async (params) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await InventoryRefund.create(params);
+    result.data == null
+      ? result.doSuccess(0, "Can't insert to database, please check your request!")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e);
+    e.code == 11000
+      ? result.doError(6, "Refund index duplicate!")
+      : result.doError();
   }
 
   return result;
@@ -165,4 +213,7 @@ module.exports = {
   deleteInventoryLocation,
   updateInventoryLocation,
   getInventoryLocationById,
+  insertInventoryMove,
+  insertInventoryBorrow,
+  insertInventoryRefund,
 };
