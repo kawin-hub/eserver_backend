@@ -1,5 +1,6 @@
 //User model
-let inventoryModel = require("../models/Inventory");
+let InventoryModel = require("../models/Inventory");
+let ProductModel = require("../models/Products");
 let dotenv = require("dotenv");
 let { upload, general } = require("../middleware");
 const fs = require("fs");
@@ -18,7 +19,7 @@ const getAllInventoryLocations = async (req, res) => {
     const { _id } = req.query;
 
     if (typeof _id != "undefined") {
-      result = await inventoryModel.getInventoryLocationById({
+      result = await InventoryModel.getInventoryLocationById({
         _id: new Object(_id),
       });
     } else {
@@ -33,7 +34,7 @@ const getAllInventoryLocations = async (req, res) => {
         queryCondition: {},
       };
 
-      result = await inventoryModel.getAllInventoryLocations(params);
+      result = await InventoryModel.getAllInventoryLocations(params);
     }
   } catch (error) {
     console.log(error);
@@ -60,15 +61,17 @@ const insertInventoryLocation = async (req, res) => {
     if (matched) {
       const { name, adminName, contactNumber, address, googleMap, status } =
         req.body;
-
-      result = await inventoryModel.insertInventoryLocation({
+      var params = {
         name: name,
         adminName: adminName,
         contactNumber: contactNumber,
         address: address,
         googleMap: googleMap,
         status: status,
-      });
+      }
+
+      result = await InventoryModel.insertInventoryLocation(params);
+
     } else {
       result.doError(2, validation.errors);
     }
@@ -98,7 +101,7 @@ const updateInventoryLocation = async (req, res, next) => {
       status,
     };
 
-    result = await inventoryModel.updateInventoryLocation(_id, dataUpdate);
+    result = await InventoryModel.updateInventoryLocation(_id, dataUpdate);
 
     if (result.code != 11000 && result.errors === undefined) {
       statusCode = 200;
@@ -134,7 +137,7 @@ const deleteInventoryLocation = async (req, res, next) => {
   let statusCode = 400;
 
   if (_id !== undefined) {
-    result = await inventoryModel.deleteInventoryLocation({ _id: _id });
+    result = await InventoryModel.deleteInventoryLocation({ _id: _id });
 
     if (result != null) {
       statusCode = 200;
@@ -151,80 +154,94 @@ const deleteInventoryLocation = async (req, res, next) => {
 
 //Inventory Lot
 
-const getAllInventoryLots = async function (req, res, next) {
-  var inventoryLocations = await inventoryModel.getAllInventoryLot();
+/* const getAllInventoryLots = async function (req, res, next) {
+  var inventoryLocations = await InventoryModel.getAllInventoryLot();
   res.status(200).send({
     message: "Get inventory lots successfully!",
     inventoryLocations,
   });
+}; */
+
+const getAllInventoryLots = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    const { _id } = req.query;
+
+    if (typeof _id != "undefined") {
+      result = await InventoryModel.getInventoryLotById({
+        _id: new Object(_id),
+      });
+    } else {
+      var pageOption = general.checkPageAndLimit(
+        req.query.page,
+        req.query.limit
+      );
+
+      var params = {
+        page: pageOption.page,
+        limit: pageOption.limit,
+        queryCondition: {},
+      };
+
+      result = await InventoryModel.getAllInventoryLots(params);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+
+  res.json(result);
 };
 
 const insertInventoryLot = async (req, res) => {
   var result = new DataResponse();
+  var uploadRes = await upload.uploadFiles(req, res);
 
   try {
     const validation = new Validator(req.body, {
       lotNumber: "required",
       estimatedDate: "required|date",
-      productCategory: "required|in:stock,nonstock",
-      productType: "required",
-      ExpensesNumber: "required",
       status: "required|in:draft,inactive,active",
-      name: "required",
-      quantity: "required",
+      quantity: "required|number",
+      warranty: "required|number",
+      expense_ids: "required",
+      product_ids: "required",
     });
 
     const matched = await validation.check();
 
     if (matched) {
+      const expenseResult = await account.getExpense({ _id: expense });
+
+      if (expenseResult.code == 1) {
+        const productResult = await product.getProduct({ _id: product });
+
+        if (productResult.code == 1) {
+          const { lotNumber, estimatedDate, status, name, quantity, warranty, expenseResult, productResult } = req.body;
+          var params = {
+            lotNumber: lotNumber,
+            estimatedDate: estimatedDate,
+            status: status,
+            name: name,
+            quantity: quantity,
+            warranty: warranty,
+            expense: expenseResult,
+            products: productResult
+          };
+        }
+      }
+      result = await InventoryModel.insertInventoryLot(params);
 
     } else {
-
+      result.doError(2, validation.errors);
     }
 
   } catch (error) {
-
+    console.log(error);
   }
-
 
   res.json(result);
 };
-
-
-
-
-// อันเก่า
-/* const insertInventoryLot = async (req, res, next) => {
-  var uploadRes = await upload.uploadFiles(req, res); // convert post multi-part
-  let { name, description, status } = req.body;
-
-  let result = null;
-  let message = "Insert failed";
-  let statusCode = 400;
-
-  if (name !== undefined) {
-    name = name ? name : "";
-    description = description ? description : "";
-    status = status != "" || status !== undefined ? status : "inactive";
-
-    result = await inventoryModel.insertInventoryLot({
-      name,
-      description,
-      status,
-    });
-
-    if (result.code != 11000) {
-      statusCode = 200;
-      message = "Insert inventory lot successfully";
-    } else {
-      message = "Category name is duplicate!";
-    }
-  } else {
-    message = "name, description, status is required!";
-  }
-
-  res.status(statusCode).send({ message, result });
-}; */
 
 const deleteInventoryLot = async (req, res, next) => {
   let { _id } = req.body;
@@ -234,7 +251,7 @@ const deleteInventoryLot = async (req, res, next) => {
   let statusCode = 400;
 
   if (_id !== undefined) {
-    result = await inventoryModel.deleteInventoryLot({ _id: _id });
+    result = await InventoryModel.deleteInventoryLot({ _id: _id });
 
     if (result != null) {
       statusCode = 200;
@@ -249,6 +266,124 @@ const deleteInventoryLot = async (req, res, next) => {
   res.status(statusCode).send({ message, result });
 };
 
+//Inventory Move
+
+const insertInventoryMove = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    const validation = new Validator(req.body, {
+      documentNumber: "required",
+      dueDate: "required",
+      origin: "required",
+      desdination: "required",
+      name: "required",
+      quantity: "required",
+    });
+
+    const matched = await validation.check();
+
+    if (matched) {
+      const { documentNumber, dueDate, origin, desdination, name, quantity } = req.body;
+
+      var params = {
+        documentNumber: documentNumber,
+        dueDate: dueDate,
+        origin: origin,
+        desdination: desdination,
+        name: name,
+        quantity: quantity,
+      };
+
+      result = await InventoryModel.insertInventoryMove(params);
+
+    } else {
+      result.doError(2, validation.errors);
+    }
+
+  } catch (error) {
+    console.log(error);
+  }
+
+  res.json(result);
+};
+
+//Inventory Borrow
+
+const insertInventoryBorrow = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    const validation = new Validator(req.body, {
+      documentNumber: "required",
+      dueDate: "required",
+      estimatedDate: "required",
+      purpose: "required",
+      mainStatus: "required",
+      name: "required",
+      quantity: "required",
+    });
+
+    const matched = await validation.check();
+
+    if (matched) {
+      const { documentNumber, dueDate, estimatedDate, purpose, mainStatus, name, quantity } = req.body;
+
+      var params = {
+        documentNumber: documentNumber,
+        dueDate: dueDate,
+        estimatedDate: estimatedDate,
+        purpose: purpose,
+        mainStatus: mainStatus,
+        name: name,
+        quantity: quantity,
+      };
+
+      result = await InventoryModel.insertInventoryBorrow(params);
+
+    } else {
+      result.doError(2, validation.errors);
+    }
+
+  } catch (error) {
+    console.log(error);
+  }
+
+  res.json(result);
+};
+
+//Inventory Refund
+
+const insertInventoryRefund = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    const validation = new Validator(req.body, {
+      documentNumber: "required",
+    });
+
+    const matched = await validation.check();
+
+    if (matched) {
+      const { documentNumber, } = req.body;
+
+      const params = {
+        documentNumber: documentNumber,
+      };
+
+      result = await InventoryModel.insertInventoryRefund(params);
+
+    } else {
+      result.doError(2, validation.errors);
+    }
+
+  } catch (error) {
+    console.log(error);
+  }
+
+  res.json(result);
+};
+
 module.exports = {
   getAllInventoryLocations,
   insertInventoryLocation,
@@ -257,4 +392,7 @@ module.exports = {
   deleteInventoryLot,
   deleteInventoryLocation,
   updateInventoryLocation,
+  insertInventoryMove,
+  insertInventoryBorrow,
+  insertInventoryRefund
 };
