@@ -25,9 +25,9 @@ router.delete("/locations", verifyToken, deleteInventoryLocation);
 
 // InventoryLot
 
-router.get("/lots", verifyToken, getAllInventoryLots);
+router.get("/lots", getAllInventoryLots);
 
-router.post("/lots", verifyToken, insertInventoryLot);
+router.post("/lots", insertInventoryLot);
 
 router.delete("/lots", verifyToken, deleteInventoryLot);
 

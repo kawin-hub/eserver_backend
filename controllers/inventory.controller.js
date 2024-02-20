@@ -159,7 +159,42 @@ const getAllInventoryLots = async function (req, res, next) {
   });
 };
 
-const insertInventoryLot = async (req, res, next) => {
+const insertInventoryLot = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    const validation = new Validator(req.body, {
+      lotNumber: "required",
+      estimatedDate: "required|date",
+      productCategory: "required|in:stock,nonstock",
+      productType: "required",
+      ExpensesNumber: "required",
+      status: "required|in:draft,inactive,active",
+      name: "required",
+      quantity: "required",
+    });
+
+    const matched = await validation.check();
+
+    if (matched) {
+
+    } else {
+
+    }
+
+  } catch (error) {
+
+  }
+
+
+  res.json(result);
+};
+
+
+
+
+// อันเก่า
+/* const insertInventoryLot = async (req, res, next) => {
   var uploadRes = await upload.uploadFiles(req, res); // convert post multi-part
   let { name, description, status } = req.body;
 
@@ -189,7 +224,7 @@ const insertInventoryLot = async (req, res, next) => {
   }
 
   res.status(statusCode).send({ message, result });
-};
+}; */
 
 const deleteInventoryLot = async (req, res, next) => {
   let { _id } = req.body;

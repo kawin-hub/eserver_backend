@@ -113,7 +113,26 @@ const getAllInventoryLot = async () => {
   return inventoryLot;
 };
 
-const insertInventoryLot = async (data) => {
+const insertInventoryLot = async (params) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await InventoryLot.create(params);
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e);
+    e.code == 11000
+      ? result.doError(0, "Lot index duplicate!")
+      : result.doError();
+  }
+
+  return result;
+};
+
+// อันเก่า
+/* const insertInventoryLot = async (data) => {
   var inventoryLot = new InventoryLot(data);
   var lot = null;
 
@@ -124,7 +143,7 @@ const insertInventoryLot = async (data) => {
   }
 
   return lot;
-};
+}; */
 
 const deleteInventoryLot = async (data) => {
   var result = null;
