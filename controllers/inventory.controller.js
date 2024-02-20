@@ -68,10 +68,9 @@ const insertInventoryLocation = async (req, res) => {
         address: address,
         googleMap: googleMap,
         status: status,
-      }
+      };
 
       result = await InventoryModel.insertInventoryLocation(params);
-
     } else {
       result.doError(2, validation.errors);
     }
@@ -195,47 +194,75 @@ const getAllInventoryLots = async (req, res) => {
 
 const insertInventoryLot = async (req, res) => {
   var result = new DataResponse();
-  var uploadRes = await upload.uploadFiles(req, res);
+
+  var docsName = "docs";
+  await upload.uploadFiles(req, res, [
+    {
+      name: docsName,
+      path: "./assets/documents/lot",
+      maxCount: 5,
+      allowType: ["pdf"],
+    },
+  ]);
 
   try {
     const validation = new Validator(req.body, {
       lotNumber: "required",
-      estimatedDate: "required|date",
+      estimatedDate: "required|dateFormat:YYYY-MM-DD",
       status: "required|in:draft,inactive,active",
-      quantity: "required|number",
-      warranty: "required|number",
-      expense_ids: "required",
+      quantity: "required",
+      warranty: "required",
+      /* expense_id: "required", */
       product_ids: "required",
     });
 
     const matched = await validation.check();
 
     if (matched) {
-      const expenseResult = await account.getExpense({ _id: expense });
+      const {
+        product_ids,
+        lotNumber,
+        estimatedDate,
+        status,
+        quantity,
+        warranty,
+      } = req.body;
 
-      if (expenseResult.code == 1) {
-        const productResult = await product.getProduct({ _id: product });
+      const productResult = await ProductModel.getProductsbyArrayId(
+        product_ids
+      );
 
-        if (productResult.code == 1) {
-          const { lotNumber, estimatedDate, status, name, quantity, warranty, expenseResult, productResult } = req.body;
-          var params = {
-            lotNumber: lotNumber,
-            estimatedDate: estimatedDate,
-            status: status,
-            name: name,
-            quantity: quantity,
-            warranty: warranty,
-            expense: expenseResult,
-            products: productResult
-          };
+      if (productResult.code == 1) {
+        for (var i = 0; i < product_ids.length; i++) {
+          for (var j = 0; j < productResult.data.length; j++) {
+            if (product_ids[i] == productResult.data[j]._id) {
+              productResult.data[j].quantity = quantity[i];
+              productResult.data[j].warranty = warranty[i];
+              break;
+            }
+          }
         }
-      }
-      result = await InventoryModel.insertInventoryLot(params);
 
+        var params = {
+          lotNumber: lotNumber,
+          estimatedDate: estimatedDate,
+          status: status,
+          products: productResult.data,
+        };
+
+        result = await InventoryModel.insertInventoryLot(params);
+      }
     } else {
       result.doError(2, validation.errors);
     }
 
+    if (result.code != 1) {
+      for (let i = 0; i < req.files[docsName].length; i++) {
+        fs.rmSync(req.files[docsName][i].path, {
+          force: true,
+        });
+      }
+    }
   } catch (error) {
     console.log(error);
   }
@@ -284,7 +311,8 @@ const insertInventoryMove = async (req, res) => {
     const matched = await validation.check();
 
     if (matched) {
-      const { documentNumber, dueDate, origin, desdination, name, quantity } = req.body;
+      const { documentNumber, dueDate, origin, desdination, name, quantity } =
+        req.body;
 
       var params = {
         documentNumber: documentNumber,
@@ -296,11 +324,9 @@ const insertInventoryMove = async (req, res) => {
       };
 
       result = await InventoryModel.insertInventoryMove(params);
-
     } else {
       result.doError(2, validation.errors);
     }
-
   } catch (error) {
     console.log(error);
   }
@@ -327,7 +353,15 @@ const insertInventoryBorrow = async (req, res) => {
     const matched = await validation.check();
 
     if (matched) {
-      const { documentNumber, dueDate, estimatedDate, purpose, mainStatus, name, quantity } = req.body;
+      const {
+        documentNumber,
+        dueDate,
+        estimatedDate,
+        purpose,
+        mainStatus,
+        name,
+        quantity,
+      } = req.body;
 
       var params = {
         documentNumber: documentNumber,
@@ -340,11 +374,9 @@ const insertInventoryBorrow = async (req, res) => {
       };
 
       result = await InventoryModel.insertInventoryBorrow(params);
-
     } else {
       result.doError(2, validation.errors);
     }
-
   } catch (error) {
     console.log(error);
   }
@@ -365,18 +397,16 @@ const insertInventoryRefund = async (req, res) => {
     const matched = await validation.check();
 
     if (matched) {
-      const { documentNumber, } = req.body;
+      const { documentNumber } = req.body;
 
       const params = {
         documentNumber: documentNumber,
       };
 
       result = await InventoryModel.insertInventoryRefund(params);
-
     } else {
       result.doError(2, validation.errors);
     }
-
   } catch (error) {
     console.log(error);
   }
@@ -394,5 +424,5 @@ module.exports = {
   updateInventoryLocation,
   insertInventoryMove,
   insertInventoryBorrow,
-  insertInventoryRefund
+  insertInventoryRefund,
 };
