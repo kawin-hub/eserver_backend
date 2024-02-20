@@ -145,7 +145,6 @@ const deleteInventoryLot = async (data) => {
 };
 
 //Inventory Move
-
 const insertInventoryMove = async (params) => {
   var result = new DataResponse();
 
