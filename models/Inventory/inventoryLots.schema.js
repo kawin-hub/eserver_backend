@@ -13,7 +13,7 @@ let inventoryLotSchema = new Schema(
       required: true,
     },
     expense: {
-      _id: { type: ObjectId, ref: "ExpensesModel" },
+      _id: { type: ObjectId, ref: "AccountExpenses" },
       documentNumber: { type: String },
     },
     status: {
@@ -28,6 +28,16 @@ let inventoryLotSchema = new Schema(
         name: String,
         quatity: Number,
         warranty: Number,
+      },
+    ],
+    documents: [
+      {
+        name: String,
+        path: String,
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
       },
     ],
   },

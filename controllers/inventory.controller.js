@@ -195,11 +195,11 @@ const getAllInventoryLots = async (req, res) => {
 const insertInventoryLot = async (req, res) => {
   var result = new DataResponse();
 
-  var docsName = "docs";
+  var docsName = "documents";
   await upload.uploadFiles(req, res, [
     {
       name: docsName,
-      path: "./assets/documents/lot",
+      path: "./assets/documents/inventory/lots",
       maxCount: 5,
       allowType: ["pdf"],
     },
