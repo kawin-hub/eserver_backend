@@ -1,5 +1,5 @@
-const InventoryLocation = require("./inventoryLocation.schema");
-const InventoryLot = require("./inventoryLot.schema");
+const InventoryLocation = require("./inventoryLocations.schema");
+const InventoryLot = require("./inventoryLots.schema");
 const InventoryMove = require("./inventoryMove.schema");
 const { DataResponse } = require("../general_data.model");
 
@@ -126,7 +126,7 @@ const insertInventoryLot = async (params) => {
   } catch (e) {
     console.log(e);
     e.code == 11000
-      ? result.doError(6, "Lot index duplicate!")
+      ? result.doError(6, "Lot document number duplicate!")
       : result.doError();
   }
 
