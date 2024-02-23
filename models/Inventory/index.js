@@ -1,8 +1,12 @@
-const InventoryLocation = require("./inventoryLocations.schema");
+const InventoryLocation = require("./location/inventoryLocations.schema");
 const InventoryLot = require("./inventoryLots.schema");
 const InventoryMove = require("./inventoryMoves.schema");
-const InventoryBorrow = require("./inventoryBorrows.schema")
+const InventoryBorrow = require("./inventoryBorrows.schema");
+const InventoryProductSerial = require("./productSerial/inventoryProductSerial.schema");
 const { DataResponse } = require("../general_data.model");
+
+// import module part
+const productSerial = require("./productSerial/productSerial.model");
 
 // Inventory Location
 const getAllInventoryLocations = async (params) => {
@@ -76,7 +80,10 @@ const insertInventoryLocation = async (params) => {
   try {
     result.data = await InventoryLocation.create(params);
     result.data == null
-      ? result.doSuccess(0, "Can't insert to database, please check your request!")
+      ? result.doSuccess(
+          0,
+          "Can't insert to database, please check your request!"
+        )
       : result.doSuccess(1);
   } catch (e) {
     console.log(e);
@@ -188,7 +195,6 @@ const getInventoryLotById = async (params) => {
       ? result.doSuccess(2, "_id not found in database")
       : result.doSuccess(1);
   } catch (e) {
-    console.log(e.kind);
     if (e.kind == "ObjectId") {
       result.doError(0, "Please check your _id format");
     } else {
@@ -205,7 +211,10 @@ const insertInventoryLot = async (params) => {
   try {
     result.data = await InventoryLot.create(params);
     result.data == null
-      ? result.doSuccess(0, "Can't insert to database, please check your request!")
+      ? result.doSuccess(
+          0,
+          "Can't insert to database, please check your request!"
+        )
       : result.doSuccess(1);
   } catch (e) {
     console.log(e);
@@ -244,7 +253,7 @@ const getAllInventoryMoves = async (params) => {
     const queryResult = await InventoryMove.find(queryCondition, {
       _id: 1,
       createdAt: 1,
-      dueDate:1,
+      dueDate: 1,
       documentNumber: 1,
       location: 1,
     })
@@ -280,7 +289,10 @@ const insertInventoryMove = async (params) => {
   try {
     result.data = await InventoryMove.create(params);
     result.data == null
-      ? result.doSuccess(0, "Can't insert to database, please check your request!")
+      ? result.doSuccess(
+          0,
+          "Can't insert to database, please check your request!"
+        )
       : result.doSuccess(1);
   } catch (e) {
     console.log(e);
@@ -365,7 +377,10 @@ const insertInventoryBorrow = async (params) => {
   try {
     result.data = await InventoryBorrow.create(params);
     result.data == null
-      ? result.doSuccess(0, "Can't insert to database, please check your request!")
+      ? result.doSuccess(
+          0,
+          "Can't insert to database, please check your request!"
+        )
       : result.doSuccess(1);
   } catch (e) {
     console.log(e);
@@ -405,7 +420,10 @@ const insertInventoryRefund = async (params) => {
   try {
     result.data = await InventoryRefund.create(params);
     result.data == null
-      ? result.doSuccess(0, "Can't insert to database, please check your request!")
+      ? result.doSuccess(
+          0,
+          "Can't insert to database, please check your request!"
+        )
       : result.doSuccess(1);
   } catch (e) {
     console.log(e);
@@ -417,7 +435,22 @@ const insertInventoryRefund = async (params) => {
   return result;
 };
 
+const updateOneInventoryLot = async (conditions, params) => {
+  var result = new DataResponse();
+  try {
+    if (conditions != {}) {
+      result.data = await InventoryLot.updateOne(conditions, params);
+      result.data == null
+        ? result.doSuccess(2, "_id not found in database")
+        : result.doSuccess(1);
+    }
+  } catch (e) {
+    console.log(e);
+    result.doError(0);
+  }
 
+  return result;
+};
 
 module.exports = {
   getAllInventoryLocations,
@@ -437,4 +470,6 @@ module.exports = {
   getInventoryBorrowById,
   insertInventoryBorrow,
   insertInventoryRefund,
+  updateOneInventoryLot,
+  productSerial,
 };

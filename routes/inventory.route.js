@@ -5,28 +5,34 @@ const { verifyToken } = (mw = require("../middleware"));
 //const upload = multer({ dest: "./assets/images/product/brands/" });
 
 const {
-  getInventoryLocations,
-  insertInventoryLocation,
   getInventoryLots,
   insertInventoryLot,
   deleteInventoryLot,
-  deleteInventoryLocation,
-  updateInventoryLocation,
   getInventoryMoves,
   insertInventoryMove,
   getInventoryBorrows,
   insertInventoryBorrow,
   insertInventoryRefund,
-} = require("../controllers/inventory.controller");
+  inventoryProductSerial,
+  inventoryLocation,
+} = require("../controllers/inventory");
 
 // Inventory Location
-router.get("/locations", getInventoryLocations);
+router.get("/locations", inventoryLocation.getInventoryLocations);
 
-router.post("/locations", insertInventoryLocation);
+router.post("/locations", inventoryLocation.insertInventoryLocation);
 
-router.put("/locations", verifyToken, updateInventoryLocation);
+router.put(
+  "/locations",
+  verifyToken,
+  inventoryLocation.updateInventoryLocation
+);
 
-router.delete("/locations", verifyToken, deleteInventoryLocation);
+router.delete(
+  "/locations",
+  verifyToken,
+  inventoryLocation.deleteInventoryLocation
+);
 
 // Inventory Lot
 
@@ -51,5 +57,10 @@ router.post("/borrows", insertInventoryBorrow);
 // Inventory Refund
 
 router.post("/refunds", insertInventoryRefund);
+
+// Inventory Lot
+
+router.post("/productSerial", inventoryProductSerial.insertProductSerial);
+router.delete("/productSerial", inventoryProductSerial.deleteProductSerial);
 
 module.exports = router;

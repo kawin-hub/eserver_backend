@@ -122,6 +122,24 @@ const getProductModels = async (param = {}) => {
   return productModels;
 };
 
+const getProductModelsByParams = async (param = {}, projection = {}) => {
+  var result = new DataResponse();
+  try {
+    result.data = await ProductModel.findOne(param, projection).lean();
+    result.data == null
+      ? result.doSuccess(2, "Not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e);
+    if (e.kind == "ObjectId") {
+      result.doError(0, "Please check your _id format");
+    } else {
+      result.doError(0);
+    }
+  }
+  return result;
+};
+
 const deleteProductModel = async (data) => {
   var result = null;
   try {
@@ -181,5 +199,6 @@ module.exports = {
   getProductModels,
   deleteProductModel,
   updateProductModel,
-  getProductsbyArrayId
+  getProductsbyArrayId,
+  getProductModelsByParams,
 };

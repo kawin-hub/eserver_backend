@@ -41,6 +41,18 @@ let inventoryLotSchema = new Schema(
           default: Date.now,
         },
       },
+      // Documents for Purchase
+    ],
+    documentsFromStore: [
+      {
+        name: String,
+        path: String,
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+      // Documents for Store
     ],
   },
   {
