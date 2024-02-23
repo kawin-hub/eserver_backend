@@ -1,91 +1,40 @@
-//User model
-let AccountModel = require("../models/Accounts");
+//account model
+let AccountModel = require("../models/Account");
 let dotenv = require("dotenv");
 let { upload, general } = require("../middleware");
 const fs = require("fs");
 const { DataResponse } = require("../models/general_data.model");
 const { Validator } = require("node-input-validator");
+const path = require("path");
 const { ObjectId } = require("mongoose").Types;
 
 dotenv.config();
 
+//Account Expense
 
-const insertAccountExpense = async (req, res) => {
+const getAccountExpenses = async (req, res) => {
     var result = new DataResponse();
-    var docsName = "documents";
-    var imagesName = "images";
-
-    await upload.uploadFiles(req, res, [
-        {
-            name: imagesName,
-            path: "./assets/images/account/expenses",
-            allowType: ["jpeg", "jpg", "png"],
-        },
-        {
-            name: docsName,
-            path: "./assets/documents/account/expenses",
-            maxCount: 5,
-            allowType: ["pdf"],
-        },
-    ]);
 
     try {
-        const validation = new Validator(req.body, {
-            lotNumber: "required",
-            estimatedDate: "required|dateFormat:YYYY-MM-DD",
-            status: "required|in:draft,inactive,active",
-            quantity: "required",
-            warranty: "required",
-            /* expense_id: "required", */
-            product_ids: "required",
-        });
+        const { _id } = req.query;
 
-        const matched = await validation.check();
-
-        if (matched) {
-            const {
-                product_ids,
-                lotNumber,
-                estimatedDate,
-                status,
-                quantity,
-                warranty,
-            } = req.body;
-
-            const productResult = await ProductModel.getProductsbyArrayId(
-                product_ids
+        if (typeof _id != "undefined") {
+            result = await AccountModel.getAccountExpenseById({
+                _id: new Object(_id),
+            });
+        } else {
+            var pageOption = general.checkPageAndLimit(
+                req.query.page,
+                req.query.limit
             );
 
-            if (productResult.code == 1) {
-                for (var i = 0; i < product_ids.length; i++) {
-                    for (var j = 0; j < productResult.data.length; j++) {
-                        if (product_ids[i] == productResult.data[j]._id) {
-                            productResult.data[j].quantity = quantity[i];
-                            productResult.data[j].warranty = warranty[i];
-                            break;
-                        }
-                    }
-                }
+            var params = {
+                page: pageOption.page,
+                limit: pageOption.limit,
+                queryCondition: {},
+            };
 
-                var params = {
-                    lotNumber: lotNumber,
-                    estimatedDate: estimatedDate,
-                    status: status,
-                    products: productResult.data,
-                };
-
-                result = await InventoryModel.insertInventoryLot(params);
-            }
-        } else {
-            result.doError(2, validation.errors);
-        }
-
-        if (result.code != 1) {
-            for (let i = 0; i < req.files[docsName].length; i++) {
-                fs.rmSync(req.files[docsName][i].path, {
-                    force: true,
-                });
-            }
+            result = await AccountModel.getAllAccountExpenses(params);
         }
     } catch (error) {
         console.log(error);
@@ -94,6 +43,101 @@ const insertAccountExpense = async (req, res) => {
     res.json(result);
 };
 
+const insertAccountExpense = async (req, res) => {
+    var result = new DataResponse();
+
+    try {
+        var imagesName = "images";
+        var docsName = "documents";
+
+        var resUpload = await upload.uploadFiles(req, res, [
+            {
+                name: imagesName,
+                path: "./assets/images/account/expenses",
+                maxCount: 5,
+                allowType: ["jpeg", "jpg", "png"],
+            },
+            {
+                name: docsName,
+                path: "./assets/documents/account/expenses",
+                maxCount: 5,
+                allowType: ["pdf"],
+            },
+        ]);
+
+        if (resUpload.success) {
+
+            const validation = new Validator(req.body, {
+                documentNumber: "required",
+                expenseDate: "required|dateFormat:YYYY-MM-DD",
+                expenseType: "required|in:stock,nonstock",
+                amount: "required",
+                whom: "required",
+            });
+
+            const matched = await validation.check();
+
+            if (matched) {
+                const { documentNumber, expenseDate, expenseCategory, expenseType, amount, whom, tag, remark } = req.body;
+                var images = []
+                var documents = []
+
+                for (let i = 0; i < req.files[imagesName].length; i++) {
+                    images[i] = {
+                        name: req.files[imagesName][i].originalname,
+                        path: req.files[imagesName][i].path
+                    }
+                }
+
+                for (let i = 0; i < req.files[docsName].length; i++) {
+                    documents[i] = {
+                        name: req.files[docsName][i].originalname,
+                        path: req.files[docsName][i].path
+                    }
+                }
+                var params = {
+                    documentNumber: documentNumber,
+                    expenseDate: expenseDate,
+                    expenseCategory: typeof expenseCategory != "undefined" ? expenseCategory : "",
+                    expenseType: expenseType,
+                    amount: amount,
+                    whom: whom,
+                    tag: typeof tag != "undefined" ? tag : "",
+                    remark: typeof remark != "undefined" ? remark : "",
+                    images: images,
+                    documents: documents,
+                };
+                result = await AccountModel.insertAccountExpense(params);
+
+            } else {
+                result.doError(2, validation.errors);
+            }
+
+        } else {
+            result.doError(7, "Files or images are wrong format, please check!");
+        }
+
+    } catch (error) {
+        console.log(error)
+    }
+
+    if (result.code != 1) {
+        for (let i = 0; i < req.files[imagesName].length; i++) {
+            fs.rmSync(req.files[imagesName][i].path, {
+                force: true,
+            });
+        }
+        for (let i = 0; i < req.files[docsName].length; i++) {
+            fs.rmSync(req.files[docsName][i].path, {
+                force: true,
+            });
+        }
+    }
+
+    res.json(result);
+}
+
 module.exports = {
+    getAccountExpenses,
     insertAccountExpense,
 };

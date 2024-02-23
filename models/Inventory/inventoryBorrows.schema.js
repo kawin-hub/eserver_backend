@@ -19,22 +19,21 @@ let inventoryBorrowSchema = new Schema(
         purpose: {
             type: String,
             enum: ["demo", "service", "spare", "test"],
-            default: "",
+            default: "spare",
         },
         mainStatus: {
             type: String,
             enum: ["rent", "request"],
             default: "rent"
         },
-        products: [{
-            _id: { type: ObjectId, ref: "ProductModel" },
-            modelCode: String,
-            name: String,
-        }],
-        quantity: {
-            type: Number,
-            required: true,
-        },
+        products: [
+            {
+              _id: { type: ObjectId, ref: "ProductModel" },
+              modelCode: { type: String },
+              name: { type: String },
+              quantity: { type: Number },
+            },
+          ],
     },
     {
         timestamps: true,

@@ -14,8 +14,7 @@ let accountExpenseSchema = new Schema(
         },
         expenseCategory: {
             type: String,
-            enum: ["smart film", "smart home", "smart mirror", "others", "marketing", "ค่า Plateform, license และ cloud ต่าง ๆ", "test product", "ค่าน้ำมัน", "เบ็ดเตล็ด"],
-            default: "",
+            default: "others",
         },
         expenseType: {
             type: String,
@@ -25,6 +24,7 @@ let accountExpenseSchema = new Schema(
         amount: {
             type: Number,
             default: 0,
+            required: true,
         },
         whom: {
             type: String,

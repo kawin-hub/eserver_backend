@@ -1,18 +1,20 @@
-//User model
+//Inventory model
 let InventoryModel = require("../models/Inventory");
+let AccountModel = require("../models/Account");
 let ProductModel = require("../models/Products");
 let dotenv = require("dotenv");
 let { upload, general } = require("../middleware");
 const fs = require("fs");
 const { DataResponse } = require("../models/general_data.model");
 const { Validator } = require("node-input-validator");
+const { match } = require("assert");
 const { ObjectId } = require("mongoose").Types;
 
 dotenv.config();
 
 //Inventory Location
 
-const getAllInventoryLocations = async (req, res) => {
+const getInventoryLocations = async (req, res) => {
   var result = new DataResponse();
 
   try {
@@ -153,15 +155,7 @@ const deleteInventoryLocation = async (req, res, next) => {
 
 //Inventory Lot
 
-/* const getAllInventoryLots = async function (req, res, next) {
-  var inventoryLocations = await InventoryModel.getAllInventoryLot();
-  res.status(200).send({
-    message: "Get inventory lots successfully!",
-    inventoryLocations,
-  });
-}; */
-
-const getAllInventoryLots = async (req, res) => {
+const getInventoryLots = async (req, res) => {
   var result = new DataResponse();
 
   try {
@@ -183,7 +177,7 @@ const getAllInventoryLots = async (req, res) => {
         queryCondition: {},
       };
 
-      result = await InventoryModel.getAllInventoryLots(params);
+      result = await InventoryModel.getALLInventoryLots(params);
     }
   } catch (error) {
     console.log(error);
@@ -195,80 +189,98 @@ const getAllInventoryLots = async (req, res) => {
 const insertInventoryLot = async (req, res) => {
   var result = new DataResponse();
 
-  var docsName = "documents";
-  await upload.uploadFiles(req, res, [
-    {
-      name: docsName,
-      path: "./assets/documents/inventory/lots",
-      maxCount: 5,
-      allowType: ["pdf"],
-    },
-  ]);
-
   try {
-    const validation = new Validator(req.body, {
-      lotNumber: "required",
-      estimatedDate: "required|dateFormat:YYYY-MM-DD",
-      status: "required|in:draft,inactive,active",
-      quantity: "required",
-      warranty: "required",
-      /* expense_id: "required", */
-      product_ids: "required",
-    });
+    var docsName = "documents";
 
-    const matched = await validation.check();
+    var resUpload = await upload.uploadFiles(req, res, [
+      {
+        name: docsName,
+        path: "./assets/documents/inventory/lots",
+        maxCount: 5,
+        allowType: ["pdf"],
+      },
+    ]);
 
-    if (matched) {
-      const {
-        product_ids,
-        lotNumber,
-        estimatedDate,
-        status,
-        quantity,
-        warranty,
-      } = req.body;
+    if (resUpload.success) {
+      const validation = new Validator(req.body, {
+        lotNumber: "required",
+        estimatedDate: "required|dateFormat:YYYY-MM-DD",
+        status: "required|in:draft,inactive,active",
+        quantity: "required",
+        warranty: "required",
+        expense_id: "required",
+        product_ids: "required",
+      });
+      const matched = await validation.check();
 
-      const productResult = await ProductModel.getProductsbyArrayId(
-        product_ids
-      );
+      if (matched) {
+        const { lotNumber, estimatedDate, status, quantity, warranty, expense_id, product_ids } = req.body;
+        const expenseResult = await AccountModel.getAccountExpenseById({ _id: expense_id });
 
-      if (productResult.code == 1) {
-        for (var i = 0; i < product_ids.length; i++) {
-          for (var j = 0; j < productResult.data.length; j++) {
-            if (product_ids[i] == productResult.data[j]._id) {
-              productResult.data[j].quantity = quantity[i];
-              productResult.data[j].warranty = warranty[i];
-              break;
+        if (expenseResult.code == 1) {
+          const productResult = await ProductModel.getProductsbyArrayId({ _id: product_ids });
+
+          if (productResult.code == 1) {
+            for (var i = 0; i < product_ids.length; i++) {
+              for (var j = 0; j < productResult.data.length; j++) {
+                if (product_ids[i] == productResult.data[j]._id) {
+                  productResult.data[j].quantity = quantity[i];
+                  productResult.data[j].warranty = warranty[i];
+                  break;
+                }
+              }
             }
+
+            var documents = []
+
+            for (let i = 0; i < req.files[docsName].length; i++) {
+              documents[i] = {
+                name: req.files[docsName][i].originalname,
+                path: req.files[docsName][i].path
+              }
+            }
+            var params = {
+              lotNumber: lotNumber,
+              estimatedDate: estimatedDate,
+              status: status,
+              quantity: quantity,
+              warranty: warranty,
+              expense: expenseResult.data,
+              products: productResult.data,
+              documents: documents,
+            };
+            result = await InventoryModel.insertInventoryLot(params);
+
+          } else {
+            result.doError(5, "product_ids is not found!");
           }
+
+        } else {
+          result.doError(5, "expense_id is not found!");
         }
 
-        var params = {
-          lotNumber: lotNumber,
-          estimatedDate: estimatedDate,
-          status: status,
-          products: productResult.data,
-        };
-
-        result = await InventoryModel.insertInventoryLot(params);
+      } else {
+        result.doError(2, validation.errors);
       }
+
     } else {
-      result.doError(2, validation.errors);
+      result.doError(7, "Files is wrong format, please check!");
     }
 
-    if (result.code != 1) {
-      for (let i = 0; i < req.files[docsName].length; i++) {
-        fs.rmSync(req.files[docsName][i].path, {
-          force: true,
-        });
-      }
-    }
   } catch (error) {
-    console.log(error);
+    console.log(error)
+  }
+
+  if (result.code != 1) {
+    for (let i = 0; i < req.files[docsName].length; i++) {
+      fs.rmSync(req.files[docsName][i].path, {
+        force: true,
+      });
+    }
   }
 
   res.json(result);
-};
+}
 
 const deleteInventoryLot = async (req, res, next) => {
   let { _id } = req.body;
@@ -295,40 +307,103 @@ const deleteInventoryLot = async (req, res, next) => {
 
 //Inventory Move
 
+const getInventoryMoves = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    const { _id } = req.query;
+
+    if (typeof _id != "undefined") {
+      result = await InventoryModel.getInventoryMoveById({
+        _id: new Object(_id),
+      });
+    } else {
+      var pageOption = general.checkPageAndLimit(
+        req.query.page,
+        req.query.limit
+      );
+
+      var params = {
+        page: pageOption.page,
+        limit: pageOption.limit,
+        queryCondition: {},
+      };
+
+      result = await InventoryModel.getAllInventoryMoves(params);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+
+  res.json(result);
+};
+
 const insertInventoryMove = async (req, res) => {
   var result = new DataResponse();
 
   try {
     const validation = new Validator(req.body, {
       documentNumber: "required",
-      dueDate: "required",
-      origin: "required",
-      desdination: "required",
-      name: "required",
-      quantity: "required",
+      dueDate: "required|dateFormat:YYYY-MM-DD",
+      location_origin_id: "required",
+      location_destination_id: "required",
+      product_ids: "required",
+      quantity: "required"
     });
 
     const matched = await validation.check();
 
     if (matched) {
-      const { documentNumber, dueDate, origin, desdination, name, quantity } =
-        req.body;
+      const { documentNumber, dueDate, location_origin_id, location_destination_id, product_ids, quantity } = req.body;
+      const locationResult = await InventoryModel.getInventoryLocationbyArrayId([location_origin_id, location_destination_id]);
 
-      var params = {
-        documentNumber: documentNumber,
-        dueDate: dueDate,
-        origin: origin,
-        desdination: desdination,
-        name: name,
-        quantity: quantity,
-      };
+      if (locationResult.code == 1 && locationResult.data.length >= 2) {
 
-      result = await InventoryModel.insertInventoryMove(params);
+        const productResult = await ProductModel.getProductsbyArrayId({ _id: product_ids });
+
+        if (productResult.code == 1) {
+          for (var i = 0; i < product_ids.length; i++) {
+            for (var j = 0; j < productResult.data.length; j++) {
+              if (product_ids[i] == productResult.data[j]._id) {
+                productResult.data[j].quantity = quantity[i];
+                break;
+              }
+            }
+          }
+
+          var params = {
+            location: {
+              origin: {
+                _id: locationResult.data[0]._id == location_origin_id ? locationResult.data[0]._id : locationResult.data[1]._id,
+                name: locationResult.data[0]._id == location_origin_id ? locationResult.data[0].name : locationResult.data[1].name,
+              },
+              destination: {
+                _id: locationResult.data[0]._id == location_destination_id ? locationResult.data[0]._id : locationResult.data[1]._id,
+                name: locationResult.data[0]._id == location_destination_id ? locationResult.data[0].name : locationResult.data[1].name,
+              }
+            },
+            documentNumber: documentNumber,
+            dueDate: dueDate,
+            products: productResult.data,
+            quantity: quantity,
+          };
+
+          result = await InventoryModel.insertInventoryMove(params);
+
+        } else {
+          result.doError(5, "product_ids is not found!");
+        }
+
+      } else {
+        result.doError(5, "location_id is not found!");
+      }
+
     } else {
       result.doError(2, validation.errors);
     }
+
   } catch (error) {
-    console.log(error);
+    console.log(error)
   }
 
   res.json(result);
@@ -336,46 +411,29 @@ const insertInventoryMove = async (req, res) => {
 
 //Inventory Borrow
 
-const insertInventoryBorrow = async (req, res) => {
+const getInventoryBorrows = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    const validation = new Validator(req.body, {
-      documentNumber: "required",
-      dueDate: "required",
-      estimatedDate: "required",
-      purpose: "required",
-      mainStatus: "required",
-      name: "required",
-      quantity: "required",
-    });
+    const { _id } = req.query;
 
-    const matched = await validation.check();
-
-    if (matched) {
-      const {
-        documentNumber,
-        dueDate,
-        estimatedDate,
-        purpose,
-        mainStatus,
-        name,
-        quantity,
-      } = req.body;
+    if (typeof _id != "undefined") {
+      result = await InventoryModel.getInventoryBorrowById({
+        _id: new Object(_id),
+      });
+    } else {
+      var pageOption = general.checkPageAndLimit(
+        req.query.page,
+        req.query.limit
+      );
 
       var params = {
-        documentNumber: documentNumber,
-        dueDate: dueDate,
-        estimatedDate: estimatedDate,
-        purpose: purpose,
-        mainStatus: mainStatus,
-        name: name,
-        quantity: quantity,
+        page: pageOption.page,
+        limit: pageOption.limit,
+        queryCondition: {},
       };
 
-      result = await InventoryModel.insertInventoryBorrow(params);
-    } else {
-      result.doError(2, validation.errors);
+      result = await InventoryModel.getAllInventoryBorrows(params);
     }
   } catch (error) {
     console.log(error);
@@ -383,6 +441,61 @@ const insertInventoryBorrow = async (req, res) => {
 
   res.json(result);
 };
+
+const insertInventoryBorrow = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    const validation = new Validator(req.body, {
+      documentNumber: "required",
+      dueDate: "required|dateFormat:YYYY-MM-DD",
+      estimatedDate: "required",
+      purpose: "required|in:demo,service,spare,test",
+      mainStatus: "required|in:rent,request",
+      product_ids: "required",
+      quantity: "required",
+    });
+
+    const matched = await validation.check();
+
+    if (matched) {
+      const { documentNumber, dueDate, estimatedDate, purpose, mainStatus, product_ids } = req.body;
+      const productResult = await ProductModel.getProductsbyArrayId({ _id: product_ids });
+
+      if (productResult.code == 1) {
+        for (var i = 0; i < product_ids.length; i++) {
+          for (var j = 0; j < productResult.data.length; j++) {
+            if (product_ids[i] == productResult.data[j]._id) {
+              productResult.data[j].quantity = quantity[i];
+              break;
+            }
+          }
+        }
+        var params = {
+          documentNumber: documentNumber,
+          dueDate: dueDate,
+          estimatedDate: estimatedDate,
+          purpose: purpose,
+          mainStatus: mainStatus,
+          products: productResult.data,
+        };
+
+        result = await InventoryModel.insertInventoryBorrow(params);
+
+      } else {
+        result.doError(5, "product_ids is not found!");
+      }
+
+    } else {
+      result.doError(2, validation.errors);
+    }
+
+  } catch (error) {
+    console.log(error)
+  }
+
+  res.json(result);
+}
 
 //Inventory Refund
 
@@ -415,14 +528,16 @@ const insertInventoryRefund = async (req, res) => {
 };
 
 module.exports = {
-  getAllInventoryLocations,
+  getInventoryLocations,
   insertInventoryLocation,
-  getAllInventoryLots,
+  getInventoryLots,
   insertInventoryLot,
   deleteInventoryLot,
   deleteInventoryLocation,
   updateInventoryLocation,
+  getInventoryMoves,
   insertInventoryMove,
+  getInventoryBorrows,
   insertInventoryBorrow,
   insertInventoryRefund,
 };

@@ -5,20 +5,22 @@ const { verifyToken } = (mw = require("../middleware"));
 //const upload = multer({ dest: "./assets/images/product/brands/" });
 
 const {
-  getAllInventoryLocations,
+  getInventoryLocations,
   insertInventoryLocation,
-  getAllInventoryLots,
+  getInventoryLots,
   insertInventoryLot,
   deleteInventoryLot,
   deleteInventoryLocation,
   updateInventoryLocation,
+  getInventoryMoves,
   insertInventoryMove,
+  getInventoryBorrows,
   insertInventoryBorrow,
   insertInventoryRefund,
 } = require("../controllers/inventory.controller");
 
 // Inventory Location
-router.get("/locations", getAllInventoryLocations);
+router.get("/locations", getInventoryLocations);
 
 router.post("/locations", insertInventoryLocation);
 
@@ -28,7 +30,7 @@ router.delete("/locations", verifyToken, deleteInventoryLocation);
 
 // Inventory Lot
 
-router.get("/lots", getAllInventoryLots);
+router.get("/lots", getInventoryLots);
 
 router.post("/lots", insertInventoryLot);
 
@@ -36,9 +38,13 @@ router.delete("/lots", verifyToken, deleteInventoryLot);
 
 // Inventory Move
 
+router.get("/moves", getInventoryMoves);
+
 router.post("/moves", insertInventoryMove);
 
 // Inventory Borrow
+
+router.get("/borrows", getInventoryBorrows);
 
 router.post("/borrows", insertInventoryBorrow);
 
