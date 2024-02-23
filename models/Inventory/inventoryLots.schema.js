@@ -15,6 +15,8 @@ let inventoryLotSchema = new Schema(
     expense: {
       _id: { type: ObjectId, ref: "AccountExpenses" },
       documentNumber: { type: String },
+      expenseCategory: { type: String },
+      expenseType: { type: String },
     },
     status: {
       type: String,
@@ -24,10 +26,10 @@ let inventoryLotSchema = new Schema(
     products: [
       {
         _id: { type: ObjectId, ref: "ProductModel" },
-        modelCode: String,
-        name: String,
-        quatity: Number,
-        warranty: Number,
+        modelCode: { type: String },
+        name: { type: String },
+        quantity: { type: Number },
+        warranty: { type: Number },
       },
     ],
     documents: [
