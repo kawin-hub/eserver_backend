@@ -12,7 +12,7 @@ let inventoryMoveSchema = new Schema(
             type: Date,
             required: true,
         },
-        location: {
+        inventoryLocation: {
             origin: {
                 _id: { type: ObjectId, ref: "InventoryLocations" },
                 name: { type: String },
@@ -22,14 +22,17 @@ let inventoryMoveSchema = new Schema(
                 name: { type: String },
             }
         },
-        products: [
+        currentStatus: {
+            type: String
+        },
+        productModel: [
             {
-              _id: { type: ObjectId, ref: "ProductModel" },
-              modelCode: { type: String },
-              name: { type: String },
-              quantity: { type: Number },
+                _id: { type: ObjectId, ref: "ProductModel" },
+                modelCode: { type: String },
+                name: { type: String },
+                quantity: { type: Number },
             },
-          ],
+        ],
     },
     {
         timestamps: true,

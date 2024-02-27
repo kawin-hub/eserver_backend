@@ -1,26 +1,24 @@
 //account model
-let SaleModel = require("../models/Sale");
+let SaleModel = require("../../models/Sale");
 let dotenv = require("dotenv");
-let { upload, general } = require("../middleware");
-const fs = require("fs");
-const { DataResponse } = require("../models/general_data.model");
+let { general } = require("../../middleware");
+const { DataResponse } = require("../../models/general_data.model");
 const { Validator } = require("node-input-validator");
-const path = require("path");
-const { match } = require("assert");
-const { ObjectId } = require("mongoose").Types;
 
 dotenv.config();
 
-//Sale Lead
+// 👉 Get all or by ID
 
-const getSaleLeads = async (req, res) => {
+exports.getSaleLeads = async (req, res) => {
     var result = new DataResponse();
 
     try {
         const { _id } = req.query;
 
+        var SaleLeadModel = SaleModel.lead
+
         if (typeof _id != "undefined") {
-            result = await SaleModel.getSaleLeadById({
+            result = await SaleLeadModel.getSaleLeadById({
                 _id: new Object(_id),
             });
         } else {
@@ -35,7 +33,7 @@ const getSaleLeads = async (req, res) => {
                 queryCondition: {},
             };
 
-            result = await SaleModel.getAllSaleLeads(params);
+            result = await SaleLeadModel.getAllSaleLeads(params);
         }
     } catch (error) {
         console.log(error);
@@ -44,7 +42,9 @@ const getSaleLeads = async (req, res) => {
     res.json(result);
 };
 
-const insertSaleLead = async (req, res) => {
+// 👉 Insert/Post
+
+exports.insertSaleLead = async (req, res) => {
 
     var result = new DataResponse();
 
@@ -59,11 +59,13 @@ const insertSaleLead = async (req, res) => {
 
         const matched = await validation.check();
 
+        var SaleLeadModel = SaleModel.lead
+
         if (matched) {
 
             const { companyName, taxId, branch, address, googleMap, companyEmail, companyContactNumber, leadFirstname, leadLastname, leadContactNumber, lineId, leadLevel, tag } = req.body;
-
-            var params = {
+            
+            var inserLeadparams = {
                 companyName: companyName,
                 taxId: typeof taxId != "undefined" ? taxId : "",
                 branch: typeof branch != "undefined" ? branch : "",
@@ -79,7 +81,7 @@ const insertSaleLead = async (req, res) => {
                 tag: typeof tag != "undefined" ? tag : "",
             };
 
-            result = await SaleModel.insertSaleLead(params);
+            result = await SaleLeadModel.insertSaleLead(inserLeadparams);
 
         } else {
             result.doError(2, validation.errors);
@@ -91,17 +93,3 @@ const insertSaleLead = async (req, res) => {
 
     res.json(result);
 }
-
-//Sale Quotation
-
-const insertSaleQuotation = async (req, res) => {
-    var result = new DataResponse();
-
-    res.json(result);
-}
-
-module.exports = {
-    getSaleLeads,
-    insertSaleLead,
-    insertSaleQuotation,
-};

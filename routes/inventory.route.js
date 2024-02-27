@@ -4,63 +4,55 @@ const { verifyToken } = (mw = require("../middleware"));
 //const multer = require("multer");
 //const upload = multer({ dest: "./assets/images/product/brands/" });
 
+// 👉 Import controller part
 const {
-  getInventoryLots,
-  insertInventoryLot,
-  deleteInventoryLot,
-  getInventoryMoves,
-  insertInventoryMove,
-  getInventoryBorrows,
-  insertInventoryBorrow,
   insertInventoryRefund,
-  inventoryProductSerial,
+
   inventoryLocation,
+  inventoryLot,
+  inventoryMove,
+  inventoryRequest,
+  inventoryProductSerial,
 } = require("../controllers/inventory");
 
-// Inventory Location
+// 👉 Inventory Location
+
 router.get("/locations", inventoryLocation.getInventoryLocations);
 
 router.post("/locations", inventoryLocation.insertInventoryLocation);
 
-router.put(
-  "/locations",
-  verifyToken,
-  inventoryLocation.updateInventoryLocation
-);
+router.put("/locations", verifyToken, inventoryLocation.updateInventoryLocation);
 
-router.delete(
-  "/locations",
-  verifyToken,
-  inventoryLocation.deleteInventoryLocation
-);
+router.delete("/locations", verifyToken, inventoryLocation.deleteInventoryLocation);
 
-// Inventory Lot
+// 👉 Inventory Lot
 
-router.get("/lots", getInventoryLots);
+router.get("/lots", inventoryLot.getInventoryLots);
 
-router.post("/lots", insertInventoryLot);
+router.post("/lots", inventoryLot.insertInventoryLot);
 
-router.delete("/lots", verifyToken, deleteInventoryLot);
+router.delete("/lots", verifyToken, inventoryLot.deleteInventoryLot);
 
-// Inventory Move
+// 👉 Inventory Move
 
-router.get("/moves", getInventoryMoves);
+router.get("/moves", inventoryMove.getInventoryMoves);
 
-router.post("/moves", insertInventoryMove);
+router.post("/moves", inventoryMove.insertInventoryMove);
 
-// Inventory Borrow
+// 👉 Inventory Request
 
-router.get("/borrows", getInventoryBorrows);
+router.get("/requests", inventoryRequest.getInventoryRequests);
 
-router.post("/borrows", insertInventoryBorrow);
+router.post("/requests", inventoryRequest.insertInventoryRequest);
 
-// Inventory Refund
+// 👉 Inventory Refund
 
 router.post("/refunds", insertInventoryRefund);
 
-// Inventory Lot
+// 👉 Inventory Product Serial
 
 router.post("/productSerial", inventoryProductSerial.insertProductSerial);
+
 router.delete("/productSerial", inventoryProductSerial.deleteProductSerial);
 
 module.exports = router;

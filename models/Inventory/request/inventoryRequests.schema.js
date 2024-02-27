@@ -1,7 +1,7 @@
 const { Schema, model, ObjectId } = require("mongoose");
-const collection = "InventoryBorrows";
+const collection = "InventoryRequests";
 
-let inventoryBorrowSchema = new Schema(
+let inventoryRequestSchema = new Schema(
   {
     documentNumber: {
       type: String,
@@ -12,24 +12,18 @@ let inventoryBorrowSchema = new Schema(
       type: Date,
       required: true,
     },
-    estimatedDate: {
-      type: Date,
-      required: true,
-    },
     requestType: {
       type: String,
-      enum: ["sell", "borrow", "broken", "r&d", "gift", "others"],
+      enum: ["sell", "borrow", "broken", "r&d", "gift", "booking", "others"],
       required: true,
+    },
+    estimatedReturnDate: {
+      type: Date,
     },
     remark: {
       type: String,
     },
-    mainStatus: {
-      type: String,
-      enum: ["rent", "request"],
-      default: "rent",
-    },
-    products: [
+    productModel: [
       {
         _id: { type: ObjectId, ref: "ProductModel" },
         modelCode: { type: String },
@@ -37,6 +31,9 @@ let inventoryBorrowSchema = new Schema(
         quantity: { type: Number },
       },
     ],
+    currentStatus: {
+      type: String
+    },
   },
   {
     timestamps: true,
@@ -45,4 +42,4 @@ let inventoryBorrowSchema = new Schema(
   }
 );
 
-module.exports = model(collection, inventoryBorrowSchema);
+module.exports = model(collection, inventoryRequestSchema);

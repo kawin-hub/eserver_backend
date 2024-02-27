@@ -16,6 +16,12 @@ let inventoryProductSerailSchema = new Schema(
       _id: { type: ObjectId, ref: "inventoryLots" },
       lotNumber: String,
     },
+    accountExpense: {
+      _id: { type: ObjectId, ref: "AccountExpenses" },
+      documentNumber: { type: String },
+      expenseCategory: { type: String },
+      expenseType: { type: String },
+    },
     serialNumber: {
       type: String,
       unique: true
@@ -24,7 +30,9 @@ let inventoryProductSerailSchema = new Schema(
       type: Date,
       default: Date.now,
     },
-    currentStatus: String,
+    currentStatus: {
+      type: String,
+    },
     movements: [
       {
         status: {

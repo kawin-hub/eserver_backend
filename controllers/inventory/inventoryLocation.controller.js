@@ -1,8 +1,11 @@
+// 👉 Inventory model
 let InventoryModel = require("../../models/Inventory");
 let { upload, general } = require("../../middleware");
 const fs = require("fs");
 const { DataResponse } = require("../../models/general_data.model");
 const { Validator } = require("node-input-validator");
+
+// 👉 Get all or by ID
 
 exports.getInventoryLocations = async (req, res) => {
   var result = new DataResponse();
@@ -10,10 +13,10 @@ exports.getInventoryLocations = async (req, res) => {
   try {
     const { _id } = req.query;
 
+    var InventoryLocationModel = InventoryModel.location
+
     if (typeof _id != "undefined") {
-      result = await InventoryModel.getInventoryLocationById({
-        _id: new Object(_id),
-      });
+      result = await InventoryLocationModel.getInventoryLocationById({ _id: _id })
     } else {
       var pageOption = general.checkPageAndLimit(
         req.query.page,
@@ -26,7 +29,7 @@ exports.getInventoryLocations = async (req, res) => {
         queryCondition: {},
       };
 
-      result = await InventoryModel.getAllInventoryLocations(params);
+      result = await InventoryLocationModel.getAllInventoryLocations(params)
     }
   } catch (error) {
     console.log(error);
@@ -34,6 +37,9 @@ exports.getInventoryLocations = async (req, res) => {
 
   res.json(result);
 };
+
+// 👉 Insert/Post
+
 exports.insertInventoryLocation = async (req, res) => {
   var result = new DataResponse();
 
@@ -49,10 +55,12 @@ exports.insertInventoryLocation = async (req, res) => {
 
     const matched = await validation.check();
 
+    var InventoryLocationModel = InventoryModel.location
+
     if (matched) {
       const { name, adminName, contactNumber, address, googleMap, status } =
         req.body;
-      var params = {
+      var insertLocationtparams = {
         name: name,
         adminName: adminName,
         contactNumber: contactNumber,
@@ -61,7 +69,7 @@ exports.insertInventoryLocation = async (req, res) => {
         status: status,
       };
 
-      result = await InventoryModel.insertInventoryLocation(params);
+      result = await InventoryLocationModel.insertInventoryLocation(insertLocationtparams);
     } else {
       result.doError(2, validation.errors);
     }
@@ -71,6 +79,9 @@ exports.insertInventoryLocation = async (req, res) => {
 
   res.json(result);
 };
+
+// 👉 Update/Put // รอคุณกวินสอนอีกที
+
 exports.updateInventoryLocation = async (req, res, next) => {
   var uploadRes = await upload.uploadFiles(req, res); // convert post multi-part
 
@@ -78,6 +89,8 @@ exports.updateInventoryLocation = async (req, res, next) => {
   let message = "Update failed";
   let statusCode = 400;
   let { name, description, status, _id } = req.body;
+
+  var InventoryLocationModel = InventoryModel.location
 
   if (name !== undefined) {
     name = name ? name : "";
@@ -90,7 +103,7 @@ exports.updateInventoryLocation = async (req, res, next) => {
       status,
     };
 
-    result = await InventoryModel.updateInventoryLocation(_id, dataUpdate);
+    result = await InventoryLocationModel.updateInventoryLocation(_id, dataUpdate);
 
     if (result.code != 11000 && result.errors === undefined) {
       statusCode = 200;
@@ -117,6 +130,9 @@ exports.updateInventoryLocation = async (req, res, next) => {
 
   res.status(statusCode).send({ message, result });
 };
+
+// 👉 Delete
+
 exports.deleteInventoryLocation = async (req, res, next) => {
   let { _id } = req.body;
 
@@ -124,8 +140,10 @@ exports.deleteInventoryLocation = async (req, res, next) => {
   let message = "Insert failed";
   let statusCode = 400;
 
+  var InventoryLocationModel = InventoryModel.location
+
   if (_id !== undefined) {
-    result = await InventoryModel.deleteInventoryLocation({ _id: _id });
+    result = await InventoryLocationModel.deleteInventoryLocation({ _id: _id });
 
     if (result != null) {
       statusCode = 200;

@@ -1,25 +1,22 @@
 //account model
-let AccountModel = require("../models/Account");
-let dotenv = require("dotenv");
-let { upload, general } = require("../middleware");
+let AccountModel = require("../../models/Account");
+let { upload, general } = require("../../middleware");
 const fs = require("fs");
-const { DataResponse } = require("../models/general_data.model");
+const { DataResponse } = require("../../models/general_data.model");
 const { Validator } = require("node-input-validator");
-const path = require("path");
-const { ObjectId } = require("mongoose").Types;
 
-dotenv.config();
+// 👉 Get all or by ID
 
-//Account Expense
-
-const getAccountExpenses = async (req, res) => {
+exports.getAccountExpenses = async (req, res) => {
     var result = new DataResponse();
 
     try {
         const { _id } = req.query;
 
+        var AccountExpenseModel = AccountModel.expense
+
         if (typeof _id != "undefined") {
-            result = await AccountModel.getAccountExpenseById({
+            result = await AccountExpenseModel.getAccountExpenseById({
                 _id: new Object(_id),
             });
         } else {
@@ -34,7 +31,7 @@ const getAccountExpenses = async (req, res) => {
                 queryCondition: {},
             };
 
-            result = await AccountModel.getAllAccountExpenses(params);
+            result = await AccountExpenseModel.getAllAccountExpenses(params);
         }
     } catch (error) {
         console.log(error);
@@ -43,7 +40,9 @@ const getAccountExpenses = async (req, res) => {
     res.json(result);
 };
 
-const insertAccountExpense = async (req, res) => {
+// 👉 Insert/Post
+
+exports.insertAccountExpense = async (req, res) => {
     var result = new DataResponse();
 
     try {
@@ -70,26 +69,28 @@ const insertAccountExpense = async (req, res) => {
             const validation = new Validator(req.body, {
                 documentNumber: "required",
                 expenseDate: "required|dateFormat:YYYY-MM-DD",
-                expenseType: "required|in:stock,nonstock",
+                expenseCategory: "required|in:stock,nonstock",
                 amount: "required",
                 whom: "required",
             });
 
             const matched = await validation.check();
 
+            var AccountExpenseModel = AccountModel.expense
+
             if (matched) {
                 const { documentNumber, expenseDate, expenseCategory, expenseType, amount, whom, tag, remark } = req.body;
                 var images = []
                 var documents = []
 
-                for (let i = 0; i < req.files[imagesName].length; i++) {
+                for (let i = 0; i < req.files[imagesName]?.length; i++) {
                     images[i] = {
                         name: req.files[imagesName][i].originalname,
                         path: req.files[imagesName][i].path
                     }
                 }
 
-                for (let i = 0; i < req.files[docsName].length; i++) {
+                for (let i = 0; i < req.files[docsName]?.length; i++) {
                     documents[i] = {
                         name: req.files[docsName][i].originalname,
                         path: req.files[docsName][i].path
@@ -107,7 +108,7 @@ const insertAccountExpense = async (req, res) => {
                     images: images,
                     documents: documents,
                 };
-                result = await AccountModel.insertAccountExpense(params);
+                result = await AccountExpenseModel.insertAccountExpense(params);
 
             } else {
                 result.doError(2, validation.errors);
@@ -122,12 +123,12 @@ const insertAccountExpense = async (req, res) => {
     }
 
     if (result.code != 1) {
-        for (let i = 0; i < req.files[imagesName].length; i++) {
+        for (let i = 0; i < req.files[imagesName]?.length; i++) {
             fs.rmSync(req.files[imagesName][i].path, {
                 force: true,
             });
         }
-        for (let i = 0; i < req.files[docsName].length; i++) {
+        for (let i = 0; i < req.files[docsName]?.length; i++) {
             fs.rmSync(req.files[docsName][i].path, {
                 force: true,
             });
@@ -136,8 +137,3 @@ const insertAccountExpense = async (req, res) => {
 
     res.json(result);
 }
-
-module.exports = {
-    getAccountExpenses,
-    insertAccountExpense,
-};

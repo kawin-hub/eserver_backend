@@ -1,6 +1,8 @@
 const InventoryProductSerial = require("./inventoryProductSerial.schema");
 const { DataResponse } = require("../../general_data.model");
 
+// 👉 Insert/Post
+
 exports.insertProductSerial = async (params) => {
   var result = new DataResponse();
 
@@ -19,6 +21,8 @@ exports.insertProductSerial = async (params) => {
 
   return result;
 };
+
+// 👉 Delete
 
 exports.deleteOneProductSerial = async (params) => {
   var result = new DataResponse();
