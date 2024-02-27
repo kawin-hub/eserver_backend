@@ -12,7 +12,7 @@ let inventoryLotSchema = new Schema(
       type: Date,
       required: true,
     },
-    expense: {
+    accountExpense: {
       _id: { type: ObjectId, ref: "AccountExpenses" },
       documentNumber: { type: String },
       expenseCategory: { type: String },
@@ -23,7 +23,7 @@ let inventoryLotSchema = new Schema(
       enum: ["active", "inactive", "draft"],
       default: "draft",
     },
-    products: [
+    productModel: [
       {
         _id: { type: ObjectId, ref: "ProductModel" },
         modelCode: { type: String },
@@ -32,6 +32,9 @@ let inventoryLotSchema = new Schema(
         warranty: { type: Number },
       },
     ],
+    currentStatus: {
+      type: String
+    },
     documents: [
       {
         name: String,
@@ -41,6 +44,18 @@ let inventoryLotSchema = new Schema(
           default: Date.now,
         },
       },
+      // Documents for Purchase
+    ],
+    documentsFromStore: [
+      {
+        name: String,
+        path: String,
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+      // Documents for Store
     ],
   },
   {

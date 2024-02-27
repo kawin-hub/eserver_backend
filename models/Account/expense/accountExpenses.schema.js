@@ -14,12 +14,12 @@ let accountExpenseSchema = new Schema(
         },
         expenseCategory: {
             type: String,
-            default: "others",
+            enum: ["stock", "nonstock"],
+            default: "stock",
         },
         expenseType: {
             type: String,
-            enum: ["stock", "nonstock"],
-            default: "stock",
+            default: "others",
         },
         amount: {
             type: Number,

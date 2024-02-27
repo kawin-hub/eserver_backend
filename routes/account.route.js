@@ -5,14 +5,13 @@ const { verifyToken } = (mw = require("../middleware"));
 //const upload = multer({ dest: "./assets/images/product/brands/" });
 
 const {
-    getAccountExpenses,
-    insertAccountExpense,
-} = require("../controllers/account.controller");
+    accountExpense
+} = require("../controllers/account");
 
-// Account Expense
+// 👉 Account Expense
 
-router.get("/expenses", getAccountExpenses);
+router.get("/expenses", accountExpense.getAccountExpenses);
 
-router.post("/expense", insertAccountExpense);
+router.post("/expenses", accountExpense.insertAccountExpense);
 
 module.exports = router;
