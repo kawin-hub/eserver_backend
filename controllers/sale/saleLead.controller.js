@@ -43,61 +43,69 @@ exports.getSaleLeads = async (req, res) => {
 // 👉 Insert/Post
 
 exports.insertSaleLead = async (req, res) => {
+  var result = new DataResponse();
 
-    var result = new DataResponse();
+  try {
+    const validation = new Validator(req.body, {
+      companyName: "required",
+      leadFirstname: "required",
+      leadContactNumber: "required",
+      leadLevel: "required|in:low prudential,middle prudential,high prudential",
+    });
 
-    try {
+    const matched = await validation.check();
 
-        const validation = new Validator(req.body, {
-            companyName: "required",
-            leadFirstname: "required",
-            leadContactNumber: "required",
-            leadLevel: "required|in:low prudential,middle prudential,high prudential",
-        });
+    var SaleLeadModel = SaleModel.lead;
 
-        const matched = await validation.check();
+    if (matched) {
+      const {
+        companyName,
+        taxId,
+        branch,
+        address,
+        googleMap,
+        companyEmail,
+        companyContactNumber,
+        leadFirstname,
+        leadLastname,
+        leadContactNumber,
+        lineId,
+        leadLevel,
+        tag,
+      } = req.body;
 
-        var SaleLeadModel = SaleModel.lead
+      const userData = req.body.authData.userInfo.userData;
 
-        if (matched) {
+      var inserLeadparams = {
+        companyName: companyName,
+        taxId: typeof taxId != "undefined" ? taxId : "",
+        branch: typeof branch != "undefined" ? branch : "",
+        address: typeof address != "undefined" ? address : "",
+        googleMap: typeof googleMap != "undefined" ? googleMap : "",
+        companyEmail: typeof companyEmail != "undefined" ? companyEmail : "",
+        companyContactNumber:
+          typeof companyContactNumber != "undefined"
+            ? companyContactNumber
+            : "",
+        leadFirstname: leadFirstname,
+        leadLastname: typeof leadLastname != "undefined" ? leadLastname : "",
+        leadContactNumber: leadContactNumber,
+        lineId: typeof lineId != "undefined" ? lineId : "",
+        leadLevel: leadLevel,
+        tag: typeof tag != "undefined" ? tag : "",
+        createdBy: {
+          _id: userData._id,
+          firstname: userData.firstname,
+          lastname: userData.lastname,
+        },
+      };
 
-            const { companyName, taxId, branch, address, googleMap, companyEmail, companyContactNumber, leadFirstname, leadLastname, leadContactNumber, lineId, leadLevel, tag } = req.body;
-
-            const userData = req.body.authData.userInfo.userData
-
-            var inserLeadparams = {
-                companyName: companyName,
-                taxId: typeof taxId != "undefined" ? taxId : "",
-                branch: typeof branch != "undefined" ? branch : "",
-                address: typeof address != "undefined" ? address : "",
-                googleMap: typeof googleMap != "undefined" ? googleMap : "",
-                companyEmail: typeof companyEmail != "undefined" ? companyEmail : "",
-                companyContactNumber: typeof companyContactNumber != "undefined" ? companyContactNumber : "",
-                leadFirstname: leadFirstname,
-                leadLastname: typeof leadLastname != "undefined" ? leadLastname : "",
-                leadContactNumber: leadContactNumber,
-                lineId: typeof lineId != "undefined" ? lineId : "",
-                leadLevel: leadLevel,
-                tag: typeof tag != "undefined" ? tag : "",
-                createdBy: {
-                    _id: userData._id,
-                    firstname: userData.firstname,
-                    lastname: userData.lastname
-                }
-            };
-
-            result = await SaleLeadModel.insertSaleLead(inserLeadparams);
-
-        } else {
-            result.doError(2, validation.errors);
-        }
-
-    } catch (error) {
-        console.log(error)
+      result = await SaleLeadModel.insertSaleLead(inserLeadparams);
+    } else {
+      result.doError(2, validation.errors);
     }
   } catch (error) {
     console.log(error);
   }
-
   res.json(result);
 };
