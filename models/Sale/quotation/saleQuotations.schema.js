@@ -47,8 +47,8 @@ let saleQuotationSchema = new Schema(
     },
     quotationStatus: {
       type: String,
-      enum: ["warm", "hot", "cold", "done"],
-      default: "warm",
+      enum: ["draft", "warm", "hot", "cold", "done"],
+      default: "draft",
     },
     createdBy: {
       _id: { type: ObjectId, ref: "Users" },
