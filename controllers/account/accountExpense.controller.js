@@ -43,51 +43,94 @@ exports.getAccountExpenses = async (req, res) => {
 // 👉 Insert/Post
 
 exports.insertAccountExpense = async (req, res) => {
-  var result = new DataResponse();
+    var result = new DataResponse();
 
-  try {
-    var imagesName = "images";
-    var docsName = "documents";
+    try {
+        var imagesName = "images";
+        var docsName = "documents";
 
-    var resUpload = await upload.uploadFiles(req, res, [
-      {
-        name: imagesName,
-        path: "./assets/images/account/expenses",
-        maxCount: 5,
-        allowType: ["jpeg", "jpg", "png"],
-      },
-      {
-        name: docsName,
-        path: "./assets/documents/account/expenses",
-        maxCount: 5,
-        allowType: ["pdf"],
-      },
-    ]);
-    console.log(req.files);
-    if (resUpload.success) {
-      const validation = new Validator(req.body, {
-        documentNumber: "required",
-        expenseDate: "required|dateFormat:YYYY-MM-DD",
-        expenseCategory: "required|in:stock,nonstock",
-        amount: "required",
-        whom: "required",
-      });
-      const matched = await validation.check();
+        var resUpload = await upload.uploadFiles(req, res, [
+            {
+                name: imagesName,
+                path: "./assets/images/account/expenses",
+                maxCount: 5,
+                allowType: ["jpeg", "jpg", "png"],
+            },
+            {
+                name: docsName,
+                path: "./assets/documents/account/expenses",
+                maxCount: 5,
+                allowType: ["pdf"],
+            },
+        ]);
 
-      var AccountExpenseModel = AccountModel.expense;
-      if (matched) {
-        const {
-          documentNumber,
-          expenseDate,
-          expenseCategory,
-          expenseType,
-          amount,
-          whom,
-          tag,
-          remark,
-        } = req.body;
-        var images = [];
-        var documents = [];
+        if (resUpload.success) {
+
+            const validation = new Validator(req.body, {
+                documentNumber: "required",
+                expenseDate: "required|dateFormat:YYYY-MM-DD",
+                expenseCategory: "required|in:stock,nonstock",
+                amount: "required",
+                whom: "required",
+            });
+
+            const matched = await validation.check();
+
+            var AccountExpenseModel = AccountModel.expense
+
+            if (matched) {
+                const { documentNumber, expenseDate, expenseCategory, expenseType, amount, whom, tag, remark } = req.body;
+
+                const userData = req.body.authData.userInfo.userData
+
+                var images = []
+                var documents = []
+
+                for (let i = 0; i < req.files[imagesName]?.length; i++) {
+                    images[i] = {
+                        name: req.files[imagesName][i].originalname,
+                        path: req.files[imagesName][i].path
+                    }
+                }
+
+                for (let i = 0; i < req.files[docsName]?.length; i++) {
+                    documents[i] = {
+                        name: req.files[docsName][i].originalname,
+                        path: req.files[docsName][i].path
+                    }
+                }
+                var params = {
+                    documentNumber: documentNumber,
+                    expenseDate: expenseDate,
+                    expenseCategory: typeof expenseCategory != "undefined" ? expenseCategory : "",
+                    expenseType: expenseType,
+                    amount: amount,
+                    whom: whom,
+                    tag: typeof tag != "undefined" ? tag : "",
+                    remark: typeof remark != "undefined" ? remark : "",
+                    images: images,
+                    documents: documents,
+                    createdBy: {
+                        _id: userData._id,
+                        firstname: userData.firstname,
+                        lastname: userData.lastname
+                    }
+                };
+                result = await AccountExpenseModel.insertAccountExpense(params);
+
+            } else {
+                result.doError(2, validation.errors);
+            }
+
+        } else {
+            result.doError(7, "Files or images are wrong format, please check!");
+        }
+
+    } catch (error) {
+        console.log(error)
+    }
+
+    if (result.code != 1) {
         for (let i = 0; i < req.files[imagesName]?.length; i++) {
           images[i] = {
             name: req.files[imagesName][i].originalname,

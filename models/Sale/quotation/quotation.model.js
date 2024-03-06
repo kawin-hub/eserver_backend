@@ -1,9 +1,9 @@
-const SaleLead = require("./saleLeads.schema");
+const SaleQuotation = require("./saleQuotations.schema")
 const { DataResponse } = require("../../general_data.model");
 
 // 👉 Get all
 
-exports.getAllSaleLeads = async (params) => {
+exports.getAllSaleQuotations = async (params) => {
   var result = new DataResponse();
   try {
     var limit = parseInt(params.limit);
@@ -14,13 +14,13 @@ exports.getAllSaleLeads = async (params) => {
     var queryCondition =
       params.queryCondition !== undefined ? params.queryCondition : {};
 
-    const queryResult = await SaleLead.find(queryCondition, {
+    const queryResult = await SaleQuotation.find(queryCondition, {
       _id: 1,
       createdAt: 1,
-      companyName: 1,
-      leadFirstname: 1,
-      leadContactNumber: 1,
-      leadLevel: 1,
+      documentNumber: 1,
+      saleLead: 1,
+      quotationStatus: 1,
+      currentStatus: 1,
       createdBy: 1,
     })
       .skip(skip)
@@ -28,7 +28,7 @@ exports.getAllSaleLeads = async (params) => {
 
     result.doSuccess(1);
 
-    var countTotalRow = await SaleLead.countDocuments(
+    var countTotalRow = await SaleQuotation.countDocuments(
       params.queryCondition
     );
     result.doSuccess(1);
@@ -51,11 +51,11 @@ exports.getAllSaleLeads = async (params) => {
 
 // 👉 Get by ID
 
-exports.getSaleLeadById = async (params) => {
+exports.getSaleQuotationById = async (params) => {
   var result = new DataResponse();
 
   try {
-    result.data = await SaleLead.findOne(params).lean();
+    result.data = await SaleQuotation.findOne(params).lean();
     result.data == null
       ? result.doSuccess(2, "_id not found in database")
       : result.doSuccess(1);
@@ -73,16 +73,19 @@ exports.getSaleLeadById = async (params) => {
 
 // 👉 Insert/Post
 
-exports.insertSaleLead = async (params) => {
+exports.insertSaleQuotation = async (params) => {
   var result = new DataResponse();
 
   try {
-    result.data = await SaleLead.create(params);
+    result.data = await SaleQuotation.create(params);
     result.data == null
       ? result.doSuccess(0, "Can't insert to database, please check your request!")
       : result.doSuccess(1);
   } catch (e) {
     console.log(e);
+    e.code == 11000
+      ? result.doError(6, "Quotation document number duplicate!")
+      : result.doError();
   }
 
   return result;

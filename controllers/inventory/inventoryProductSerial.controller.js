@@ -28,6 +28,8 @@ exports.insertProductSerial = async (req, res) => {
         inventoryLot_id,
       } = req.body;
 
+      const userData = req.body.authData.userInfo.userData
+
       var AccountExpenseModel = AccountModel.expense
       var InventoryLocationModel = InventoryModel.location
       var InventoryLotModel = InventoryModel.lot
@@ -88,7 +90,6 @@ exports.insertProductSerial = async (req, res) => {
             _id: inventoryLotResult.data._id,
             lotNumber: inventoryLotResult.data.lotNumber,
           },
-          currentStatus: "in stock",
           movements: [
             {
               status: "create lot",
@@ -100,6 +101,11 @@ exports.insertProductSerial = async (req, res) => {
               docNumber: inventoryLotResult.data.lotNumber,
             },
           ],
+          createdBy: {
+            _id: userData._id,
+            firstname: userData.firstname,
+            lastname: userData.lastname
+          }
         };
 
         var productSerialModel = InventoryModel.productSerial;

@@ -10,8 +10,8 @@ const {
 
 // 👉 Account Expense
 
-router.get("/expenses", accountExpense.getAccountExpenses);
+router.get("/expenses", verifyToken, accountExpense.getAccountExpenses);
 
-router.post("/expenses", accountExpense.insertAccountExpense);
+router.post("/expenses", verifyToken, accountExpense.insertAccountExpense);
 
 module.exports = router;

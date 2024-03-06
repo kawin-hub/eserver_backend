@@ -22,6 +22,7 @@ exports.getAllAccountExpenses = async (params) => {
       expenseCategory: 1,
       amount: 1,
       expenseType: 1,
+      createdBy: 1,
     })
       .skip(skip)
       .limit(limit);

@@ -14,7 +14,7 @@ let inventoryRequestSchema = new Schema(
     },
     requestType: {
       type: String,
-      enum: ["sell", "borrow", "broken", "r&d", "gift", "booking", "others"],
+      enum: ["sell", "booking", "borrow", "broken", "r&d", "gift", "others"],
       required: true,
     },
     estimatedReturnDate: {
@@ -32,7 +32,18 @@ let inventoryRequestSchema = new Schema(
       },
     ],
     currentStatus: {
-      type: String
+      type: String,
+      default: "request"
+    },
+    createdBy: {
+      _id: { type: ObjectId, ref: "Users" },
+      firstname: { type: String },
+      lastname: { type: String }
+    },
+    updatedBy: {
+      _id: { type: ObjectId, ref: "Users" },
+      firstname: { type: String },
+      lastname: { type: String }
     },
   },
   {
