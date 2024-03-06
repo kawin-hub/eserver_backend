@@ -80,6 +80,9 @@ exports.insertAccountExpense = async (req, res) => {
 
             if (matched) {
                 const { documentNumber, expenseDate, expenseCategory, expenseType, amount, whom, tag, remark } = req.body;
+
+                const userData = req.body.authData.userInfo.userData
+
                 var images = []
                 var documents = []
 
@@ -107,6 +110,11 @@ exports.insertAccountExpense = async (req, res) => {
                     remark: typeof remark != "undefined" ? remark : "",
                     images: images,
                     documents: documents,
+                    createdBy: {
+                        _id: userData._id,
+                        firstname: userData.firstname,
+                        lastname: userData.lastname
+                    }
                 };
                 result = await AccountExpenseModel.insertAccountExpense(params);
 

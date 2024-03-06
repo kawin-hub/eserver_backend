@@ -21,6 +21,8 @@ exports.getAllInventoryMoves = async (params) => {
             documentNumber: 1,
             inventoryLocation: 1,
             currentStatus: 1,
+            createdBy: 1,
+            createdAt: 1
         })
             .skip(skip)
             .limit(limit);
@@ -86,7 +88,7 @@ exports.insertInventoryMove = async (params) => {
     } catch (e) {
         console.log(e);
         e.code == 11000
-            ? result.doError(6, "Move index duplicate!")
+            ? result.doError(6, "Move document number duplicate!")
             : result.doError();
     }
 

@@ -23,7 +23,8 @@ let inventoryMoveSchema = new Schema(
             }
         },
         currentStatus: {
-            type: String
+          type: String,
+          default: "request"
         },
         productModel: [
             {
@@ -33,6 +34,16 @@ let inventoryMoveSchema = new Schema(
                 quantity: { type: Number },
             },
         ],
+        createdBy: {
+            _id: { type: ObjectId, ref: "Users" },
+            firstname: { type: String },
+            lastname: { type: String }
+        },
+        updatedBy: {
+            _id: { type: ObjectId, ref: "Users" },
+            firstname: { type: String },
+            lastname: { type: String }
+        },
     },
     {
         timestamps: true,

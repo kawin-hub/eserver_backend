@@ -44,8 +44,20 @@ let saleLeadSchema = new Schema(
             enum: ["low prudential", "middle prudential", "high prudential"],
             default: "low prudential",
         },
-        tag: {
-            type: String,
+        tag: [
+            {
+                type: String,
+            }
+        ],
+        createdBy: {
+            _id: { type: ObjectId, ref: "Users" },
+            firstname: { type: String },
+            lastname: { type: String }
+        },
+        updatedBy: {
+            _id: { type: ObjectId, ref: "Users" },
+            firstname: { type: String },
+            lastname: { type: String }
         },
     },
     {

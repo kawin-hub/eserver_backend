@@ -49,7 +49,7 @@ exports.insertInventoryRequest = async (req, res) => {
         const validation = new Validator(req.body, {
             documentNumber: "required",
             dueDate: "required|dateFormat:YYYY-MM-DD",
-            requestType: "required|in:sell,borrow,broken,r&d,gift,reserve products,others",
+            requestType: "required|in:sell,booking,borrow,broken,r&d,gift,others",
             products: "required",
         });
 
@@ -66,6 +66,8 @@ exports.insertInventoryRequest = async (req, res) => {
                 remark,
                 products,
             } = req.body;
+
+            const userData = req.body.authData.userInfo.userData
 
             var productModel_ids = []
 
@@ -95,10 +97,14 @@ exports.insertInventoryRequest = async (req, res) => {
                     documentNumber: documentNumber,
                     dueDate: dueDate,
                     requestType: requestType,
-                    estimatedReturnDate: typeof estimatedReturnDate != "undefined" ? estimatedReturnDate : "",
+                    estimatedReturnDate: typeof estimatedReturnDate != "undefined" ? estimatedReturnDate : null,
                     remark: typeof remark != "undefined" ? remark : "",
                     productModel: productResult.data,
-                    currentStatus: "request",
+                    createdBy: {
+                        _id: userData._id,
+                        firstname: userData.firstname,
+                        lastname: userData.lastname
+                    }
                 };
 
                 result = await InventoryRequestModel.insertInventoryRequest(insertRequestparams);

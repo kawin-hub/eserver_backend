@@ -60,6 +60,9 @@ exports.insertInventoryLocation = async (req, res) => {
     if (matched) {
       const { name, adminName, contactNumber, address, googleMap, status } =
         req.body;
+
+      const userData = req.body.authData.userInfo.userData
+
       var insertLocationtparams = {
         name: name,
         adminName: adminName,
@@ -67,6 +70,11 @@ exports.insertInventoryLocation = async (req, res) => {
         address: address,
         googleMap: googleMap,
         status: status,
+        createdBy: {
+          _id: userData._id,
+          firstname: userData.firstname,
+          lastname: userData.lastname
+        }
       };
 
       result = await InventoryLocationModel.insertInventoryLocation(insertLocationtparams);

@@ -10,11 +10,14 @@ const { match } = require("assert");
 const { ObjectId } = require("mongoose").Types;
 
 // 👉 import module part
+const inventoryTotal = require("./inventoryTotal.controller");
 const inventoryLocation = require("./inventoryLocation.controller");
 const inventoryLot = require("./inventoryLot.controller")
 const inventoryMove = require("./inventoryMove.controller")
 const inventoryRequest = require("./inventoryRequest.controller")
 const inventoryProductSerial = require("./inventoryProductSerial.controller");
+const inventoryProductSerialMove = require("./inventoryProductSerialMove.controller");
+const inventoryProductSerialRequest = require("./inventoryProductSerialRequest.controller");
 
 dotenv.config();
 
@@ -50,10 +53,13 @@ const insertInventoryRefund = async (req, res) => {
 
 module.exports = {
   insertInventoryRefund,
-  
+
+  inventoryTotal,
   inventoryLocation,
   inventoryLot,
   inventoryMove,
   inventoryRequest,
   inventoryProductSerial,
+  inventoryProductSerialMove,
+  inventoryProductSerialRequest,
 };

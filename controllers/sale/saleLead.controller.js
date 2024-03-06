@@ -1,11 +1,8 @@
-//account model
+//Sale model
 let SaleModel = require("../../models/Sale");
-let dotenv = require("dotenv");
 let { general } = require("../../middleware");
 const { DataResponse } = require("../../models/general_data.model");
 const { Validator } = require("node-input-validator");
-
-dotenv.config();
 
 // 👉 Get all or by ID
 
@@ -64,7 +61,9 @@ exports.insertSaleLead = async (req, res) => {
         if (matched) {
 
             const { companyName, taxId, branch, address, googleMap, companyEmail, companyContactNumber, leadFirstname, leadLastname, leadContactNumber, lineId, leadLevel, tag } = req.body;
-            
+
+            const userData = req.body.authData.userInfo.userData
+
             var inserLeadparams = {
                 companyName: companyName,
                 taxId: typeof taxId != "undefined" ? taxId : "",
@@ -79,6 +78,11 @@ exports.insertSaleLead = async (req, res) => {
                 lineId: typeof lineId != "undefined" ? lineId : "",
                 leadLevel: leadLevel,
                 tag: typeof tag != "undefined" ? tag : "",
+                createdBy: {
+                    _id: userData._id,
+                    firstname: userData.firstname,
+                    lastname: userData.lastname
+                }
             };
 
             result = await SaleLeadModel.insertSaleLead(inserLeadparams);
