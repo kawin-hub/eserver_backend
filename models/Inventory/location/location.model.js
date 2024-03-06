@@ -21,6 +21,7 @@ exports.getAllInventoryLocations = async (params) => {
             contactNumber: 1,
             address: 1,
             status: 1,
+            createdBy: 1,
         })
             .skip(skip)
             .limit(limit);
@@ -86,7 +87,7 @@ exports.insertInventoryLocation = async (params) => {
     } catch (e) {
         console.log(e);
         e.code == 11000
-            ? result.doError(6, "Lot index duplicate!")
+            ? result.doError(6, "Location document number duplicate!")
             : result.doError();
     }
 

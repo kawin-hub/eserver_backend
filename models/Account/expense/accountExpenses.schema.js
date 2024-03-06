@@ -56,6 +56,16 @@ let accountExpenseSchema = new Schema(
                 },
             },
         ],
+        createdBy: {
+            _id: { type: ObjectId, ref: "Users" },
+            firstname: { type: String },
+            lastname: { type: String }
+        },
+        updatedBy: {
+            _id: { type: ObjectId, ref: "Users" },
+            firstname: { type: String },
+            lastname: { type: String }
+        },
     },
     {
         timestamps: true,

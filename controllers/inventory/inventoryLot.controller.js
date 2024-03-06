@@ -82,6 +82,10 @@ exports.insertInventoryLot = async (req, res) => {
                     productModel_id,
                 } = req.body;
 
+                const userData = req.body.authData.userInfo.userData
+
+                console.log(req.body)
+
                 var productModel_ids = []
 
                 if (typeof productModel_id == "string") {
@@ -89,7 +93,7 @@ exports.insertInventoryLot = async (req, res) => {
                 } else {
                     productModel_ids = productModel_id
                 }
-                
+
                 var AccountExpenseModel = AccountModel.expense
 
                 const expenseResult = await AccountExpenseModel.getAccountExpenseById({
@@ -156,7 +160,11 @@ exports.insertInventoryLot = async (req, res) => {
                             accountExpense: expenseResult.data,
                             productModel: productResult.data,
                             documents: documents,
-                            currentStatus: "in progress",
+                            createdBy: {
+                                _id: userData._id,
+                                firstname: userData.firstname,
+                                lastname: userData.lastname
+                            }
                         };
 
                         var InventoryLotModel = InventoryModel.lot

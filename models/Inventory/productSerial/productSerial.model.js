@@ -10,9 +10,9 @@ exports.insertProductSerial = async (params) => {
     result.data = await InventoryProductSerial.create(params);
     result.data == null
       ? result.doSuccess(
-          0,
-          "Can't insert to database, please check your request!"
-        )
+        0,
+        "Can't insert to database, please check your request!"
+      )
       : result.doSuccess(1);
   } catch (e) {
     console.log(e);
@@ -21,6 +21,31 @@ exports.insertProductSerial = async (params) => {
 
   return result;
 };
+
+// 👉 Get by Array ID
+
+exports.getProducSerialtsbyArrayId = async (inventoryProductSerial_ids) => {
+  var result = new DataResponse();
+  try {
+    result.data = await InventoryProductSerial.find(
+      { _id: { $in: inventoryProductSerial_ids } },
+      { _id: 1, serialNumber: 1 }
+    ).lean();
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e);
+    if (e.kind == "ObjectId") {
+      result.doError(0, "Please check your _id format");
+    } else {
+      result.doError(0);
+    }
+  }
+
+  return result;
+};
+
 
 // 👉 Delete
 

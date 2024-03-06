@@ -33,7 +33,8 @@ let inventoryLotSchema = new Schema(
       },
     ],
     currentStatus: {
-      type: String
+      type: String,
+      default: "in progress"
     },
     documents: [
       {
@@ -57,6 +58,16 @@ let inventoryLotSchema = new Schema(
       },
       // Documents for Store
     ],
+    createdBy: {
+      _id: { type: ObjectId, ref: "Users" },
+      firstname: { type: String },
+      lastname: { type: String }
+    },
+    updatedBy: {
+      _id: { type: ObjectId, ref: "Users" },
+      firstname: { type: String },
+      lastname: { type: String }
+    },
   },
   {
     timestamps: true,

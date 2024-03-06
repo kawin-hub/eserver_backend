@@ -1,5 +1,4 @@
-const mongoose = require("mongoose");
-const Schema = mongoose.Schema;
+const { Schema, model, ObjectId } = require("mongoose");
 const collection = "InventoryLocations";
 
 let inventoryLocationSchema = new Schema(
@@ -30,6 +29,16 @@ let inventoryLocationSchema = new Schema(
       enum: ["active", "inactive"],
       default: "inactive",
     },
+    createdBy: {
+      _id: { type: ObjectId, ref: "Users" },
+      firstname: { type: String },
+      lastname: { type: String }
+    },
+    updatedBy: {
+      _id: { type: ObjectId, ref: "Users" },
+      firstname: { type: String },
+      lastname: { type: String }
+    },
   },
   {
     timestamps: true,
@@ -38,4 +47,4 @@ let inventoryLocationSchema = new Schema(
   }
 );
 
-module.exports = mongoose.model(collection, inventoryLocationSchema);
+module.exports = model(collection, inventoryLocationSchema);

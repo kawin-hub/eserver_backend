@@ -67,6 +67,8 @@ exports.insertInventoryMove = async (req, res) => {
                 products,
             } = req.body;
 
+            const userData = req.body.authData.userInfo.userData
+
             var InventoryLocationModel = InventoryModel.location
 
             const locationResult = await InventoryLocationModel.getInventoryLocationbyArrayId(
@@ -93,7 +95,7 @@ exports.insertInventoryMove = async (req, res) => {
                 );
 
                 if (productResult.code == 1 && products.length == productResult.data.length) {
-        
+
                     for (var i = 0; i < productResult.data.length; i++) {
                         for (var j = 0; j < products.length; j++) {
                             if (productResult.data[i]._id == products[j]._id) {
@@ -129,7 +131,11 @@ exports.insertInventoryMove = async (req, res) => {
                         documentNumber: documentNumber,
                         dueDate: dueDate,
                         productModel: productResult.data,
-                        currentStatus: "in progress",
+                        createdBy: {
+                            _id: userData._id,
+                            firstname: userData.firstname,
+                            lastname: userData.lastname
+                        }
                     };
 
                     result = await InventoryMoveModel.insertInventoryMove(insertMoveparams);
@@ -141,9 +147,11 @@ exports.insertInventoryMove = async (req, res) => {
             } else {
                 result.doError(5, "location_id is not found!");
             }
+
         } else {
             result.doError(2, validation.errors);
         }
+
     } catch (error) {
         console.log(error);
     }

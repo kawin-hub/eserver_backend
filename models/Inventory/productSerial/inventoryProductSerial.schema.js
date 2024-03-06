@@ -5,8 +5,8 @@ let inventoryProductSerailSchema = new Schema(
   {
     productModel: {
       _id: { type: ObjectId, ref: "ProductModel" },
-      name: String,
       modelCode: String,
+      name: String,
     },
     inventoryLocation: {
       _id: { type: ObjectId, ref: "inventoryLocations" },
@@ -32,6 +32,7 @@ let inventoryProductSerailSchema = new Schema(
     },
     currentStatus: {
       type: String,
+      default: "in stock"
     },
     movements: [
       {
@@ -44,6 +45,7 @@ let inventoryProductSerailSchema = new Schema(
             "sold",
             "broken",
             "r&d",
+            "gift",
             "others",
           ],
           //required: true,
@@ -54,13 +56,23 @@ let inventoryProductSerailSchema = new Schema(
         },
         docNumber: {
           type: String,
-          inventoryLot: { _id: { type: ObjectId, ref: "inventoryLot" } },
+          inventoryLot: { _id: { type: ObjectId, ref: "InventoryLots" } },
           inventoryRequest: {
-            _id: { type: ObjectId, ref: "inventoryRequest" },
+            _id: { type: ObjectId, ref: "InventoryRequests" },
           },
         },
       },
     ],
+    createdBy: {
+      _id: { type: ObjectId, ref: "Users" },
+      firstname: { type: String },
+      lastname: { type: String }
+    },
+    updatedBy: {
+      _id: { type: ObjectId, ref: "Users" },
+      firstname: { type: String },
+      lastname: { type: String }
+    },
   },
   {
     timestamps: true,

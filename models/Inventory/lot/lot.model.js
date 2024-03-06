@@ -21,6 +21,7 @@ exports.getALLInventoryLots = async (params) => {
             accountExpense: 1,
             currentStatus: 1,
             status: 1,
+            createdBy: 1,
         })
             .skip(skip)
             .limit(limit);
@@ -110,16 +111,16 @@ exports.deleteInventoryLot = async (data) => {
 exports.updateOneInventoryLot = async (conditions, params) => {
     var result = new DataResponse();
     try {
-      if (conditions != {}) {
-        result.data = await InventoryLot.updateOne(conditions, params);
-        result.data == null
-          ? result.doSuccess(2, "_id not found in database")
-          : result.doSuccess(1);
-      }
+        if (conditions != {}) {
+            result.data = await InventoryLot.updateOne(conditions, params);
+            result.data == null
+                ? result.doSuccess(2, "_id not found in database")
+                : result.doSuccess(1);
+        }
     } catch (e) {
-      console.log(e);
-      result.doError(0);
+        console.log(e);
+        result.doError(0);
     }
-  
+
     return result;
-  };
+};

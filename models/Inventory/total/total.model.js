@@ -1,9 +1,9 @@
-const InventoryRequest = require("./inventoryRequests.schema");
+const InventoryTotal = require("./inventoryTotals.schema");
 const { DataResponse } = require("../../general_data.model");
 
 // 👉 Get all
 
-exports.getAllInventoryRequests = async (params) => {
+exports.getAllInventoryTotals = async (params) => {
     var result = new DataResponse();
     try {
         var limit = parseInt(params.limit);
@@ -14,21 +14,16 @@ exports.getAllInventoryRequests = async (params) => {
         var queryCondition =
             params.queryCondition !== undefined ? params.queryCondition : {};
 
-        const queryResult = await InventoryRequest.find(queryCondition, {
-            _id: 1,
-            createdAt: 1,
-            dueDate: 1,
-            documentNumber: 1,
-            requestType: 1,
-            currentStatus: 1,
-            createdBy: 1
+        const queryResult = await InventoryTotal.find(queryCondition, {
+            productModel: 1,
+            inventoryLocation: 1,
         })
             .skip(skip)
             .limit(limit);
 
         result.doSuccess(1);
 
-        var countTotalRow = await InventoryRequest.countDocuments(
+        var countTotalRow = await InventoryTotal.countDocuments(
             params.queryCondition
         );
         result.doSuccess(1);
@@ -51,11 +46,11 @@ exports.getAllInventoryRequests = async (params) => {
 
 // 👉 Get by ID
 
-exports.getInventoryRequestById = async (params) => {
+exports.getInventoryTotalById = async (params) => {
     var result = new DataResponse();
 
     try {
-        result.data = await InventoryRequest.findOne(params).lean();
+        result.data = await InventoryTotal.findOne(params).lean();
         result.data == null
             ? result.doSuccess(2, "_id not found in database")
             : result.doSuccess(1);
@@ -66,29 +61,6 @@ exports.getInventoryRequestById = async (params) => {
         } else {
             result.doError(0);
         }
-    }
-
-    return result;
-};
-
-// 👉 Insert/Post
-
-exports.insertInventoryRequest = async (params) => {
-    var result = new DataResponse();
-
-    try {
-        result.data = await InventoryRequest.create(params);
-        result.data == null
-            ? result.doSuccess(
-                0,
-                "Can't insert to database, please check your request!"
-            )
-            : result.doSuccess(1);
-    } catch (e) {
-        console.log(e);
-        e.code == 11000
-            ? result.doError(6, "Request index duplicate!")
-            : result.doError();
     }
 
     return result;
