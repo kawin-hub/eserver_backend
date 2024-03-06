@@ -8,23 +8,27 @@ const { Validator } = require("node-input-validator");
 // 👉 Insert/Post
 
 exports.insertSaleInvoice = async (req, res) => {
-    var result = new DataResponse();
+  var result = new DataResponse();
 
-    try {
-const validation = new Validator(req.body,{
+  try {
+    /* const validation = new Validator(req.body,{
     documentNumber: "required",
     issuedDate: "required|dateFormat:YYYY-MM-DD",
     dueDate: "required|dateFormat:YYYY-MM-DD",
-    invoicePercentSummary: "required",
-    invoiceSummary: "required",
+    amountRecieved: "required",
     customerType: "required",
     projectType: "required",
-  
-});
+    saleQuotation_id: "required",
 
+}); */
 
-    } catch (error) {
-        console.log(error)
-    }
-    res.json(result)
+    var params = {
+        documentNumber: documentNumber,
+        products: products,
+        
+    };
+  } catch (error) {
+    console.log(error);
+  }
+  res.json(result);
 };
