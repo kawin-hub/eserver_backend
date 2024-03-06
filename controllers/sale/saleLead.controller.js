@@ -7,36 +7,37 @@ const { Validator } = require("node-input-validator");
 // 👉 Get all or by ID
 
 exports.getSaleLeads = async (req, res) => {
-    var result = new DataResponse();
+  var result = new DataResponse();
 
-    try {
-        const { _id } = req.query;
+  try {
+    const { _id } = req.query;
 
-        var SaleLeadModel = SaleModel.lead
+    var SaleLeadModel = SaleModel.lead;
 
-        if (typeof _id != "undefined") {
-            result = await SaleLeadModel.getSaleLeadById({
-                _id: new Object(_id),
-            });
-        } else {
-            var pageOption = general.checkPageAndLimit(
-                req.query.page,
-                req.query.limit
-            );
+    if (typeof _id != "undefined") {
+      result = await SaleLeadModel.getSaleLeadById({
+        _id: new Object(_id),
+      });
+    } else {
+      var pageOption = general.checkPageAndLimit(
+        req.query.page,
+        req.query.limit
+      );
 
-            var params = {
-                page: pageOption.page,
-                limit: pageOption.limit,
-                queryCondition: {},
-            };
+      var params = {
+        page: pageOption.page,
+        limit: pageOption.limit,
+        queryCondition: {},
+      };
 
-            result = await SaleLeadModel.getAllSaleLeads(params);
-        }
-    } catch (error) {
-        console.log(error);
+      result = await SaleLeadModel.getAllSaleLeads(params);
+      console.log(result.data.documents);
     }
+  } catch (error) {
+    console.log(error);
+  }
 
-    res.json(result);
+  res.json(result);
 };
 
 // 👉 Insert/Post
@@ -94,6 +95,9 @@ exports.insertSaleLead = async (req, res) => {
     } catch (error) {
         console.log(error)
     }
+  } catch (error) {
+    console.log(error);
+  }
 
-    res.json(result);
-}
+  res.json(result);
+};

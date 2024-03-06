@@ -12,11 +12,12 @@ exports.getInventoryLocations = async (req, res) => {
 
   try {
     const { _id } = req.query;
-
-    var InventoryLocationModel = InventoryModel.location
+    var InventoryLocationModel = InventoryModel.location;
 
     if (typeof _id != "undefined") {
-      result = await InventoryLocationModel.getInventoryLocationById({ _id: _id })
+      result = await InventoryLocationModel.getInventoryLocationById({
+        _id: _id,
+      });
     } else {
       var pageOption = general.checkPageAndLimit(
         req.query.page,
@@ -29,7 +30,7 @@ exports.getInventoryLocations = async (req, res) => {
         queryCondition: {},
       };
 
-      result = await InventoryLocationModel.getAllInventoryLocations(params)
+      result = await InventoryLocationModel.getAllInventoryLocations(params);
     }
   } catch (error) {
     console.log(error);
@@ -42,7 +43,6 @@ exports.getInventoryLocations = async (req, res) => {
 
 exports.insertInventoryLocation = async (req, res) => {
   var result = new DataResponse();
-
   try {
     const validation = new Validator(req.body, {
       name: "required",
@@ -50,12 +50,12 @@ exports.insertInventoryLocation = async (req, res) => {
       contactNumber: "required",
       address: "required",
       googleMap: "required",
-      status: "required|in:active,inactive",
+      locationStatus: "required|in:active,inactive",
     });
 
     const matched = await validation.check();
 
-    var InventoryLocationModel = InventoryModel.location
+    var InventoryLocationModel = InventoryModel.location;
 
     if (matched) {
       const { name, adminName, contactNumber, address, googleMap, status } =
@@ -69,7 +69,7 @@ exports.insertInventoryLocation = async (req, res) => {
         contactNumber: contactNumber,
         address: address,
         googleMap: googleMap,
-        status: status,
+        status: locationStatus,
         createdBy: {
           _id: userData._id,
           firstname: userData.firstname,
@@ -77,7 +77,9 @@ exports.insertInventoryLocation = async (req, res) => {
         }
       };
 
-      result = await InventoryLocationModel.insertInventoryLocation(insertLocationtparams);
+      result = await InventoryLocationModel.insertInventoryLocation(
+        insertLocationtparams
+      );
     } else {
       result.doError(2, validation.errors);
     }
@@ -98,7 +100,7 @@ exports.updateInventoryLocation = async (req, res, next) => {
   let statusCode = 400;
   let { name, description, status, _id } = req.body;
 
-  var InventoryLocationModel = InventoryModel.location
+  var InventoryLocationModel = InventoryModel.location;
 
   if (name !== undefined) {
     name = name ? name : "";
@@ -111,7 +113,10 @@ exports.updateInventoryLocation = async (req, res, next) => {
       status,
     };
 
-    result = await InventoryLocationModel.updateInventoryLocation(_id, dataUpdate);
+    result = await InventoryLocationModel.updateInventoryLocation(
+      _id,
+      dataUpdate
+    );
 
     if (result.code != 11000 && result.errors === undefined) {
       statusCode = 200;
@@ -148,7 +153,7 @@ exports.deleteInventoryLocation = async (req, res, next) => {
   let message = "Insert failed";
   let statusCode = 400;
 
-  var InventoryLocationModel = InventoryModel.location
+  var InventoryLocationModel = InventoryModel.location;
 
   if (_id !== undefined) {
     result = await InventoryLocationModel.deleteInventoryLocation({ _id: _id });
