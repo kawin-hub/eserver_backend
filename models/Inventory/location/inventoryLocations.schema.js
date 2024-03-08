@@ -24,18 +24,18 @@ let inventoryLocationSchema = new Schema(
       type: String,
       required: true,
     },
-    status: {
+    locationStatus: {
       type: String,
       enum: ["active", "inactive"],
       default: "inactive",
     },
     createdBy: {
-      _id: { type: ObjectId, ref: "Users" },
+      user_id: { type: ObjectId, ref: "Users" },
       firstname: { type: String },
       lastname: { type: String }
     },
     updatedBy: {
-      _id: { type: ObjectId, ref: "Users" },
+      user_id: { type: ObjectId, ref: "Users" },
       firstname: { type: String },
       lastname: { type: String }
     },

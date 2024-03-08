@@ -25,7 +25,7 @@ let inventoryRequestSchema = new Schema(
     },
     productModel: [
       {
-        _id: { type: ObjectId, ref: "ProductModel" },
+        productModel_id: { type: ObjectId, ref: "ProductModel" },
         modelCode: { type: String },
         name: { type: String },
         quantity: { type: Number },
@@ -33,17 +33,17 @@ let inventoryRequestSchema = new Schema(
     ],
     currentStatus: {
       type: String,
-      default: "request"
+      default: "request",
     },
     createdBy: {
-      _id: { type: ObjectId, ref: "Users" },
+      user_id: { type: ObjectId, ref: "Users" },
       firstname: { type: String },
-      lastname: { type: String }
+      lastname: { type: String },
     },
     updatedBy: {
-      _id: { type: ObjectId, ref: "Users" },
+      user_id: { type: ObjectId, ref: "Users" },
       firstname: { type: String },
-      lastname: { type: String }
+      lastname: { type: String },
     },
   },
   {

@@ -10,9 +10,9 @@ exports.insertProductSerial = async (params) => {
     result.data = await InventoryProductSerial.create(params);
     result.data == null
       ? result.doSuccess(
-        0,
-        "Can't insert to database, please check your request!"
-      )
+          0,
+          "Can't insert to database, please check your request!"
+        )
       : result.doSuccess(1);
   } catch (e) {
     console.log(e);
@@ -45,7 +45,6 @@ exports.getProducSerialtsbyArrayId = async (inventoryProductSerial_ids) => {
 
   return result;
 };
-
 
 // 👉 Delete
 

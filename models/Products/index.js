@@ -164,12 +164,12 @@ const updateProductModel = async (_id, update) => {
   return model;
 };
 
-const getProductsbyArrayId = async (product_ids) => {
+const getProductsbyArrayId = async (product_ids, projection = {}) => {
   var result = new DataResponse();
   try {
     result.data = await ProductModel.find(
       { _id: { $in: product_ids } },
-      { _id: 1, modelCode: 1, name: 1 }
+      projection
     ).lean();
     result.data == null
       ? result.doSuccess(2, "_id not found in database")

@@ -18,9 +18,14 @@ exports.getAllSaleLeads = async (params) => {
       _id: 1,
       createdAt: 1,
       companyName: 1,
-      leadFirstname: 1,
-      leadContactNumber: 1,
-      leadLevel: 1,
+      firstname: 1,
+      lastname: 1,
+      contactNumber: 1,
+      level: 1,
+      address: 1,
+      branch: 1,
+      taxId: 1,
+      googleMap: 1,
       createdBy: 1,
     })
       .skip(skip)
@@ -28,9 +33,7 @@ exports.getAllSaleLeads = async (params) => {
 
     result.doSuccess(1);
 
-    var countTotalRow = await SaleLead.countDocuments(
-      params.queryCondition
-    );
+    var countTotalRow = await SaleLead.countDocuments(params.queryCondition);
     result.doSuccess(1);
 
     result.data = {
@@ -79,7 +82,10 @@ exports.insertSaleLead = async (params) => {
   try {
     result.data = await SaleLead.create(params);
     result.data == null
-      ? result.doSuccess(0, "Can't insert to database, please check your request!")
+      ? result.doSuccess(
+          0,
+          "Can't insert to database, please check your request!"
+        )
       : result.doSuccess(1);
   } catch (e) {
     console.log(e);

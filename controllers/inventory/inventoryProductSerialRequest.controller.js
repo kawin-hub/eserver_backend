@@ -71,7 +71,7 @@ exports.insertProductSerialRequest = async (req, res) => {
             if (inventoryRequestResult.code == 1 && productModelResult.code == 1 && inventoryProductSerialResult.code == 1) {
                 var insertProductSerialRequestparams = {
                     inventoryMove: {
-                        _id: inventoryRequestResult.data._id,
+                        move_id: inventoryRequestResult.data._id,
                         documentNumber: inventoryRequestResult.data.documentNumber,
                         dueDate: inventoryRequestResult.data.dueDate,
                         requestType: inventoryRequestResult.data.requestType,
@@ -79,7 +79,7 @@ exports.insertProductSerialRequest = async (req, res) => {
                         remark: inventoryRequestResult.data.remark,
                     },
                     productModel: {
-                        _id: productModelResult.data._id,
+                        productModel_id: productModelResult.data._id,
                         name: productModelResult.data.name,
                         modelCode: productModelResult.data.modelCode,
                     },
@@ -92,7 +92,7 @@ exports.insertProductSerialRequest = async (req, res) => {
                         },
                     ],
                     createdBy: {
-                        _id: userData._id,
+                        user_id: userData._id,
                         firstname: userData.firstname,
                         lastname: userData.lastname
                     }

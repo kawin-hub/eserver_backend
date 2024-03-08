@@ -68,7 +68,7 @@ exports.insertAccountExpense = async (req, res) => {
       const validation = new Validator(req.body, {
         documentNumber: "required",
         expenseDate: "required|dateFormat:YYYY-MM-DD",
-        expenseCategory: "required|in:stock,nonstock",
+        category: "required|in:stock,nonstock",
         amount: "required",
         whom: "required",
       });
@@ -81,8 +81,8 @@ exports.insertAccountExpense = async (req, res) => {
         const {
           documentNumber,
           expenseDate,
-          expenseCategory,
-          expenseType,
+          category,
+          type,
           amount,
           whom,
           tag,
@@ -110,9 +110,8 @@ exports.insertAccountExpense = async (req, res) => {
         var params = {
           documentNumber: documentNumber,
           expenseDate: expenseDate,
-          expenseCategory:
-            typeof expenseCategory != "undefined" ? expenseCategory : "",
-          expenseType: expenseType,
+          expenseCategory: typeof category != "undefined" ? category : "",
+          expenseType: type,
           amount: amount,
           whom: whom,
           tag: typeof tag != "undefined" ? tag : "",
@@ -120,7 +119,7 @@ exports.insertAccountExpense = async (req, res) => {
           images: images,
           documents: documents,
           createdBy: {
-            _id: userData._id,
+            user_id: userData._id,
             firstname: userData.firstname,
             lastname: userData.lastname,
           },

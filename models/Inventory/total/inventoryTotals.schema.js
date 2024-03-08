@@ -4,13 +4,13 @@ const collection = "InventoryTotals";
 let inventoryTotalSchema = new Schema(
     {
         productModel: {
-            _id: { type: ObjectId, ref: "ProductModel" },
+            productModel_id: { type: ObjectId, ref: "ProductModel" },
             modelCode: { type: String },
             name: { type: String },
             status: { type: String },
         },
         inventoryLocation: {
-          _id: { type: ObjectId, ref: "inventoryLocations" },
+          location_id: { type: ObjectId, ref: "inventoryLocations" },
           name: String,
         },
     },

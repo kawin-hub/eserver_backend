@@ -13,7 +13,7 @@ let inventoryLotSchema = new Schema(
       required: true,
     },
     accountExpense: {
-      _id: { type: ObjectId, ref: "AccountExpenses" },
+      expense_id: { type: ObjectId, ref: "AccountExpenses" },
       documentNumber: { type: String },
       expenseCategory: { type: String },
       expenseType: { type: String },
@@ -25,7 +25,7 @@ let inventoryLotSchema = new Schema(
     },
     productModel: [
       {
-        _id: { type: ObjectId, ref: "ProductModel" },
+        productModel_id: { type: ObjectId, ref: "ProductModel" },
         modelCode: { type: String },
         name: { type: String },
         quantity: { type: Number },
@@ -59,12 +59,12 @@ let inventoryLotSchema = new Schema(
       // Documents for Store
     ],
     createdBy: {
-      _id: { type: ObjectId, ref: "Users" },
+      user_id: { type: ObjectId, ref: "Users" },
       firstname: { type: String },
       lastname: { type: String }
     },
     updatedBy: {
-      _id: { type: ObjectId, ref: "Users" },
+      user_id: { type: ObjectId, ref: "Users" },
       firstname: { type: String },
       lastname: { type: String }
     },

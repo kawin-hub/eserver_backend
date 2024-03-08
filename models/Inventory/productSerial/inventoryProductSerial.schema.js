@@ -4,27 +4,27 @@ const collection = "InventoryProductSerial";
 let inventoryProductSerailSchema = new Schema(
   {
     productModel: {
-      _id: { type: ObjectId, ref: "ProductModel" },
+      productModel_id: { type: ObjectId, ref: "ProductModel" },
       modelCode: String,
       name: String,
     },
     inventoryLocation: {
-      _id: { type: ObjectId, ref: "inventoryLocations" },
+      location_id: { type: ObjectId, ref: "inventoryLocations" },
       name: String,
     },
     inventoryLot: {
-      _id: { type: ObjectId, ref: "inventoryLots" },
+      lot_id: { type: ObjectId, ref: "inventoryLots" },
       lotNumber: String,
     },
     accountExpense: {
-      _id: { type: ObjectId, ref: "AccountExpenses" },
+      expense_id: { type: ObjectId, ref: "AccountExpenses" },
       documentNumber: { type: String },
-      expenseCategory: { type: String },
-      expenseType: { type: String },
+      category: { type: String },
+      type: { type: String },
     },
     serialNumber: {
       type: String,
-      unique: true
+      unique: true,
     },
     recieveDate: {
       type: Date,
@@ -32,7 +32,7 @@ let inventoryProductSerailSchema = new Schema(
     },
     currentStatus: {
       type: String,
-      default: "in stock"
+      default: "in stock",
     },
     movements: [
       {
@@ -56,22 +56,22 @@ let inventoryProductSerailSchema = new Schema(
         },
         docNumber: {
           type: String,
-          inventoryLot: { _id: { type: ObjectId, ref: "InventoryLots" } },
+          inventoryLot: { lot_id: { type: ObjectId, ref: "InventoryLots" } },
           inventoryRequest: {
-            _id: { type: ObjectId, ref: "InventoryRequests" },
+            request_id: { type: ObjectId, ref: "InventoryRequests" },
           },
         },
       },
     ],
     createdBy: {
-      _id: { type: ObjectId, ref: "Users" },
+      user_id: { type: ObjectId, ref: "Users" },
       firstname: { type: String },
-      lastname: { type: String }
+      lastname: { type: String },
     },
     updatedBy: {
-      _id: { type: ObjectId, ref: "Users" },
+      user_id: { type: ObjectId, ref: "Users" },
       firstname: { type: String },
-      lastname: { type: String }
+      lastname: { type: String },
     },
   },
   {

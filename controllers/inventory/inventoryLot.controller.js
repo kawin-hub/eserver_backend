@@ -66,7 +66,7 @@ exports.insertInventoryLot = async (req, res) => {
                 status: "required|in:draft,inactive,active",
                 quantity: "required",
                 warranty: "required",
-                accountExpense_id: "required",
+                expense_id: "required",
                 productModel_id: "required",
             });
             const matched = await validation.check();
@@ -78,7 +78,7 @@ exports.insertInventoryLot = async (req, res) => {
                     status,
                     quantity,
                     warranty,
-                    accountExpense_id,
+                    expense_id,
                     productModel_id,
                 } = req.body;
 
@@ -97,7 +97,7 @@ exports.insertInventoryLot = async (req, res) => {
                 var AccountExpenseModel = AccountModel.expense
 
                 const expenseResult = await AccountExpenseModel.getAccountExpenseById({
-                    _id: accountExpense_id,
+                    _id: expense_id,
                 },
                     {
                         _id: 1,
@@ -161,7 +161,7 @@ exports.insertInventoryLot = async (req, res) => {
                             productModel: productResult.data,
                             documents: documents,
                             createdBy: {
-                                _id: userData._id,
+                                user_id: userData._id,
                                 firstname: userData.firstname,
                                 lastname: userData.lastname
                             }
