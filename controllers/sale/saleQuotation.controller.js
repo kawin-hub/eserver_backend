@@ -124,12 +124,11 @@ exports.insertSaleQuotation = async (req, res) => {
           var totalDiscount = 0;
           var vat = 7;
           var totalPrice = 0;
-          console.log(productResult.data)
+          console.log(productResult.data);
 
           for (var i = 0; i < productResult.data.length; i++) {
             for (var j = 0; j < products.length; j++) {
               if (productResult.data[i]._id == products[j]._id) {
-                /* productResult.data[i].price = products[j].price; */
                 productResult.data[i].quantity = products[j].quantity;
                 productResult.data[i].discountPercent =
                   (100 * parseFloat(products[j].discountBaht)) /

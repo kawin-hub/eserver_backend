@@ -87,11 +87,11 @@ exports.insertSaleLead = async (req, res) => {
           typeof companyContactNumber != "undefined"
             ? companyContactNumber
             : "",
-        leadFirstname: firstname,
-        leadLastname: typeof lastname != "undefined" ? lastname : "",
-        leadContactNumber: contactNumber,
+        firstname: firstname,
+        lastname: typeof lastname != "undefined" ? lastname : "",
+        contactNumber: contactNumber,
         lineId: typeof lineId != "undefined" ? lineId : "",
-        leadLevel: level,
+        level: level,
         tag: typeof tag != "undefined" ? tag : "",
         createdBy: {
           user_id: userData._id,

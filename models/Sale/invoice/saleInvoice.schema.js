@@ -22,7 +22,7 @@ let invoiceSchema = new Schema(
       percent: {
         type: Number,
       },
-      number: {
+      baht: {
         type: Number,
         required: true,
       },

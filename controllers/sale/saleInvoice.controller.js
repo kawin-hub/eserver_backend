@@ -15,7 +15,7 @@ exports.insertSaleInvoice = async (req, res) => {
       documentNumber: "required",
       issuedDate: "required|dateFormat:YYYY-MM-DD",
       dueDate: "required|dateFormat:YYYY-MM-DD",
-      number: "required|numeric",
+      baht: "required|numeric",
       customerType: "required|in:project,dealer,general",
       convertType: "required|in:install,delivery",
       quotation_id: "required",
@@ -32,7 +32,7 @@ exports.insertSaleInvoice = async (req, res) => {
         documentNumber,
         issuedDate,
         dueDate,
-        number,
+        baht,
         customerType,
         convertType,
         quotation_id,
@@ -46,31 +46,15 @@ exports.insertSaleInvoice = async (req, res) => {
         _id: quotation_id,
       });
 
-      console.log(quotationResult);
       if (quotationResult.code == 1) {
         const products = quotationResult.data.products.map((item) => {
           const { _id, ...rest } = item;
           return rest;
         });
 
-        var convertInfoResult = await SaleModel.lead.getSaleLeadById(
-          {
-            _id: installationInfo_id || deliveryInfo_id,
-          },
-          {
-            _id: 1,
-            companyName: 1,
-            branch: 1,
-            address: 1,
-            googleMap: 1,
-            leadFirstname: 1,
-            leadLastname: 1,
-            leadContactNumber: 1,
-          }
-        );
-
         // Calculate percent and number
-        /*  const totalPrice = 10000;
+        const summary = quotationResult.data.summary; // ดึงค่า summary
+        const totalPrice = summary.totalPrice; // ยอดรวมของ quotation
         var bahtToShow = 0;
         var percentToShow = 0;
 
@@ -107,7 +91,25 @@ exports.insertSaleInvoice = async (req, res) => {
           percentToShow = ((result[0] + result[1]) / totalPrice) * 100;
         }
 
-        calculate({ baht: [number, 0], percent: [percent, 0] }); */
+        calculate({ baht: [bahtToShow], percent: [percentToShow] });
+
+        percentToShow = isNaN(percentToShow) ? 0 : percentToShow;
+
+        var convertInfoResult = await SaleModel.lead.getSaleLeadById(
+          {
+            _id: installationInfo_id || deliveryInfo_id,
+          },
+          {
+            _id: 1,
+            companyName: 1,
+            branch: 1,
+            address: 1,
+            googleMap: 1,
+            leadFirstname: 1,
+            leadLastname: 1,
+            leadContactNumber: 1,
+          }
+        );
 
         // ตรวจสอบว่า installationInfo_id หรือ deliveryInfo_id มีการส่งมาหรือไม่
         if (convertType === "install" && installationInfo_id) {
@@ -117,8 +119,9 @@ exports.insertSaleInvoice = async (req, res) => {
               issuedDate: issuedDate,
               dueDate: dueDate,
               amountRecieved: {
-                percent: typeof percent != "undefined" ? percent : "",
-                number: number,
+                percent:
+                  typeof percentToShow != "undefined" ? percentToShow : "",
+                baht: baht,
               },
               convertInfo: {
                 customerType: customerType,
@@ -144,8 +147,9 @@ exports.insertSaleInvoice = async (req, res) => {
               issuedDate: issuedDate,
               dueDate: dueDate,
               amountRecieved: {
-                percent: typeof percent != "undefined" ? percent : "",
-                number: number,
+                percent:
+                  typeof percentToShow != "undefined" ? percentToShow : "",
+                baht: baht,
               },
               convertInfo: {
                 customerType: customerType,
