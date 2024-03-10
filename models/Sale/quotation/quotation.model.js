@@ -22,6 +22,7 @@ exports.getAllSaleQuotations = async (params) => {
       quotationStatus: 1,
       currentStatus: 1,
       createdBy: 1,
+      summary: 1,
     })
       .skip(skip)
       .limit(limit);
