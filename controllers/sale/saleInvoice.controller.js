@@ -42,11 +42,29 @@ exports.insertSaleInvoice = async (req, res) => {
 
       /* const userData = req.body.authData.userInfo.userData; */
       // ดึงต่า QT
-      var quotationResult = await SaleModel.quotation.getSaleQuotationById({
-        _id: quotation_id,
-      });
 
-      if (quotationResult.code == 1) {
+      var [quotationResult, convertInfoResult] = await Promise.all([
+        SaleModel.quotation.getSaleQuotationById({
+          _id: quotation_id,
+        }),
+        SaleModel.lead.getSaleLeadById(
+          {
+            _id: installationInfo_id || deliveryInfo_id,
+          },
+          {
+            _id: 1,
+            companyName: 1,
+            branch: 1,
+            address: 1,
+            googleMap: 1,
+            leadFirstname: 1,
+            leadLastname: 1,
+            leadContactNumber: 1,
+          }
+        ),
+      ]);
+
+      if (quotationResult.code == 1 && convertInfoResult.code == 1) {
         //ลบ _id ออกจาก Product ที่ดึงมาจาก QT และให้แสดงส่วนที่เหลือ
         const products = quotationResult.data.products.map((item) => {
           const { _id, ...rest } = item;
@@ -54,7 +72,7 @@ exports.insertSaleInvoice = async (req, res) => {
         });
 
         // สร้างฟังก์ชันสำหรับคำนวณเปอร์เซ็นต์และจำนวนเงิน
-        function calculate(params) {
+        async function checkInvoiceTotalPay(params) {
           // ดึงยอดรวมของใบเสนอราคา
           const totalPrice = quotationResult.data.summary.totalPrice;
 
@@ -73,12 +91,7 @@ exports.insertSaleInvoice = async (req, res) => {
             result[1] = 100 - result[0]; // คำนวณ percent ของจำนวนที่เหลือ
             result[2] = bahtValue; // ยอดเงินที่จ่าย
 
-            // ตรวจสอบว่ายอดเงินที่จ่ายเกินราคารวมไหม
-            if (result[2] > totalPrice) {
-              result[2] = "The amount is over the total price!";
-            } else {
-              result[2] = "The payment left : " + (totalPrice - result[2]); // คำนวณยอดเงินที่เหลือ
-            }
+            result[2] = totalPrice - result[2]; // คำนวณยอดเงินที่เหลือ
           } else if (
             params.percent !== undefined &&
             params.percent.length > 0
@@ -97,98 +110,76 @@ exports.insertSaleInvoice = async (req, res) => {
           bahtToShow = result[2];
           percentToShow = result[0];
 
-          return { bahtToShow, percentToShow };
-        }
+          const invoiceInfo =
+            await SaleModel.invoice.getSaleQuotationByConditions(
+              { quotation_id: quotation_id },
+              { _id: 1, amountRecieved: 1 }
+            );
 
+          var invoiceCreatedTotal = 0;
+
+          for (var i = 0; i < invoiceInfo.data.length; i++) {
+            invoiceCreatedTotal += invoiceInfo.data[i].amountRecieved.baht;
+          }
+
+          var totalInvoiceNew = invoiceCreatedTotal + params.baht;
+
+          return {
+            status:
+              totalInvoiceNew > quotationResult.data.summary.totalPrice
+                ? false
+                : true,
+            invoiceTotalOld: invoiceCreatedTotal,
+            invoiceTotalNew: totalInvoiceNew,
+            invoiceTotalpay: quotationResult.data.summary.totalPrice,
+            baht: params.baht,
+            percent: isNaN(percentToShow) ? 0 : percentToShow,
+          };
+        }
         // ตัวอย่างการใช้งาน
-        const { bahtToShow, percentToShow } = calculate({
+        const invoiceInfo = await checkInvoiceTotalPay({
           baht: baht,
           percent: [],
         });
-        console.log("Baht to show:", bahtToShow);
-        console.log("Percent to show:", percentToShow);
 
-        // รอก่อน
-
-        var convertInfoResult = await SaleModel.lead.getSaleLeadById(
-          {
-            _id: installationInfo_id || deliveryInfo_id,
-          },
-          {
-            _id: 1,
-            companyName: 1,
-            branch: 1,
-            address: 1,
-            googleMap: 1,
-            leadFirstname: 1,
-            leadLastname: 1,
-            leadContactNumber: 1,
-          }
-        );
+        if (invoiceInfo.status) {
+          var result = await SaleModel.invoice.insertSaleInvoice({
+            documentNumber: documentNumber,
+            issuedDate: issuedDate,
+            dueDate: dueDate,
+            amountRecieved: {
+              baht: baht,
+              percent: invoiceInfo.percent,
+            },
+            convertInfo: {
+              customerType: customerType,
+              convertType: convertType,
+              installationInfo: {
+                estimateDate: req.body.estimateDate
+                  ? req.body.estimateDate
+                  : "",
+                address: convertInfoResult.data,
+              },
+            },
+            quotation_id: quotation_id,
+            customerInfo: quotationResult.data.saleLead,
+            products: products,
+          });
+        } else {
+          result.doError(7, "Payment of this invoice is over quotation total!");
+        }
 
         // ตรวจสอบว่า installationInfo_id หรือ deliveryInfo_id มีการส่งมาหรือไม่
-        if (convertType === "install" && installationInfo_id) {
-          if (convertInfoResult.code === 1) {
-            var result = await SaleModel.invoice.insertSaleInvoice({
-              documentNumber: documentNumber,
-              issuedDate: issuedDate,
-              dueDate: dueDate,
-              amountRecieved: {
-                baht: baht,
-                percent: !isNaN(percentToShow) ? percentToShow : 0,
-              },
-              convertInfo: {
-                customerType: customerType,
-                convertType: convertType,
-                installationInfo: {
-                  estimateDate: req.body.estimateDate
-                    ? req.body.estimateDate
-                    : "",
-                  address: convertInfoResult.data,
-                },
-              },
-              quotation: quotation_id,
-              customerInfo: quotationResult.data.saleLead,
-              products: products,
-            });
-          } else {
-            result.doError(5, "installationInfo_id is not found!");
-          }
-        } else if (convertType === "delivery" && deliveryInfo_id) {
-          if (convertInfoResult.code === 1) {
-            var result = await SaleModel.invoice.insertSaleInvoice({
-              documentNumber: documentNumber,
-              issuedDate: issuedDate,
-              dueDate: dueDate,
-              amountRecieved: {
-                baht: baht,
-                percent: !isNaN(percentToShow) ? percentToShow : 0,
-              },
-              convertInfo: {
-                customerType: customerType,
-                convertType: convertType,
-                deliveryInfo: {
-                  deliveryDate: req.body.deliveryDate
-                    ? req.body.deliveryDate
-                    : "",
-                  address: convertInfoResult.data,
-                },
-              },
-              quotation: quotation_id,
-              customerInfo: quotationResult.data.saleLead,
-              products: products,
-            });
-          } else {
-            result.doError(5, "deliveryInfo_id is not found!");
-          }
-        } else {
-          result.doError(
-            5,
-            "If convertType is 'install', please provide a valid installationInfo_id. If it's 'delivery', make sure to provide a valid deliveryInfo_id."
-          );
-        }
       } else {
-        result.doError(5, "quotation_id is not found!");
+        var errorInArray = [];
+
+        if (convertInfoResult.code != 1)
+          errorInArray[errorInArray.length] = "lead_id is not found!";
+
+        if (quotationResult.code != 1)
+          errorInArray[errorInArray.length] = "deliveryInfo_id is not found!";
+
+        result.doError(5, errorInArray);
       }
     } else {
       result.doError(2, validation.errors);

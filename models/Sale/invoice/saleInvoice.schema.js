@@ -78,9 +78,7 @@ let invoiceSchema = new Schema(
     },
     // ข้อมูลที่ดึงมาจากแหล่งอื่นตอน Convert จะอยู่ในหน้า Invoice
     // saleQuotation ดึงมาอย่างเดียว ไม่เก็บ
-    quotation: {
-      quotation_id: { type: ObjectId, ref: "SaleQuotations" },
-    },
+    quotation_id: { type: ObjectId, ref: "SaleQuotations", required: true },
     // ส่วนนี้ทั้งหมดดึงมาและเก็บ
     customerInfo: {
       lead_id: { type: ObjectId, ref: "SaleLeads" },
