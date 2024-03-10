@@ -41,59 +41,74 @@ exports.insertSaleInvoice = async (req, res) => {
       } = req.body;
 
       /* const userData = req.body.authData.userInfo.userData; */
-
+      // ดึงต่า QT
       var quotationResult = await SaleModel.quotation.getSaleQuotationById({
         _id: quotation_id,
       });
 
       if (quotationResult.code == 1) {
+        //ลบ _id ออกจาก Product ที่ดึงมาจาก QT และให้แสดงส่วนที่เหลือ
         const products = quotationResult.data.products.map((item) => {
           const { _id, ...rest } = item;
           return rest;
         });
 
-        // Calculate percent and number
-        const summary = quotationResult.data.summary; // ดึงค่า summary
-        const totalPrice = summary.totalPrice; // ยอดรวมของ quotation
-        var bahtToShow = 0;
-        var percentToShow = 0;
-
+        // สร้างฟังก์ชันสำหรับคำนวณเปอร์เซ็นต์และจำนวนเงิน
         function calculate(params) {
-          var result = 0;
+          // ดึงยอดรวมของใบเสนอราคา
+          const totalPrice = quotationResult.data.summary.totalPrice;
 
-          if (params.baht[0] > 0) {
-            result = [];
-            result[0] = (params.baht[0] * 100) / totalPrice;
-            result[1] = (params.baht[1] * 100) / totalPrice;
-            result[2] = params.baht[0] + params.baht[1];
+          // กำหนดตัวแปรเริ่มต้น
+          var result = [];
+          var bahtToShow = 0;
+          var percentToShow = 0;
 
+          // ตรวจสอบว่ามีการกรอก baht มาไหม
+          if (params.baht !== undefined && params.baht > 0) {
+            // กรณีกรอก baht เท่านั้น
+            const bahtValue = parseFloat(params.baht);
+
+            // คำนวณเปอร์เซ็นต์และจำนวนเงินจาก baht
+            result[0] = (bahtValue * 100) / totalPrice; // คำนวณ percent
+            result[1] = 100 - result[0]; // คำนวณ percent ของจำนวนที่เหลือ
+            result[2] = bahtValue; // ยอดเงินที่จ่าย
+
+            // ตรวจสอบว่ายอดเงินที่จ่ายเกินราคารวมไหม
             if (result[2] > totalPrice) {
               result[2] = "The amount is over the total price!";
             } else {
-              result[2] =
-                "The payment left : " +
-                (totalPrice - (params.baht[0] + params.baht[1]));
+              result[2] = "The payment left : " + (totalPrice - result[2]); // คำนวณยอดเงินที่เหลือ
             }
-          } else {
-            result = [];
-            result[0] = (params.percent[0] * totalPrice) / 100;
-            result[1] = (params.percent[1] * totalPrice) / 100;
-            result[2] = result[0] + result[1];
+          } else if (
+            params.percent !== undefined &&
+            params.percent.length > 0
+          ) {
+            // กรณีกรอก percent เท่านั้น
+            const percentValue = parseFloat(params.percent[0]);
+
+            result[0] = percentValue; // percent ที่ถูกกรอก
+            result[1] = 100 - percentValue; // percent ของจำนวนที่เหลือ
+            result[2] = (percentValue * totalPrice) / 100; // ยอดเงินที่จ่าย
 
             if (result[2] > totalPrice) {
               result[2] = "The amount is over the total price!";
             }
           }
-
-          console.log(result);
-
           bahtToShow = result[2];
-          percentToShow = ((result[0] + result[1]) / totalPrice) * 100;
+          percentToShow = result[0];
+
+          return { bahtToShow, percentToShow };
         }
 
-        calculate({ baht: [bahtToShow], percent: [percentToShow] });
+        // ตัวอย่างการใช้งาน
+        const { bahtToShow, percentToShow } = calculate({
+          baht: baht,
+          percent: [],
+        });
+        console.log("Baht to show:", bahtToShow);
+        console.log("Percent to show:", percentToShow);
 
-        percentToShow = isNaN(percentToShow) ? 0 : percentToShow;
+        // รอก่อน
 
         var convertInfoResult = await SaleModel.lead.getSaleLeadById(
           {
@@ -119,9 +134,8 @@ exports.insertSaleInvoice = async (req, res) => {
               issuedDate: issuedDate,
               dueDate: dueDate,
               amountRecieved: {
-                percent:
-                  typeof percentToShow != "undefined" ? percentToShow : "",
                 baht: baht,
+                percent: !isNaN(percentToShow) ? percentToShow : 0,
               },
               convertInfo: {
                 customerType: customerType,
@@ -147,9 +161,8 @@ exports.insertSaleInvoice = async (req, res) => {
               issuedDate: issuedDate,
               dueDate: dueDate,
               amountRecieved: {
-                percent:
-                  typeof percentToShow != "undefined" ? percentToShow : "",
                 baht: baht,
+                percent: !isNaN(percentToShow) ? percentToShow : 0,
               },
               convertInfo: {
                 customerType: customerType,

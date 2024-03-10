@@ -124,7 +124,6 @@ exports.insertSaleQuotation = async (req, res) => {
           var totalDiscount = 0;
           var vat = 7;
           var totalPrice = 0;
-          console.log(productResult.data);
 
           for (var i = 0; i < productResult.data.length; i++) {
             for (var j = 0; j < products.length; j++) {

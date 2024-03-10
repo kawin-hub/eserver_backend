@@ -50,10 +50,10 @@ let invoiceSchema = new Schema(
           type: Date,
         },
         address: {
-          _id: { type: ObjectId, ref: "SaleLeads" },
-          leadFirstname: { type: String },
-          leadLastname: { type: String },
-          leadContactNumber: { type: String },
+          lead_id: { type: ObjectId, ref: "SaleLeads" },
+          firstname: { type: String },
+          lastname: { type: String },
+          contactNumber: { type: String },
           companyName: { type: String },
           branch: { type: String },
           address: { type: String },
@@ -65,10 +65,10 @@ let invoiceSchema = new Schema(
           type: Date,
         },
         address: {
-          _id: { type: ObjectId, ref: "SaleLeads" },
-          leadFirstname: { type: String },
-          leadLastname: { type: String },
-          leadContactNumber: { type: String },
+          lead_id: { type: ObjectId, ref: "SaleLeads" },
+          firstname: { type: String },
+          lastname: { type: String },
+          contactNumber: { type: String },
           companyName: { type: String },
           branch: { type: String },
           address: { type: String },
@@ -83,10 +83,10 @@ let invoiceSchema = new Schema(
     },
     // ส่วนนี้ทั้งหมดดึงมาและเก็บ
     customerInfo: {
-      _id: { type: ObjectId, ref: "SaleLeads" },
-      leadFirstname: { type: String },
-      leadLastname: { type: String },
-      leadContactNumber: { type: String },
+      lead_id: { type: ObjectId, ref: "SaleLeads" },
+      firstname: { type: String },
+      lastname: { type: String },
+      contactNumber: { type: String },
       companyName: { type: String },
       branch: { type: String },
       address: { type: String },
@@ -94,7 +94,7 @@ let invoiceSchema = new Schema(
     },
     products: [
       {
-        _id: { type: ObjectId, ref: "ProductModel" },
+        productModel_id: { type: ObjectId, ref: "ProductModel" },
         modelCode: { type: String },
         name: { type: String },
         price: { type: Number },
@@ -104,12 +104,12 @@ let invoiceSchema = new Schema(
       },
     ],
     createdBy: {
-      createdBy_id: { type: ObjectId, ref: "Users" },
+      user_id: { type: ObjectId, ref: "Users" },
       firstname: { type: String },
       lastname: { type: String },
     },
     updatedBy: {
-      updatedBy_id: { type: ObjectId, ref: "Users" },
+      user_id: { type: ObjectId, ref: "Users" },
       firstname: { type: String },
       lastname: { type: String },
     },
