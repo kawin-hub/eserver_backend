@@ -1,96 +1,47 @@
-const InventoryLocation = require("./inventoryLocation.schema");
-const InventoryLot = require("./inventoryLot.schema");
+const { DataResponse } = require("../general_data.model");
 
-// Inventory Location
-const getAllInventoryLocations = async () => {
-  var inventoryLocation = null;
-  try {
-    inventoryLocation = await InventoryLocation.find().lean();
-  } catch (e) {
-    inventoryLocation = e;
-  }
+// 👉 import module part
+const total = require("./total/total.model");
+const location = require("./location/location.model");
+const lot = require("./lot/lot.model");
+const move = require("./move/move.model");
+const request = require("./request/request.model");
+const productSerial = require("./productSerial/productSerial.model");
+const productSerialMove = require("./productSerialMove/productSerialMove.model");
+const productSerialRequest = require("./productSerialRequest/productSerialRequest.model");
 
-  return inventoryLocation;
-};
+//Inventory Refund
 
-const insertInventoryLocation = async (data) => {
-  var inventoryLocation = new InventoryLocation(data);
-  var location = null;
+const insertInventoryRefund = async (params) => {
+  var result = new DataResponse();
 
   try {
-    location = await inventoryLocation.save();
+    result.data = await InventoryRefund.create(params);
+    result.data == null
+      ? result.doSuccess(
+          0,
+          "Can't insert to database, please check your request!"
+        )
+      : result.doSuccess(1);
   } catch (e) {
-    location = e;
-  }
-
-  return location;
-};
-
-const updateInventoryLocation = async (_id, update) => {
-  var location = null;
-
-  try {
-    location = await InventoryLocation.findByIdAndUpdate(_id, update);
-  } catch (e) {
-    location = e;
-  }
-
-  return location;
-};
-
-const deleteInventoryLocation = async (data) => {
-  var result = null;
-  try {
-    result = await InventoryLocation.findByIdAndRemove(data);
-  } catch (e) {
-    result = e;
-  }
-
-  return result;
-};
-
-//Inventory Lot
-const getAllInventoryLot = async () => {
-  var inventoryLot = null;
-  try {
-    inventoryLot = await InventoryLot.find().lean();
-  } catch (e) {
-    inventoryLot = e;
-  }
-
-  return inventoryLot;
-};
-
-const insertInventoryLot = async (data) => {
-  var inventoryLot = new InventoryLot(data);
-  var lot = null;
-
-  try {
-    lot = await inventoryLot.save();
-  } catch (e) {
-    lot = e;
-  }
-
-  return lot;
-};
-
-const deleteInventoryLot = async (data) => {
-  var result = null;
-  try {
-    result = await InventoryLot.findByIdAndRemove(data);
-  } catch (e) {
-    result = e;
+    console.log(e);
+    e.code == 11000
+      ? result.doError(6, "Refund index duplicate!")
+      : result.doError();
   }
 
   return result;
 };
 
 module.exports = {
-  getAllInventoryLocations,
-  insertInventoryLocation,
-  getAllInventoryLot,
-  insertInventoryLot,
-  deleteInventoryLot,
-  deleteInventoryLocation,
-  updateInventoryLocation
+  insertInventoryRefund,
+
+  total,
+  location,
+  lot,
+  move,
+  request,
+  productSerial,
+  productSerialMove,
+  productSerialRequest,
 };

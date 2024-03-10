@@ -10,7 +10,6 @@ dotenv.config();
 
 const insertProductCategory = async (req, res, next) => {
   var uploadRes = await upload.uploadFiles(req, res); // convert post multi-part
-  console.log(req.body);
   let { name, description, status } = req.body;
 
   let result = null;
@@ -43,7 +42,6 @@ const insertProductCategory = async (req, res, next) => {
 
 const getAllProductCategories = async (req, res, next) => {
   var productCategories = await productModel.getAllProductCategories();
-
   res.status(200).send({
     message: "Get product categories successfully!",
     productCategories,
