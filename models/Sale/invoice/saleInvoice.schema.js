@@ -21,47 +21,80 @@ let invoiceSchema = new Schema(
     amountRecieved: {
       percent: {
         type: Number,
-        required: true,
       },
-      number: {
+      baht: {
         type: Number,
         required: true,
       },
-    },
-    customerType: {
-      type: String,
-      enum: ["project", "dealer", "general"],
-      default: "general",
-      required: true,
-    },
-    projectType: {
-      type: String,
-      enum: ["install", "delivery"],
-      required: true,
     },
     paymentStatus: {
       type: String,
       enum: ["paid", "unpaid"],
       default: "unpaid",
     },
-    // ข้อมูลที่ดึงมาจากแหล่งอื่นตอน Convert จะอยู่ในหน้า Invoice
-    saleQuotation: {
-      _id: { type: ObjectId, ref: "saleQuotations" },
+    //ข้อมูลที่ฝากไว้ในหน้า Invoice ก่อนเพราะยังไม่มี Schema ของตัวแม่รองรับ (Project ยังไม่ได้ถูกสร้าง)
+    convertInfo: {
+      customerType: {
+        type: String,
+        enum: ["project", "dealer", "general"],
+        default: "general",
+        required: true,
+      },
+      convertType: {
+        type: String,
+        enum: ["install", "delivery"],
+        required: true,
+      },
+      installationInfo: {
+        estimateDate: {
+          type: Date,
+        },
+        address: {
+          lead_id: { type: ObjectId, ref: "SaleLeads" },
+          firstname: { type: String },
+          lastname: { type: String },
+          contactNumber: { type: String },
+          companyName: { type: String },
+          branch: { type: String },
+          address: { type: String },
+          googleMap: { type: String },
+        },
+      },
+      deliveryInfo: {
+        deliveryDate: {
+          type: Date,
+        },
+        address: {
+          lead_id: { type: ObjectId, ref: "SaleLeads" },
+          firstname: { type: String },
+          lastname: { type: String },
+          contactNumber: { type: String },
+          companyName: { type: String },
+          branch: { type: String },
+          address: { type: String },
+          googleMap: { type: String },
+        },
+      },
     },
+    // ข้อมูลที่ดึงมาจากแหล่งอื่นตอน Convert จะอยู่ในหน้า Invoice
+    // saleQuotation ดึงมาอย่างเดียว ไม่เก็บ
+    quotation: {
+      quotation_id: { type: ObjectId, ref: "SaleQuotations" },
+    },
+    // ส่วนนี้ทั้งหมดดึงมาและเก็บ
     customerInfo: {
-      _id: { type: ObjectId, ref: "SaleLeads" },
-      leadFirstname: { type: String },
-      leadLastname: { type: String },
-      leadContactNumber: { type: String },
+      lead_id: { type: ObjectId, ref: "SaleLeads" },
+      firstname: { type: String },
+      lastname: { type: String },
+      contactNumber: { type: String },
       companyName: { type: String },
       branch: { type: String },
       address: { type: String },
       taxId: { type: String },
-      googleMap: { type: String },
     },
     products: [
       {
-        _id: { type: ObjectId, ref: "ProductModel" },
+        productModel_id: { type: ObjectId, ref: "ProductModel" },
         modelCode: { type: String },
         name: { type: String },
         price: { type: Number },
@@ -71,12 +104,12 @@ let invoiceSchema = new Schema(
       },
     ],
     createdBy: {
-      _id: { type: ObjectId, ref: "Users" },
+      user_id: { type: ObjectId, ref: "Users" },
       firstname: { type: String },
       lastname: { type: String },
     },
     updatedBy: {
-      _id: { type: ObjectId, ref: "Users" },
+      user_id: { type: ObjectId, ref: "Users" },
       firstname: { type: String },
       lastname: { type: String },
     },

@@ -17,11 +17,11 @@ let saleQuotationSchema = new Schema(
       type: Date,
       required: true,
     },
-    saleLead: {
-      _id: { type: ObjectId, ref: "SaleLeads" },
-      leadFirstname: { type: String },
-      leadLastname: { type: String },
-      leadContactNumber: { type: String },
+    customerInfo: {
+      lead_id: { type: ObjectId, ref: "SaleLeads" },
+      firstname: { type: String },
+      lastname: { type: String },
+      contactNumber: { type: String },
       companyName: { type: String },
       branch: { type: String },
       address: { type: String },
@@ -30,7 +30,7 @@ let saleQuotationSchema = new Schema(
     },
     products: [
       {
-        _id: { type: ObjectId, ref: "ProductModel" },
+        productModel_id: { type: ObjectId, ref: "ProductModel" },
         modelCode: { type: String },
         name: { type: String },
         price: { type: Number },
@@ -39,6 +39,24 @@ let saleQuotationSchema = new Schema(
         discountBaht: { type: Number },
       },
     ],
+    summary: {
+      extraDiscount: {
+        type: Number,
+        required: true,
+      },
+      totalDiscount: {
+        type: Number,
+        required: true,
+      },
+      vat: {
+        type: Number,
+        default: 7,
+      },
+      totalPrice: {
+        type: Number,
+        required: true,
+      },
+    },
     paymentMethod: {
       type: String,
     },
@@ -51,12 +69,12 @@ let saleQuotationSchema = new Schema(
       default: "draft",
     },
     createdBy: {
-      _id: { type: ObjectId, ref: "Users" },
+      user_id: { type: ObjectId, ref: "Users" },
       firstname: { type: String },
       lastname: { type: String },
     },
     updatedBy: {
-      _id: { type: ObjectId, ref: "Users" },
+      user_id: { type: ObjectId, ref: "Users" },
       firstname: { type: String },
       lastname: { type: String },
     },

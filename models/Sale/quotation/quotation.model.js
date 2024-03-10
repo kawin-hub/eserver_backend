@@ -1,4 +1,4 @@
-const SaleQuotation = require("./saleQuotations.schema")
+const SaleQuotation = require("./saleQuotations.schema");
 const { DataResponse } = require("../../general_data.model");
 
 // 👉 Get all
@@ -18,7 +18,7 @@ exports.getAllSaleQuotations = async (params) => {
       _id: 1,
       createdAt: 1,
       documentNumber: 1,
-      saleLead: 1,
+      customerInfo: 1,
       quotationStatus: 1,
       currentStatus: 1,
       createdBy: 1,
@@ -79,7 +79,10 @@ exports.insertSaleQuotation = async (params) => {
   try {
     result.data = await SaleQuotation.create(params);
     result.data == null
-      ? result.doSuccess(0, "Can't insert to database, please check your request!")
+      ? result.doSuccess(
+          0,
+          "Can't insert to database, please check your request!"
+        )
       : result.doSuccess(1);
   } catch (e) {
     console.log(e);

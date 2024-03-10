@@ -19,9 +19,9 @@ exports.getAllAccountExpenses = async (params) => {
       expenseDate: 1,
       documentNumber: 1,
       whom: 1,
-      expenseCategory: 1,
+      category: 1,
       amount: 1,
-      expenseType: 1,
+      type: 1,
       createdBy: 1,
     })
       .skip(skip)

@@ -48,9 +48,9 @@ exports.insertSaleLead = async (req, res) => {
   try {
     const validation = new Validator(req.body, {
       companyName: "required",
-      leadFirstname: "required",
-      leadContactNumber: "required",
-      leadLevel: "required|in:low prudential,middle prudential,high prudential",
+      firstname: "required",
+      contactNumber: "required",
+      level: "required|in:low prudential,middle prudential,high prudential",
     });
 
     const matched = await validation.check();
@@ -66,11 +66,11 @@ exports.insertSaleLead = async (req, res) => {
         googleMap,
         companyEmail,
         companyContactNumber,
-        leadFirstname,
-        leadLastname,
-        leadContactNumber,
+        firstname,
+        lastname,
+        contactNumber,
         lineId,
-        leadLevel,
+        level,
         tag,
       } = req.body;
 
@@ -87,14 +87,14 @@ exports.insertSaleLead = async (req, res) => {
           typeof companyContactNumber != "undefined"
             ? companyContactNumber
             : "",
-        leadFirstname: leadFirstname,
-        leadLastname: typeof leadLastname != "undefined" ? leadLastname : "",
-        leadContactNumber: leadContactNumber,
+        firstname: firstname,
+        lastname: typeof lastname != "undefined" ? lastname : "",
+        contactNumber: contactNumber,
         lineId: typeof lineId != "undefined" ? lineId : "",
-        leadLevel: leadLevel,
+        level: level,
         tag: typeof tag != "undefined" ? tag : "",
         createdBy: {
-          _id: userData._id,
+          user_id: userData._id,
           firstname: userData.firstname,
           lastname: userData.lastname,
         },

@@ -11,22 +11,188 @@ exports.insertSaleInvoice = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    /* const validation = new Validator(req.body,{
-    documentNumber: "required",
-    issuedDate: "required|dateFormat:YYYY-MM-DD",
-    dueDate: "required|dateFormat:YYYY-MM-DD",
-    amountRecieved: "required",
-    customerType: "required",
-    projectType: "required",
-    saleQuotation_id: "required",
-
-}); */
-
-    var params = {
-        documentNumber: documentNumber,
-        products: products,
-        
+    var validationParams = {
+      documentNumber: "required",
+      issuedDate: "required|dateFormat:YYYY-MM-DD",
+      dueDate: "required|dateFormat:YYYY-MM-DD",
+      baht: "required|numeric",
+      customerType: "required|in:project,dealer,general",
+      convertType: "required|in:install,delivery",
+      quotation_id: "required",
+      estimateDate: "dateFormat:YYYY-MM-DD", // เพิ่มการตรวจสอบรูปแบบของ estimateDate
+      deliveryDate: "dateFormat:YYYY-MM-DD", // เพิ่มการตรวจสอบรูปแบบของ deliveryDate
     };
+
+    const validation = new Validator(req.body, validationParams);
+
+    const matched = await validation.check();
+
+    if (matched) {
+      const {
+        documentNumber,
+        issuedDate,
+        dueDate,
+        baht,
+        customerType,
+        convertType,
+        quotation_id,
+        installationInfo_id,
+        deliveryInfo_id,
+      } = req.body;
+
+      /* const userData = req.body.authData.userInfo.userData; */
+      // ดึงต่า QT
+      var quotationResult = await SaleModel.quotation.getSaleQuotationById({
+        _id: quotation_id,
+      });
+
+      if (quotationResult.code == 1) {
+        //ลบ _id ออกจาก Product ที่ดึงมาจาก QT และให้แสดงส่วนที่เหลือ
+        const products = quotationResult.data.products.map((item) => {
+          const { _id, ...rest } = item;
+          return rest;
+        });
+
+        // สร้างฟังก์ชันสำหรับคำนวณเปอร์เซ็นต์และจำนวนเงิน
+        function calculate(params) {
+          // ดึงยอดรวมของใบเสนอราคา
+          const totalPrice = quotationResult.data.summary.totalPrice;
+
+          // กำหนดตัวแปรเริ่มต้น
+          var result = [];
+          var bahtToShow = 0;
+          var percentToShow = 0;
+
+          // ตรวจสอบว่ามีการกรอก baht มาไหม
+          if (params.baht !== undefined && params.baht > 0) {
+            // กรณีกรอก baht เท่านั้น
+            const bahtValue = parseFloat(params.baht);
+
+            // คำนวณเปอร์เซ็นต์และจำนวนเงินจาก baht
+            result[0] = (bahtValue * 100) / totalPrice; // คำนวณ percent
+            result[1] = 100 - result[0]; // คำนวณ percent ของจำนวนที่เหลือ
+            result[2] = bahtValue; // ยอดเงินที่จ่าย
+
+            // ตรวจสอบว่ายอดเงินที่จ่ายเกินราคารวมไหม
+            if (result[2] > totalPrice) {
+              result[2] = "The amount is over the total price!";
+            } else {
+              result[2] = "The payment left : " + (totalPrice - result[2]); // คำนวณยอดเงินที่เหลือ
+            }
+          } else if (
+            params.percent !== undefined &&
+            params.percent.length > 0
+          ) {
+            // กรณีกรอก percent เท่านั้น
+            const percentValue = parseFloat(params.percent[0]);
+
+            result[0] = percentValue; // percent ที่ถูกกรอก
+            result[1] = 100 - percentValue; // percent ของจำนวนที่เหลือ
+            result[2] = (percentValue * totalPrice) / 100; // ยอดเงินที่จ่าย
+
+            if (result[2] > totalPrice) {
+              result[2] = "The amount is over the total price!";
+            }
+          }
+          bahtToShow = result[2];
+          percentToShow = result[0];
+
+          return { bahtToShow, percentToShow };
+        }
+
+        // ตัวอย่างการใช้งาน
+        const { bahtToShow, percentToShow } = calculate({
+          baht: baht,
+          percent: [],
+        });
+        console.log("Baht to show:", bahtToShow);
+        console.log("Percent to show:", percentToShow);
+
+        // รอก่อน
+
+        var convertInfoResult = await SaleModel.lead.getSaleLeadById(
+          {
+            _id: installationInfo_id || deliveryInfo_id,
+          },
+          {
+            _id: 1,
+            companyName: 1,
+            branch: 1,
+            address: 1,
+            googleMap: 1,
+            leadFirstname: 1,
+            leadLastname: 1,
+            leadContactNumber: 1,
+          }
+        );
+
+        // ตรวจสอบว่า installationInfo_id หรือ deliveryInfo_id มีการส่งมาหรือไม่
+        if (convertType === "install" && installationInfo_id) {
+          if (convertInfoResult.code === 1) {
+            var result = await SaleModel.invoice.insertSaleInvoice({
+              documentNumber: documentNumber,
+              issuedDate: issuedDate,
+              dueDate: dueDate,
+              amountRecieved: {
+                baht: baht,
+                percent: !isNaN(percentToShow) ? percentToShow : 0,
+              },
+              convertInfo: {
+                customerType: customerType,
+                convertType: convertType,
+                installationInfo: {
+                  estimateDate: req.body.estimateDate
+                    ? req.body.estimateDate
+                    : "",
+                  address: convertInfoResult.data,
+                },
+              },
+              quotation: quotation_id,
+              customerInfo: quotationResult.data.saleLead,
+              products: products,
+            });
+          } else {
+            result.doError(5, "installationInfo_id is not found!");
+          }
+        } else if (convertType === "delivery" && deliveryInfo_id) {
+          if (convertInfoResult.code === 1) {
+            var result = await SaleModel.invoice.insertSaleInvoice({
+              documentNumber: documentNumber,
+              issuedDate: issuedDate,
+              dueDate: dueDate,
+              amountRecieved: {
+                baht: baht,
+                percent: !isNaN(percentToShow) ? percentToShow : 0,
+              },
+              convertInfo: {
+                customerType: customerType,
+                convertType: convertType,
+                deliveryInfo: {
+                  deliveryDate: req.body.deliveryDate
+                    ? req.body.deliveryDate
+                    : "",
+                  address: convertInfoResult.data,
+                },
+              },
+              quotation: quotation_id,
+              customerInfo: quotationResult.data.saleLead,
+              products: products,
+            });
+          } else {
+            result.doError(5, "deliveryInfo_id is not found!");
+          }
+        } else {
+          result.doError(
+            5,
+            "If convertType is 'install', please provide a valid installationInfo_id. If it's 'delivery', make sure to provide a valid deliveryInfo_id."
+          );
+        }
+      } else {
+        result.doError(5, "quotation_id is not found!");
+      }
+    } else {
+      result.doError(2, validation.errors);
+    }
   } catch (error) {
     console.log(error);
   }

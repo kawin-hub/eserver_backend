@@ -12,7 +12,7 @@ exports.insertProductSerial = async (req, res) => {
   try {
     const validation = new Validator(req.body, {
       serialNumber: "required",
-      accountExpense_id: "required",
+      expense_id: "required",
       productModel_id: "required",
       inventoryLocation_id: "required",
       inventoryLot_id: "required",
@@ -21,73 +21,87 @@ exports.insertProductSerial = async (req, res) => {
     const matched = await validation.check();
     if (matched) {
       const {
-        accountExpense_id,
+        expense_id,
         productModel_id,
         serialNumber,
         inventoryLocation_id,
         inventoryLot_id,
       } = req.body;
 
-      const userData = req.body.authData.userInfo.userData
+      const userData = req.body.authData.userInfo.userData;
 
-      var AccountExpenseModel = AccountModel.expense
-      var InventoryLocationModel = InventoryModel.location
-      var InventoryLotModel = InventoryModel.lot
+      var AccountExpenseModel = AccountModel.expense;
+      var InventoryLocationModel = InventoryModel.location;
+      var InventoryLotModel = InventoryModel.lot;
 
-      var [accountExpenseResult, productModelResult, inventoryLocationResult, inventoryLotResult] =
-        await Promise.all([
-          AccountExpenseModel.getAccountExpenseById(
-            {
-              _id: accountExpense_id
-            },
-            {
-              _id: 1,
-              documentNumber: 1,
-            }),
-          ProductModel.getProductModelsByParams(
-            {
-              _id: productModel_id,
-            },
-            {
-              _id: 1,
-              name: 1,
-              modelCode: 1,
-            }
-          ),
-          InventoryLocationModel.getInventoryLocationById({
+      var [
+        accountExpenseResult,
+        productModelResult,
+        inventoryLocationResult,
+        inventoryLotResult,
+      ] = await Promise.all([
+        AccountExpenseModel.getAccountExpenseById(
+          {
+            _id: expense_id,
+          },
+          {
+            _id: 1,
+            documentNumber: 1,
+          }
+        ),
+        ProductModel.getProductModelsByParams(
+          {
+            _id: productModel_id,
+          },
+          {
+            _id: 1,
+            name: 1,
+            modelCode: 1,
+          }
+        ),
+        InventoryLocationModel.getInventoryLocationById(
+          {
             _id: inventoryLocation_id,
           },
-            {
-              _id: 1,
-              name: 1,
-            }),
-          InventoryLotModel.getInventoryLotById({
+          {
+            _id: 1,
+            name: 1,
+          }
+        ),
+        InventoryLotModel.getInventoryLotById(
+          {
             _id: inventoryLot_id,
           },
-            {
-              _id: 1,
-              lotNumber: 1,
-            })
-        ]);
+          {
+            _id: 1,
+            lotNumber: 1,
+          }
+        ),
+      ]);
 
-      if (accountExpenseResult.code == 1 && productModelResult.code == 1 && inventoryLocationResult.code == 1 && inventoryLotResult.code == 1) {
+      if (
+        accountExpenseResult.code == 1 &&
+        productModelResult.code == 1 &&
+        inventoryLocationResult.code == 1 &&
+        inventoryLotResult.code == 1
+      ) {
         var insertProductSerialparams = {
           serialNumber: serialNumber,
           accountExpense: {
-            _id: accountExpenseResult.data._id,
+            expense_id: accountExpenseResult.data._id,
             documentNumber: accountExpenseResult.data.documentNumber,
           },
           productModel: {
-            _id: productModelResult.data._id,
+            productModel_id: productModelResult.data._id,
             name: productModelResult.data.name,
             modelCode: productModelResult.data.modelCode,
           },
           inventoryLocation: {
-            _id: inventoryLocationResult.data._id,
+            location_id: inventoryLocationResult.data._id,
             name: inventoryLocationResult.data.name,
           },
           inventoryLot: {
-            _id: inventoryLotResult.data._id,
+            lot_id: inventoryLotResult.data._id,
             lotNumber: inventoryLotResult.data.lotNumber,
           },
           movements: [
@@ -102,10 +116,10 @@ exports.insertProductSerial = async (req, res) => {
             },
           ],
           createdBy: {
-            _id: userData._id,
+            user_id: userData._id,
             firstname: userData.firstname,
-            lastname: userData.lastname
-          }
+            lastname: userData.lastname,
+          },
         };
 
         var productSerialModel = InventoryModel.productSerial;
@@ -113,9 +127,8 @@ exports.insertProductSerial = async (req, res) => {
           insertProductSerialparams
         );
       } else {
-        result.doError(5, "Some of ref _id is not found")
+        result.doError(5, "Some of ref _id is not found");
       }
-
     } else {
       result.doError(2, validation.errors);
     }

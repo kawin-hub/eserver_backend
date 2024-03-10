@@ -50,7 +50,7 @@ exports.insertSaleQuotation = async (req, res) => {
       documentNumber: "required",
       issuedDate: "required|dateFormat:YYYY-MM-DD",
       dueDate: "required|dateFormat:YYYY-MM-DD",
-      saleLead_id: "required",
+      lead_id: "required",
       products: "required",
       quotationStatus: "required|in:warm,hot,cold,done",
     };
@@ -75,22 +75,23 @@ exports.insertSaleQuotation = async (req, res) => {
         documentNumber,
         issuedDate,
         dueDate,
-        saleLead_id,
+        lead_id,
         products,
         paymentMethod,
         note,
         quotationStatus,
+        extraDiscount,
       } = req.body;
 
       const userData = req.body.authData.userInfo.userData;
 
       const LeadResult = await SaleLeadModel.getSaleLeadById(
-        { _id: saleLead_id },
+        { _id: lead_id },
         {
           _id: 1,
-          leadFirstname: 1,
-          leadLastname: 1,
-          leadContactNumber: 1,
+          firstname: 1,
+          lastname: 1,
+          contactNumber: 1,
           companyName: 1,
           branch: 1,
           address: 1,
@@ -112,6 +113,7 @@ exports.insertSaleQuotation = async (req, res) => {
             _id: 1,
             name: 1,
             modelCode: 1,
+            price: 1,
           }
         );
 
@@ -119,32 +121,60 @@ exports.insertSaleQuotation = async (req, res) => {
           productResult.code == 1 &&
           products.length == productResult.data.length
         ) {
+          var totalDiscount = 0;
+          var vat = 7;
+          var totalPrice = 0;
+
           for (var i = 0; i < productResult.data.length; i++) {
             for (var j = 0; j < products.length; j++) {
               if (productResult.data[i]._id == products[j]._id) {
-                productResult.data[i].price = products[j].price;
                 productResult.data[i].quantity = products[j].quantity;
-                productResult.data[i].discountPercent = products[j].discountPercent;
-                productResult.data[i].discountBaht = products[j].discountBaht;
+                productResult.data[i].discountPercent =
+                  (100 * parseFloat(products[j].discountBaht)) /
+                  parseFloat(productResult.data[i].price);
+                productResult.data[i].discountBaht = parseFloat(
+                  products[j].discountBaht
+                );
+                totalDiscount +=
+                  parseFloat(products[j].discountBaht) *
+                  parseInt(products[j].quantity);
+                totalPrice +=
+                  parseFloat(productResult.data[i].price) *
+                  parseInt(products[j].quantity);
                 break;
               }
             }
           }
+          const extraDiscountFloat = parseFloat(
+            typeof extraDiscount == "undefined" ? 0 : extraDiscount
+          );
+
+          totalDiscount += extraDiscountFloat;
+          totalPrice = totalPrice - totalDiscount;
+
+          var totalVat = (totalPrice * vat) / 100;
+          totalPrice += totalVat;
 
           var insertQuotationparams = {
             documentNumber: documentNumber,
             issuedDate: issuedDate,
             dueDate: dueDate,
-            saleLead: LeadResult.data,
+            customerInfo: LeadResult.data,
             products: productResult.data,
             paymentMethod:
               typeof paymentMethod != "undefined" ? paymentMethod : "",
             note: typeof note != "undefined" ? note : "",
             quotationStatus: quotationStatus,
             createdBy: {
-              _id: userData._id,
+              user_id: userData._id,
               firstname: userData.firstname,
               lastname: userData.lastname,
+            },
+            summary: {
+              extraDiscount: extraDiscountFloat,
+              totalDiscount: totalDiscount,
+              vat: vat,
+              totalPrice: totalPrice,
             },
           };
 
