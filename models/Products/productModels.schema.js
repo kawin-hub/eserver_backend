@@ -29,6 +29,13 @@ let productModelSchema = new Schema(
       type: Number,
       default: 0,
     },
+    discountGroup: [
+      {
+        customerLevel_id: { type: ObjectId, ref: "SaleCustomerLevels" },
+        level: { type: String },
+        discount: { type: Number, default: 0 },
+      },
+    ],
     installationPrice: {
       type: Number,
       default: 0,

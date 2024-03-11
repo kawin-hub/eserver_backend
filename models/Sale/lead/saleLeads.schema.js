@@ -44,6 +44,10 @@ let saleLeadSchema = new Schema(
       enum: ["low prudential", "middle prudential", "high prudential"],
       default: "low prudential",
     },
+    saleCustomerLevel: {
+      customerLevel_id: { type: ObjectId, ref: "SaleCustomerLevels" },
+      level: { type: String },
+    },
     tag: [
       {
         type: String,

@@ -111,7 +111,7 @@ exports.insertSaleInvoice = async (req, res) => {
           percentToShow = result[0];
 
           const invoiceInfo =
-            await SaleModel.invoice.getSaleQuotationByConditions(
+            await SaleModel.quotation.getSaleQuotationByConditions(
               { quotation_id: quotation_id },
               { _id: 1, amountRecieved: 1 }
             );
