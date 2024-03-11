@@ -1,5 +1,34 @@
 const SaleLead = require("./saleLeads.schema");
+const CustomerLevel = require("./customerLevel.schema");
 const { DataResponse } = require("../../general_data.model");
+
+async function initLead() {
+  var result;
+
+  const params = [
+    {
+      level: "end user",
+    },
+    {
+      level: "project",
+    },
+    {
+      level: "dealer",
+    },
+  ];
+
+  try {
+    result = await CustomerLevel.create(params);
+    result == null
+      ? console.log("Can't insert to database, please check your request!")
+      : console.log("CustomerLevel has been already Created.");
+  } catch (e) {
+    if (e.code == 11000) {
+      console.log("CustomerLevel has been already created.");
+    }
+  }
+}
+initLead();
 
 // 👉 Get all
 

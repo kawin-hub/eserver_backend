@@ -3,9 +3,6 @@ const collection = "SaleCustomerLevels";
 
 let SaleCustomerLevelSchema = new Schema(
   {
-    name: {
-      type: String,
-    },
     level: {
       type: String,
       unique: true,
