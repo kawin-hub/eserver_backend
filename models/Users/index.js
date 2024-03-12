@@ -22,8 +22,7 @@ const getUserById = async (_id) => {
 
   try {
     user = await User.findOne({ _id: _id }).select("-password").lean();
-  } catch (e) {
-  }
+  } catch (e) {}
 
   return user;
 };

@@ -3,6 +3,17 @@ const collection = "InventoryProductSerial";
 
 let inventoryProductSerailSchema = new Schema(
   {
+    lot_id: { type: ObjectId, ref: "inventoryLots" },
+    accountExpense: {
+      expense_id: { type: ObjectId, ref: "AccountExpenses" },
+      documentNumber: { type: String },
+      category: { type: String },
+      type: { type: String },
+    },
+    recieveDate: {
+      type: Date,
+      default: Date.now,
+    },
     productModel: {
       productModel_id: { type: ObjectId, ref: "ProductModel" },
       modelCode: String,
@@ -12,23 +23,9 @@ let inventoryProductSerailSchema = new Schema(
       location_id: { type: ObjectId, ref: "inventoryLocations" },
       name: String,
     },
-    inventoryLot: {
-      lot_id: { type: ObjectId, ref: "inventoryLots" },
-      lotNumber: String,
-    },
-    accountExpense: {
-      expense_id: { type: ObjectId, ref: "AccountExpenses" },
-      documentNumber: { type: String },
-      category: { type: String },
-      type: { type: String },
-    },
     serialNumber: {
       type: String,
       unique: true,
-    },
-    recieveDate: {
-      type: Date,
-      default: Date.now,
     },
     currentStatus: {
       type: String,

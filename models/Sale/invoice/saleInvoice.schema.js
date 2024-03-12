@@ -1,7 +1,7 @@
 const { Schema, model, ObjectId } = require("mongoose");
-const collection = "Invoices";
+const collection = "SaleInvoices";
 
-let invoiceSchema = new Schema(
+let saleInvoiceSchema = new Schema(
   {
     // ข้อมูลที่ต้องเพิ่มใน Invoice
     documentNumber: {
@@ -119,4 +119,4 @@ let invoiceSchema = new Schema(
   }
 );
 
-module.exports = model(collection, invoiceSchema);
+module.exports = model(collection, saleInvoiceSchema);

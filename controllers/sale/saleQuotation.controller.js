@@ -137,10 +137,10 @@ exports.insertSaleQuotation = async (req, res) => {
                 );
                 totalDiscount +=
                   parseFloat(products[j].discountBaht) *
-                  parseInt(products[j].quantity);
+                  parseFloat(products[j].quantity);
                 totalPrice +=
                   parseFloat(productResult.data[i].price) *
-                  parseInt(products[j].quantity);
+                  parseFloat(products[j].quantity);
                 break;
               }
             }

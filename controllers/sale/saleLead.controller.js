@@ -4,6 +4,41 @@ let { general } = require("../../middleware");
 const { DataResponse } = require("../../models/general_data.model");
 const { Validator } = require("node-input-validator");
 
+// 👉 Get CustomerLevel all or by ID
+
+exports.getCustomerLevels = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    const { _id } = req.query;
+
+    var SaleLeadModel = SaleModel.lead;
+
+    if (typeof _id != "undefined") {
+      result = await SaleLeadModel.getCustomerLevelById({
+        _id: new Object(_id),
+      });
+    } else {
+      var pageOption = general.checkPageAndLimit(
+        req.query.page,
+        req.query.limit
+      );
+
+      var params = {
+        page: pageOption.page,
+        limit: pageOption.limit,
+        queryCondition: {},
+      };
+
+      result = await SaleLeadModel.getAllCustomerLevels(params);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+
+  res.json(result);
+};
+
 // 👉 Get all or by ID
 
 exports.getSaleLeads = async (req, res) => {
@@ -31,7 +66,6 @@ exports.getSaleLeads = async (req, res) => {
       };
 
       result = await SaleLeadModel.getAllSaleLeads(params);
-      console.log(result.data.documents);
     }
   } catch (error) {
     console.log(error);
@@ -51,56 +85,69 @@ exports.insertSaleLead = async (req, res) => {
       firstname: "required",
       contactNumber: "required",
       level: "required|in:low prudential,middle prudential,high prudential",
+      customerLevel_id: "required",
     });
 
     const matched = await validation.check();
 
-    var SaleLeadModel = SaleModel.lead;
-
     if (matched) {
       const {
         companyName,
+        firstname,
+        contactNumber,
+        level,
+        customerLevel_id,
         taxId,
         branch,
         address,
         googleMap,
         companyEmail,
         companyContactNumber,
-        firstname,
         lastname,
-        contactNumber,
         lineId,
-        level,
         tag,
       } = req.body;
 
       const userData = req.body.authData.userInfo.userData;
 
-      var inserLeadparams = {
-        companyName: companyName,
-        taxId: typeof taxId != "undefined" ? taxId : "",
-        branch: typeof branch != "undefined" ? branch : "",
-        address: typeof address != "undefined" ? address : "",
-        googleMap: typeof googleMap != "undefined" ? googleMap : "",
-        companyEmail: typeof companyEmail != "undefined" ? companyEmail : "",
-        companyContactNumber:
-          typeof companyContactNumber != "undefined"
-            ? companyContactNumber
-            : "",
-        firstname: firstname,
-        lastname: typeof lastname != "undefined" ? lastname : "",
-        contactNumber: contactNumber,
-        lineId: typeof lineId != "undefined" ? lineId : "",
-        level: level,
-        tag: typeof tag != "undefined" ? tag : "",
-        createdBy: {
-          user_id: userData._id,
-          firstname: userData.firstname,
-          lastname: userData.lastname,
-        },
-      };
+      const CustomerLevelResult = await SaleModel.lead.getCustomerLevelById(
+        { _id: customerLevel_id },
+        {
+          _id: 1,
+          level: 1,
+        }
+      );
 
-      result = await SaleLeadModel.insertSaleLead(inserLeadparams);
+      if (CustomerLevelResult.code == 1) {
+        var insertLeadparams = {
+          companyName: companyName,
+          taxId: typeof taxId != "undefined" ? taxId : "",
+          branch: typeof branch != "undefined" ? branch : "",
+          address: typeof address != "undefined" ? address : "",
+          googleMap: typeof googleMap != "undefined" ? googleMap : "",
+          companyEmail: typeof companyEmail != "undefined" ? companyEmail : "",
+          companyContactNumber:
+            typeof companyContactNumber != "undefined"
+              ? companyContactNumber
+              : "",
+          firstname: firstname,
+          lastname: typeof lastname != "undefined" ? lastname : "",
+          contactNumber: contactNumber,
+          lineId: typeof lineId != "undefined" ? lineId : "",
+          level: level,
+          customerLevel: CustomerLevelResult.data,
+          tag: typeof tag != "undefined" ? tag : "",
+          createdBy: {
+            user_id: userData._id,
+            firstname: userData.firstname,
+            lastname: userData.lastname,
+          },
+        };
+
+        result = await SaleModel.lead.insertSaleLead(insertLeadparams);
+      } else {
+        result.doError(5, "customerLevel_id is not found!");
+      }
     } else {
       result.doError(2, validation.errors);
     }

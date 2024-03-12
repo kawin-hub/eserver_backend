@@ -4,9 +4,7 @@ const { verifyToken } = (mw = require("../middleware"));
 //const multer = require("multer");
 //const upload = multer({ dest: "./assets/images/product/brands/" });
 
-const {
-    accountExpense
-} = require("../controllers/account");
+const { accountExpense } = require("../controllers/account");
 
 // 👉 Account Expense
 

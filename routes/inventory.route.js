@@ -26,11 +26,23 @@ router.get("/totals", inventoryTotal.getInventoryTotals);
 
 router.get("/locations", verifyToken, inventoryLocation.getInventoryLocations);
 
-router.post("/locations", verifyToken, inventoryLocation.insertInventoryLocation);
+router.post(
+  "/locations",
+  verifyToken,
+  inventoryLocation.insertInventoryLocation
+);
 
-router.put("/locations", verifyToken, inventoryLocation.updateInventoryLocation);
+router.put(
+  "/locations",
+  verifyToken,
+  inventoryLocation.updateInventoryLocation
+);
 
-router.delete("/locations", verifyToken, inventoryLocation.deleteInventoryLocation);
+router.delete(
+  "/locations",
+  verifyToken,
+  inventoryLocation.deleteInventoryLocation
+);
 
 // 👉 Inventory Lot
 
@@ -58,16 +70,28 @@ router.post("/refunds", insertInventoryRefund);
 
 // 👉 Inventory Product Serial
 
-router.post("/productSerial", verifyToken, inventoryProductSerial.insertProductSerial);
+router.post(
+  "/productSerial",
+  verifyToken,
+  inventoryProductSerial.insertProductSerial
+);
 
 router.delete("/productSerial", inventoryProductSerial.deleteProductSerial);
 
 // 👉 Inventory Product Serial Move
 
-router.post("/productSerialMove", verifyToken, inventoryProductSerialMove.insertProductSerialMove);
+router.post(
+  "/productSerialMove",
+  verifyToken,
+  inventoryProductSerialMove.insertProductSerialMove
+);
 
 // 👉 Inventory Product Serial Request
 
-router.post("/productSerialRequest", verifyToken, inventoryProductSerialRequest.insertProductSerialRequest);
+router.post(
+  "/productSerialRequest",
+  verifyToken,
+  inventoryProductSerialRequest.insertProductSerialRequest
+);
 
 module.exports = router;

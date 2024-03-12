@@ -59,7 +59,7 @@ exports.insertProductSerialRequest = async (req, res) => {
                             modelCode: 1,
                         }
                     ),
-                    InventoryProductSerialModel.getProducSerialtsbyArrayId(
+                    InventoryProductSerialModel.getProductSerialsbyArrayId(
                         inventoryProductSerial_ids,
                         {
                             _id: 1,
