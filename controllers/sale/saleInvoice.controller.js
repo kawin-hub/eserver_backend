@@ -208,7 +208,7 @@ exports.updateSaleInvoice = async (req, res) => {
     var paymentImagesName = "paymentImages";
     var paymentDocumentsName = "paymentDocuments";
 
-    var resUpload = await upload.uploadFiles(req, res, [
+    await upload.uploadFiles(req, res, [
       {
         name: paymentImagesName,
         path: "./assets/images/account/invoices",
@@ -256,7 +256,6 @@ exports.updateSaleInvoice = async (req, res) => {
 
       params["$set"] = {}; // replace
       params["$push"] = {}; // add new
-      params["$pull"] = {}; // remove
 
       if (paymentStatus) params["$set"].paymentStatus = paymentStatus;
 
@@ -286,8 +285,38 @@ exports.updateSaleInvoice = async (req, res) => {
         paymentDocuments: { _id: { $in: paymentDocumentsRemove } },
         paymentImages: { _id: { $in: paymentImagesRemove } },
       };
+      var updateOptions = {
+        returnOriginal: true,
+      };
 
-      result = await SaleModel.invoice.updateInvoice(conditions, params);
+      result = await SaleModel.invoice.updateInvoice(
+        conditions,
+        params,
+        updateOptions
+      );
+
+      if (result.code == 1) {
+        const filteredPaymentDocumentsToDelete =
+          result.data.paymentDocuments.filter((item) =>
+            paymentDocumentsRemove.includes(item._id.toString())
+          );
+
+        for (let i = 0; i < filteredPaymentDocumentsToDelete?.length; i++) {
+          fs.rmSync(filteredPaymentDocumentsToDelete[i].path, {
+            force: true,
+          });
+        }
+
+        const filteredPaymentImagesToDelete = result.data.paymentImages.filter(
+          (item) => paymentImagesRemove.includes(item._id.toString())
+        );
+
+        for (let i = 0; i < filteredPaymentImagesToDelete?.length; i++) {
+          fs.rmSync(filteredPaymentImagesToDelete[i].path, {
+            force: true,
+          });
+        }
+      }
     }
 
     if (result.code != 1) {
