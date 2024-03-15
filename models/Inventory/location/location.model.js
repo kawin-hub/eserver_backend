@@ -24,7 +24,9 @@ exports.getAllInventoryLocations = async (params) => {
       createdBy: 1,
     })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .sort({ _id: -1 })
+      .lean();
 
     result.doSuccess(1);
 
@@ -123,12 +125,15 @@ exports.deleteInventoryLocation = async (data) => {
 
 // 👉 Get by array ID
 
-exports.getInventoryLocationbyArrayId = async (location_ids) => {
+exports.getInventoryLocationbyArrayId = async (
+  location_ids,
+  projection = {}
+) => {
   var result = new DataResponse();
   try {
     result.data = await InventoryLocation.find(
       { _id: { $in: location_ids } },
-      { _id: 1, modelCode: 1, name: 1 }
+      projection
     ).lean();
     result.data == null
       ? result.doSuccess(2, "_id not found in database")

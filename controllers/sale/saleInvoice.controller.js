@@ -16,7 +16,6 @@ exports.insertSaleInvoice = async (req, res) => {
       issuedDate: "required|dateFormat:YYYY-MM-DD",
       dueDate: "required|dateFormat:YYYY-MM-DD",
       baht: "required|numeric",
-      customerType: "required|in:project,dealer,general",
       convertType: "required|in:install,delivery",
       quotation_id: "required",
       estimateDate: "dateFormat:YYYY-MM-DD", // เพิ่มการตรวจสอบรูปแบบของ estimateDate
@@ -33,11 +32,11 @@ exports.insertSaleInvoice = async (req, res) => {
         issuedDate,
         dueDate,
         baht,
-        customerType,
         convertType,
         quotation_id,
-        installationInfo_id,
-        deliveryInfo_id,
+        lead_id,
+        estimateDate,
+        deliveryDate,
       } = req.body;
 
       /* const userData = req.body.authData.userInfo.userData; */
@@ -49,7 +48,7 @@ exports.insertSaleInvoice = async (req, res) => {
         }),
         SaleModel.lead.getSaleLeadById(
           {
-            _id: installationInfo_id || deliveryInfo_id,
+            _id: lead_id,
           },
           {
             _id: 1,
@@ -63,7 +62,6 @@ exports.insertSaleInvoice = async (req, res) => {
           }
         ),
       ]);
-
       if (quotationResult.code == 1 && convertInfoResult.code == 1) {
         //ลบ _id ออกจาก Product ที่ดึงมาจาก QT และให้แสดงส่วนที่เหลือ
         const products = quotationResult.data.products.map((item) => {
@@ -111,9 +109,9 @@ exports.insertSaleInvoice = async (req, res) => {
           percentToShow = result[0];
 
           const invoiceInfo =
-            await SaleModel.quotation.getSaleQuotationByConditions(
+            await SaleModel.invoice.getSaleInvoiceByConditions(
               { quotation_id: quotation_id },
-              { _id: 1, amountRecieved: 1 }
+              { _id: 1, quotation_id: 1, amountRecieved: 1 }
             );
 
           var invoiceCreatedTotal = 0;
@@ -143,7 +141,7 @@ exports.insertSaleInvoice = async (req, res) => {
         });
 
         if (invoiceInfo.status) {
-          var result = await SaleModel.invoice.insertSaleInvoice({
+          var insertSaleParam = {
             documentNumber: documentNumber,
             issuedDate: issuedDate,
             dueDate: dueDate,
@@ -152,19 +150,31 @@ exports.insertSaleInvoice = async (req, res) => {
               percent: invoiceInfo.percent,
             },
             convertInfo: {
-              customerType: customerType,
+              customerLevel: quotationResult.data.customerLevel,
               convertType: convertType,
-              installationInfo: {
-                estimateDate: req.body.estimateDate
-                  ? req.body.estimateDate
-                  : "",
-                address: convertInfoResult.data,
-              },
             },
             quotation_id: quotation_id,
             customerInfo: quotationResult.data.saleLead,
             products: products,
-          });
+          };
+
+          if (convertType == "install") {
+            insertSaleParam.convertInfo["installationInfo"] = {
+              estimateDate:
+                typeof estimateDate != "undefined" ? estimateDate : null,
+              address: convertInfoResult.data,
+            };
+          } else if (convertType == "delivery") {
+            insertSaleParam.convertInfo["deliveryInfo"] = {
+              deliveryDate:
+                typeof deliveryDate != "undefined" ? deliveryDate : null,
+              address: convertInfoResult.data,
+            };
+          }
+
+          var result = await SaleModel.invoice.insertSaleInvoice(
+            insertSaleParam
+          );
         } else {
           result.doError(7, "Payment of this invoice is over quotation total!");
         }

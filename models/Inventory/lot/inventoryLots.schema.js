@@ -15,8 +15,8 @@ let inventoryLotSchema = new Schema(
     accountExpense: {
       expense_id: { type: ObjectId, ref: "AccountExpenses" },
       documentNumber: { type: String },
-      expenseCategory: { type: String },
-      expenseType: { type: String },
+      category: { type: String },
+      type: { type: String },
     },
     status: {
       type: String,
@@ -34,8 +34,9 @@ let inventoryLotSchema = new Schema(
     ],
     currentStatus: {
       type: String,
-      default: "in progress"
+      default: "in progress",
     },
+    // Documents for Purchase
     documents: [
       {
         name: String,
@@ -45,8 +46,8 @@ let inventoryLotSchema = new Schema(
           default: Date.now,
         },
       },
-      // Documents for Purchase
     ],
+    // Documents from Store
     documentsFromStore: [
       {
         name: String,
@@ -56,17 +57,16 @@ let inventoryLotSchema = new Schema(
           default: Date.now,
         },
       },
-      // Documents for Store
     ],
     createdBy: {
       user_id: { type: ObjectId, ref: "Users" },
       firstname: { type: String },
-      lastname: { type: String }
+      lastname: { type: String },
     },
     updatedBy: {
       user_id: { type: ObjectId, ref: "Users" },
       firstname: { type: String },
-      lastname: { type: String }
+      lastname: { type: String },
     },
   },
   {

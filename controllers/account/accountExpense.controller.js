@@ -110,8 +110,8 @@ exports.insertAccountExpense = async (req, res) => {
         var params = {
           documentNumber: documentNumber,
           expenseDate: expenseDate,
-          expenseCategory: typeof category != "undefined" ? category : "",
-          expenseType: type,
+          category: typeof category != "undefined" ? category : "",
+          type: type,
           amount: amount,
           whom: whom,
           tag: typeof tag != "undefined" ? tag : "",

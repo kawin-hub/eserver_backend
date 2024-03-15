@@ -25,7 +25,9 @@ exports.getAllAccountExpenses = async (params) => {
       createdBy: 1,
     })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .sort({ _id: -1 })
+      .lean();
 
     result.doSuccess(1);
 
@@ -80,7 +82,10 @@ exports.insertAccountExpense = async (params) => {
   try {
     result.data = await AccountExpense.create(params);
     result.data == null
-      ? result.doSuccess(0, "Can't insert to database, please check your request!")
+      ? result.doSuccess(
+          0,
+          "Can't insert to database, please check your request!"
+        )
       : result.doSuccess(1);
   } catch (e) {
     console.log(e);

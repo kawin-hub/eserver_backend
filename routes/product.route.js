@@ -38,7 +38,7 @@ router.delete("/brands", verifyToken, deleteProductBrand);
 router.put("/brands", verifyToken, updateProductBrand);
 
 // ProductModel
-router.post('/models', verifyToken, insertProductModel)
+router.post("/models", verifyToken, insertProductModel);
 
 router.get("/models", verifyToken, getProductModels);
 

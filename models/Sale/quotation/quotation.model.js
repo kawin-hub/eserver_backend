@@ -25,7 +25,9 @@ exports.getAllSaleQuotations = async (params) => {
       summary: 1,
     })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .sort({ _id: -1 })
+      .lean();
 
     result.doSuccess(1);
 
@@ -94,26 +96,3 @@ exports.insertSaleQuotation = async (params) => {
 
   return result;
 };
-
-// 👉 Get by Conditions (คล้าย by ID แต่ไปเลือกค่าได้ที่หน้า controller)
-
-exports.getSaleQuotationByConditions = async (params, projector = {}) => {
-  var result = new DataResponse();
-
-  try {
-    result.data = await SaleInvoice.find(params, projector).lean();
-    result.data == null
-      ? result.doSuccess(2, "_id not found in database")
-      : result.doSuccess(1);
-  } catch (e) {
-    console.log(e.kind);
-    if (e.kind == "ObjectId") {
-      result.doError(0, "Please check your _id format");
-    } else {
-      result.doError(0);
-    }
-  }
-
-  return result;
-};
-

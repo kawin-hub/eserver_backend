@@ -137,10 +137,10 @@ exports.insertSaleQuotation = async (req, res) => {
                 );
                 totalDiscount +=
                   parseFloat(products[j].discountBaht) *
-                  parseInt(products[j].quantity);
+                  parseFloat(products[j].quantity);
                 totalPrice +=
                   parseFloat(productResult.data[i].price) *
-                  parseInt(products[j].quantity);
+                  parseFloat(products[j].quantity);
                 break;
               }
             }
@@ -160,6 +160,7 @@ exports.insertSaleQuotation = async (req, res) => {
             issuedDate: issuedDate,
             dueDate: dueDate,
             customerInfo: LeadResult.data,
+            customerLevel: LeadResult.data.customerLevel,
             products: productResult.data,
             paymentMethod:
               typeof paymentMethod != "undefined" ? paymentMethod : "",

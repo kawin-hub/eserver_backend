@@ -30,7 +30,74 @@ async function initLead() {
 }
 initLead();
 
-// 👉 Get all
+// 👉 Get all CustomerLevel
+
+exports.getAllCustomerLevels = async (params) => {
+  var result = new DataResponse();
+  try {
+    var limit = parseInt(params.limit);
+    var page = parseInt(params.page) ? parseInt(params.page) : 1;
+    var skip = (page - 1) * limit;
+    skip = skip < 1 ? 0 : skip;
+
+    var queryCondition =
+      params.queryCondition !== undefined ? params.queryCondition : {};
+
+    const queryResult = await CustomerLevel.find(queryCondition, {
+      _id: 1,
+      level: 1,
+    })
+      .skip(skip)
+      .limit(limit)
+      .sort({ _id: -1 })
+      .lean();
+
+    result.doSuccess(1);
+
+    var countTotalRow = await CustomerLevel.countDocuments(
+      params.queryCondition
+    );
+    result.doSuccess(1);
+
+    result.data = {
+      documents: queryResult,
+    };
+    result.data.limit = limit;
+    result.data.page = skip / limit + 1;
+    result.data.totalPage = Math.ceil(countTotalRow / limit);
+    result.data.totalCount = countTotalRow;
+
+    //totalCount
+  } catch (e) {
+    result.doError();
+  }
+
+  return result;
+};
+
+// 👉 Get CustomerLevel by ID
+
+exports.getCustomerLevelById = async (params) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await CustomerLevel.findOne(params).lean();
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e.kind);
+    if (e.kind == "ObjectId") {
+      result.doError(0, "Please check your _id format");
+    } else {
+      result.doError(0);
+    }
+  }
+
+  return result;
+};
+
+// 👉 Get all SaleLead
 
 exports.getAllSaleLeads = async (params) => {
   var result = new DataResponse();
@@ -58,7 +125,9 @@ exports.getAllSaleLeads = async (params) => {
       createdBy: 1,
     })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .sort({ _id: -1 })
+      .lean();
 
     result.doSuccess(1);
 
@@ -81,7 +150,7 @@ exports.getAllSaleLeads = async (params) => {
   return result;
 };
 
-// 👉 Get by ID
+// 👉 Get SaleLead by ID
 
 exports.getSaleLeadById = async (params) => {
   var result = new DataResponse();
@@ -103,7 +172,7 @@ exports.getSaleLeadById = async (params) => {
   return result;
 };
 
-// 👉 Insert/Post
+// 👉 Insert/Post SaleLead
 
 exports.insertSaleLead = async (params) => {
   var result = new DataResponse();

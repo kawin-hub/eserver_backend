@@ -28,6 +28,10 @@ let saleQuotationSchema = new Schema(
       taxId: { type: String },
       lineId: { type: String },
     },
+    customerLevel: {
+      customerLevel_id: { type: ObjectId, ref: "SaleCustomerLevels" },
+      level: { type: String },
+    },
     products: [
       {
         productModel_id: { type: ObjectId, ref: "ProductModel" },

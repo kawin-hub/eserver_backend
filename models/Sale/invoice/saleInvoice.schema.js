@@ -1,7 +1,7 @@
 const { Schema, model, ObjectId } = require("mongoose");
-const collection = "Invoices";
+const collection = "SaleInvoices";
 
-let invoiceSchema = new Schema(
+let saleInvoiceSchema = new Schema(
   {
     // ข้อมูลที่ต้องเพิ่มใน Invoice
     documentNumber: {
@@ -32,13 +32,12 @@ let invoiceSchema = new Schema(
       enum: ["paid", "unpaid"],
       default: "unpaid",
     },
-    //ข้อมูลที่ฝากไว้ในหน้า Invoice ก่อนเพราะยังไม่มี Schema ของตัวแม่รองรับ (Project ยังไม่ได้ถูกสร้าง)
+    // ข้อมูลที่ฝากไว้ในหน้า Invoice ก่อนเพราะยังไม่มี Schema ของตัวแม่รองรับ (Project ยังไม่ได้ถูกสร้าง)
     convertInfo: {
-      customerType: {
-        type: String,
-        enum: ["project", "dealer", "general"],
-        default: "general",
-        required: true,
+      // ต้องดึงมาแบบนี้ใช่ไหม
+      customerLevel: {
+        customerLevel_id: { type: ObjectId, ref: "SaleCustomerLevels" },
+        level: { type: String },
       },
       convertType: {
         type: String,
@@ -76,10 +75,10 @@ let invoiceSchema = new Schema(
         },
       },
     },
-    // ข้อมูลที่ดึงมาจากแหล่งอื่นตอน Convert จะอยู่ในหน้า Invoice
-    // saleQuotation ดึงมาอย่างเดียว ไม่เก็บ
+    // ดึง saleQuotation มาอย่างเดียว ไม่เก็บ
     quotation_id: { type: ObjectId, ref: "SaleQuotations", required: true },
     // ส่วนนี้ทั้งหมดดึงมาและเก็บ
+    // ข้อมูลในใบ Invoice ตรง "ถึง"
     customerInfo: {
       lead_id: { type: ObjectId, ref: "SaleLeads" },
       firstname: { type: String },
@@ -90,6 +89,7 @@ let invoiceSchema = new Schema(
       address: { type: String },
       taxId: { type: String },
     },
+    // ข้อมูลสินค้าในใบ Invoice
     products: [
       {
         productModel_id: { type: ObjectId, ref: "ProductModel" },
@@ -101,6 +101,18 @@ let invoiceSchema = new Schema(
         discountBaht: { type: Number },
       },
     ],
+    // Documents from Store
+    documentsFromAccount: [
+      {
+        name: String,
+        path: String,
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+    //สร้างและอัปเดตโดยใคร
     createdBy: {
       user_id: { type: ObjectId, ref: "Users" },
       firstname: { type: String },
@@ -119,4 +131,4 @@ let invoiceSchema = new Schema(
   }
 );
 
-module.exports = model(collection, invoiceSchema);
+module.exports = model(collection, saleInvoiceSchema);

@@ -25,7 +25,9 @@ exports.getAllInventoryMoves = async (params) => {
       createdAt: 1,
     })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .sort({ _id: -1 })
+      .lean();
 
     result.doSuccess(1);
 
