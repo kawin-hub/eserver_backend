@@ -102,7 +102,17 @@ let saleInvoiceSchema = new Schema(
       },
     ],
     // Documents from Store
-    documentsFromAccount: [
+    paymentDocuments: [
+      {
+        name: String,
+        path: String,
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+    paymentImages: [
       {
         name: String,
         path: String,

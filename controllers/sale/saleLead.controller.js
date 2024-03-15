@@ -159,3 +159,74 @@ exports.insertSaleLead = async (req, res) => {
   }
   res.json(result);
 };
+
+exports.updateSaleLead = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    const validation = new Validator(req.body, {
+      _id: "required",
+    });
+
+    const matched = await validation.check();
+
+    if (matched) {
+      const {
+        _id,
+        companyName,
+        firstname,
+        contactNumber,
+        level,
+        customerLevel_id,
+        address,
+      } = req.body;
+
+      var customerLevelInfo = null;
+
+      if (typeof customerLevel_id !== "undefined") {
+        //check DB
+        customerLevelInfo = await SaleModel.lead.getCustomerLevelById({
+          _id: customerLevel_id,
+        });
+      }
+
+      //update
+      const updateConditions = {
+        _id: _id,
+      };
+      var params = {};
+      if (companyName) params.companyName = companyName;
+      if (firstname) params.firstname = firstname;
+      if (level) params.level = level;
+      if (contactNumber) params.contactNumber = contactNumber;
+      if (address) params.address = address;
+      if (customerLevelInfo.data) {
+        params.customerLevel = {
+          customerLevel_id: customerLevelInfo.data._id,
+        };
+      }
+
+      result = await SaleModel.lead.updateSaleLead(updateConditions, params);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+
+  res.json(result);
+};
+
+exports.deleteSaleLead = async (req, res) => {
+  const { _id } = req.body;
+  try {
+    var result = new DataResponse();
+    if (typeof _id != "undefined") {
+      result = await SaleModel.lead.deleteSaleLead({ _id: _id });
+    } else {
+      result.doError(2, "_id is required.");
+    }
+  } catch (e) {
+    console.log(e);
+  }
+
+  res.json(result);
+};

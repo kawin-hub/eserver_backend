@@ -149,7 +149,6 @@ exports.getAllSaleLeads = async (params) => {
 
   return result;
 };
-
 // 👉 Get SaleLead by ID
 
 exports.getSaleLeadById = async (params) => {
@@ -187,6 +186,36 @@ exports.insertSaleLead = async (params) => {
       : result.doSuccess(1);
   } catch (e) {
     console.log(e);
+  }
+
+  return result;
+};
+
+exports.updateSaleLead = async (conditions, params) => {
+  var result = new DataResponse();
+  try {
+    result.data = await SaleLead.updateOne(conditions, params);
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e);
+    result.doError(0);
+  }
+
+  return result;
+};
+
+exports.deleteSaleLead = async (params) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await SaleLead.deleteOne(params);
+    result.data.deletedCount == 0
+      ? result.doSuccess(3, "this _id isn't allowed to be removed!")
+      : result.doSuccess(1);
+  } catch (e) {
+    result.doError();
   }
 
   return result;
