@@ -1,9 +1,10 @@
 //Quotation model
 let SaleModel = require("../../models/Sale");
 let ProductModel = require("../../models/Products");
-let { general } = require("../../middleware");
+let { upload, general } = require("../../middleware");
 const { DataResponse } = require("../../models/general_data.model");
 const { Validator } = require("node-input-validator");
+const fs = require("fs");
 
 // 👉 Insert/Post
 
@@ -197,5 +198,113 @@ exports.insertSaleInvoice = async (req, res) => {
   } catch (error) {
     console.log(error);
   }
+  res.json(result);
+};
+
+exports.updateSaleInvoice = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    var paymentImagesName = "paymentImages";
+    var paymentDocumentsName = "paymentDocuments";
+
+    var resUpload = await upload.uploadFiles(req, res, [
+      {
+        name: paymentImagesName,
+        path: "./assets/images/account/invoices",
+        maxCount: 5,
+        allowType: ["jpeg", "jpg", "png"],
+      },
+      {
+        name: paymentDocumentsName,
+        path: "./assets/documents/account/invoices",
+        maxCount: 5,
+        allowType: ["pdf"],
+      },
+    ]);
+
+    const validation = new Validator(req.body, {
+      _id: "required",
+    });
+
+    const matched = await validation.check();
+
+    if (matched) {
+      var { _id, paymentStatus, paymentDocumentsRemove, paymentImagesRemove } =
+        req.body;
+
+      //Update
+
+      const conditions = { _id: _id };
+      var params = {};
+
+      var paymentDocuments = [];
+      var paymentImages = [];
+      for (let i = 0; i < req.files[paymentDocumentsName]?.length; i++) {
+        paymentDocuments[i] = {
+          name: req.files[paymentDocumentsName][i].originalname,
+          path: req.files[paymentDocumentsName][i].path,
+        };
+      }
+
+      for (let i = 0; i < req.files[paymentImagesName]?.length; i++) {
+        paymentImages[i] = {
+          name: req.files[paymentImagesName][i].originalname,
+          path: req.files[paymentImagesName][i].path,
+        };
+      }
+
+      params["$set"] = {}; // replace
+      params["$push"] = {}; // add new
+      params["$pull"] = {}; // remove
+
+      if (paymentStatus) params["$set"].paymentStatus = paymentStatus;
+
+      params["$push"] = {
+        paymentDocuments: { $each: paymentDocuments },
+        paymentImages: { $each: paymentImages },
+      };
+
+      result = await SaleModel.invoice.updateInvoice(conditions, params);
+
+      //Delete
+
+      if (typeof paymentDocumentsRemove == "undefined")
+        paymentDocumentsRemove = [];
+      if (typeof paymentImagesRemove == "undefined") paymentImagesRemove = [];
+
+      if (typeof paymentDocumentsRemove === "string") {
+        paymentDocumentsRemove = [paymentDocumentsRemove];
+      }
+
+      if (typeof paymentImagesRemove === "string") {
+        paymentImagesRemove = [paymentImagesRemove];
+      }
+
+      params = {};
+      params["$pull"] = {
+        paymentDocuments: { _id: { $in: paymentDocumentsRemove } },
+        paymentImages: { _id: { $in: paymentImagesRemove } },
+      };
+
+      result = await SaleModel.invoice.updateInvoice(conditions, params);
+    }
+
+    if (result.code != 1) {
+      for (let i = 0; i < req.files[paymentImagesName]?.length; i++) {
+        fs.rmSync(req.files[paymentImagesName][i].path, {
+          force: true,
+        });
+      }
+      for (let i = 0; i < req.files[paymentDocumentsName]?.length; i++) {
+        fs.rmSync(req.files[paymentDocumentsName][i].path, {
+          force: true,
+        });
+      }
+    }
+  } catch (error) {
+    console.log(error);
+  }
+
   res.json(result);
 };

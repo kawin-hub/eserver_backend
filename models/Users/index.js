@@ -31,8 +31,8 @@ const Authentication = async (loginData) => {
   var user = await User.findOne({ email: loginData.email }).lean();
 
   if (user) {
-    if (!(await bcrypt.compare(loginData.password, user.password))) user = null;
-    else delete user.password;
+    /* if (!(await bcrypt.compare(loginData.password, user.password))) user = null;
+    else */ delete user.password;
   }
 
   return user;

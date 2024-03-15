@@ -45,3 +45,18 @@ exports.getSaleInvoiceByConditions = async (params, projection = {}) => {
 
   return result;
 };
+
+exports.updateInvoice = async (conditions, params) => {
+  var result = new DataResponse();
+  try {
+    result.data = await SaleInvoice.updateOne(conditions, params);
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e);
+    result.doError(0);
+  }
+
+  return result;
+};
