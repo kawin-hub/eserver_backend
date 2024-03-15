@@ -160,6 +160,7 @@ exports.insertSaleQuotation = async (req, res) => {
             issuedDate: issuedDate,
             dueDate: dueDate,
             customerInfo: LeadResult.data,
+            customerLevel: LeadResult.data.customerLevel,
             products: productResult.data,
             paymentMethod:
               typeof paymentMethod != "undefined" ? paymentMethod : "",

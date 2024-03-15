@@ -135,7 +135,10 @@ exports.insertSaleLead = async (req, res) => {
           contactNumber: contactNumber,
           lineId: typeof lineId != "undefined" ? lineId : "",
           level: level,
-          customerLevel: CustomerLevelResult.data,
+          customerLevel: {
+            customerLevel_id: CustomerLevelResult.data._id,
+            level: CustomerLevelResult.data.level,
+          },
           tag: typeof tag != "undefined" ? tag : "",
           createdBy: {
             user_id: userData._id,

@@ -36,6 +36,7 @@ let inventoryLotSchema = new Schema(
       type: String,
       default: "in progress",
     },
+    // Documents for Purchase
     documents: [
       {
         name: String,
@@ -45,8 +46,8 @@ let inventoryLotSchema = new Schema(
           default: Date.now,
         },
       },
-      // Documents for Purchase
     ],
+    // Documents from Store
     documentsFromStore: [
       {
         name: String,
@@ -56,7 +57,6 @@ let inventoryLotSchema = new Schema(
           default: Date.now,
         },
       },
-      // Documents for Store
     ],
     createdBy: {
       user_id: { type: ObjectId, ref: "Users" },

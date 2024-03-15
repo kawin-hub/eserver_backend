@@ -16,7 +16,6 @@ exports.insertSaleInvoice = async (req, res) => {
       issuedDate: "required|dateFormat:YYYY-MM-DD",
       dueDate: "required|dateFormat:YYYY-MM-DD",
       baht: "required|numeric",
-      customerType: "required|in:project,dealer,general",
       convertType: "required|in:install,delivery",
       quotation_id: "required",
       estimateDate: "dateFormat:YYYY-MM-DD", // เพิ่มการตรวจสอบรูปแบบของ estimateDate
@@ -33,7 +32,6 @@ exports.insertSaleInvoice = async (req, res) => {
         issuedDate,
         dueDate,
         baht,
-        customerType,
         convertType,
         quotation_id,
         lead_id,
@@ -64,7 +62,6 @@ exports.insertSaleInvoice = async (req, res) => {
           }
         ),
       ]);
-
       if (quotationResult.code == 1 && convertInfoResult.code == 1) {
         //ลบ _id ออกจาก Product ที่ดึงมาจาก QT และให้แสดงส่วนที่เหลือ
         const products = quotationResult.data.products.map((item) => {
@@ -153,7 +150,7 @@ exports.insertSaleInvoice = async (req, res) => {
               percent: invoiceInfo.percent,
             },
             convertInfo: {
-              customerType: customerType,
+              customerLevel: quotationResult.data.customerLevel,
               convertType: convertType,
             },
             quotation_id: quotation_id,

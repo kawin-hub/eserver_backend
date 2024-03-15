@@ -159,7 +159,12 @@ exports.insertInventoryLot = async (req, res) => {
               status: status,
               quantity: quantities,
               warranty: warranties,
-              accountExpense: expenseResult.data,
+              accountExpense: {
+                expense_id: expenseResult.data._id,
+                documentNumber: expenseResult.data.documentNumber,
+                category: expenseResult.data.category,
+                type: expenseResult.data.type,
+              },
               productModel: productResult.data,
               documents: documents,
               createdBy: {
