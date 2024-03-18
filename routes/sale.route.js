@@ -28,5 +28,6 @@ router.post("/quotations", verifyToken, saleQuotation.insertSaleQuotation);
 
 router.post("/invoices", /* verifyToken, */ saleInvoice.insertSaleInvoice);
 router.put("/invoices", verifyToken, saleInvoice.updateSaleInvoice);
+router.delete("/invoices", verifyToken, saleInvoice.deleteSaleInvoice);
 
 module.exports = router;

@@ -6,7 +6,7 @@ const { DataResponse } = require("../../models/general_data.model");
 const { Validator } = require("node-input-validator");
 const fs = require("fs");
 
-// 👉 Insert/Post
+// 👉 Post/Insert
 
 exports.insertSaleInvoice = async (req, res) => {
   var result = new DataResponse();
@@ -57,12 +57,13 @@ exports.insertSaleInvoice = async (req, res) => {
             branch: 1,
             address: 1,
             googleMap: 1,
-            leadFirstname: 1,
-            leadLastname: 1,
-            leadContactNumber: 1,
+            firstname: 1,
+            lastname: 1,
+            ContactNumber: 1,
           }
         ),
       ]);
+
       if (quotationResult.code == 1 && convertInfoResult.code == 1) {
         //ลบ _id ออกจาก Product ที่ดึงมาจาก QT และให้แสดงส่วนที่เหลือ
         const products = quotationResult.data.products.map((item) => {
@@ -155,7 +156,7 @@ exports.insertSaleInvoice = async (req, res) => {
               convertType: convertType,
             },
             quotation_id: quotation_id,
-            customerInfo: quotationResult.data.saleLead,
+            customerInfo: quotationResult.data.customerInfo,
             products: products,
           };
 
@@ -163,13 +164,31 @@ exports.insertSaleInvoice = async (req, res) => {
             insertSaleParam.convertInfo["installationInfo"] = {
               estimateDate:
                 typeof estimateDate != "undefined" ? estimateDate : null,
-              address: convertInfoResult.data,
+              address: {
+                lead_id: convertInfoResult.data._id,
+                firstname: convertInfoResult.data.firstname,
+                lastname: convertInfoResult.data.lastname,
+                contactNumber: convertInfoResult.data.contactNumber,
+                companyName: convertInfoResult.data.companyName,
+                branch: convertInfoResult.data.branch,
+                address: convertInfoResult.data.address,
+                googleMap: convertInfoResult.data.googleMap,
+              },
             };
           } else if (convertType == "delivery") {
             insertSaleParam.convertInfo["deliveryInfo"] = {
               deliveryDate:
                 typeof deliveryDate != "undefined" ? deliveryDate : null,
-              address: convertInfoResult.data,
+              address: {
+                lead_id: convertInfoResult.data._id,
+                firstname: convertInfoResult.data.firstname,
+                lastname: convertInfoResult.data.lastname,
+                contactNumber: convertInfoResult.data.contactNumber,
+                companyName: convertInfoResult.data.companyName,
+                branch: convertInfoResult.data.branch,
+                address: convertInfoResult.data.address,
+                googleMap: convertInfoResult.data.googleMap,
+              },
             };
           }
 
@@ -201,6 +220,8 @@ exports.insertSaleInvoice = async (req, res) => {
   res.json(result);
 };
 
+// 👉 Put/Update
+
 exports.updateSaleInvoice = async (req, res) => {
   var result = new DataResponse();
 
@@ -225,18 +246,53 @@ exports.updateSaleInvoice = async (req, res) => {
 
     const validation = new Validator(req.body, {
       _id: "required",
+      issuedDate: "dateFormat:YYYY-MM-DD",
+      dueDate: "dateFormat:YYYY-MM-DD",
+      baht: "numeric",
+      convertType: "in:install,delivery",
+      estimateDate: "dateFormat:YYYY-MM-DD",
+      deliveryDate: "dateFormat:YYYY-MM-DD",
     });
 
     const matched = await validation.check();
 
     if (matched) {
-      var { _id, paymentStatus, paymentDocumentsRemove, paymentImagesRemove } =
-        req.body;
+      var {
+        _id,
+        quotation_id,
+        lead_id,
+        paymentStatus,
+        paymentDocumentsRemove,
+        paymentImagesRemove,
+      } = req.body;
+
+      var quotationInfo = null;
+      var leadInfo = null;
+
+      if (typeof quotation_id !== "undefined") {
+        //check DB
+        quotationInfo = await SaleModel.quotation.getSaleQuotationById({
+          _id: quotation_id,
+        }); // ใน _id ที่ส่งมามี _id ของ ref  ไหม
+      }
+      if (typeof lead_id !== "undefined") {
+        leadInfo = await SaleModel.lead.getSaleLeadById({ _id: lead_id });
+      }
 
       //Update
 
       const conditions = { _id: _id };
       var params = {};
+      if (quotationInfo.data) {
+        params.quotation = {
+          quotation_id: quotationInfo.data._id,
+        };
+      }
+      if (leadInfo && leadInfo.data) {
+        params.lead = {
+          lead_id: leadInfo.data._id,
+        };
+      }
 
       var paymentDocuments = [];
       var paymentImages = [];
@@ -333,6 +389,27 @@ exports.updateSaleInvoice = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+  }
+
+  res.json(result);
+};
+
+// 👉 Delete
+
+exports.deleteSaleInvoice = async (req, res) => {
+  const { _id } = req.body;
+  try {
+    var result = new DataResponse();
+    if (typeof _id != "undefined") {
+      result = await SaleModel.invoice.deleteSaleInvoice({
+        _id: _id,
+        paymentStatus: "unpaid",
+      });
+    } else {
+      result.doError(2, "_id is required.");
+    }
+  } catch (e) {
+    console.log(e);
   }
 
   res.json(result);

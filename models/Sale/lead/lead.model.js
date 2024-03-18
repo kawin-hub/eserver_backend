@@ -191,6 +191,8 @@ exports.insertSaleLead = async (params) => {
   return result;
 };
 
+// 👉 Put/Update
+
 exports.updateSaleLead = async (conditions, params) => {
   var result = new DataResponse();
   try {
@@ -205,6 +207,8 @@ exports.updateSaleLead = async (conditions, params) => {
 
   return result;
 };
+
+// 👉 Delete
 
 exports.deleteSaleLead = async (params) => {
   var result = new DataResponse();

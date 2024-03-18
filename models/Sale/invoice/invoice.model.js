@@ -46,6 +46,8 @@ exports.getSaleInvoiceByConditions = async (params, projection = {}) => {
   return result;
 };
 
+// 👉 Put/Update
+
 exports.updateInvoice = async (conditions, params, options = {}) => {
   var result = new DataResponse();
   try {
@@ -60,6 +62,23 @@ exports.updateInvoice = async (conditions, params, options = {}) => {
   } catch (e) {
     console.log(e);
     result.doError(0);
+  }
+
+  return result;
+};
+
+// 👉 Delete
+
+exports.deleteSaleInvoice = async (params) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await SaleInvoice.deleteOne(params);
+    result.data.deletedCount == 0
+      ? result.doSuccess(3, "this _id isn't allowed to be removed!")
+      : result.doSuccess(1);
+  } catch (e) {
+    result.doError();
   }
 
   return result;

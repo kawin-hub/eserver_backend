@@ -40,7 +40,7 @@ exports.getAccountExpenses = async (req, res) => {
   res.json(result);
 };
 
-// 👉 Insert/Post
+// 👉 Post/Insert
 
 exports.insertAccountExpense = async (req, res) => {
   var result = new DataResponse();

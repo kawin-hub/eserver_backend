@@ -40,7 +40,7 @@ exports.getInventoryMoves = async (req, res) => {
   res.json(result);
 };
 
-// 👉 Insert/Post
+// 👉 Post/Insert
 
 exports.insertInventoryMove = async (req, res) => {
   var result = new DataResponse();

@@ -74,16 +74,13 @@ exports.getSaleLeads = async (req, res) => {
   res.json(result);
 };
 
-// 👉 Insert/Post
+// 👉 Post/Insert
 
 exports.insertSaleLead = async (req, res) => {
   var result = new DataResponse();
 
   try {
     const validation = new Validator(req.body, {
-      companyName: "required",
-      firstname: "required",
-      contactNumber: "required",
       level: "required|in:low prudential,middle prudential,high prudential",
       customerLevel_id: "required",
     });
@@ -91,22 +88,7 @@ exports.insertSaleLead = async (req, res) => {
     const matched = await validation.check();
 
     if (matched) {
-      const {
-        companyName,
-        firstname,
-        contactNumber,
-        level,
-        customerLevel_id,
-        taxId,
-        branch,
-        address,
-        googleMap,
-        companyEmail,
-        companyContactNumber,
-        lastname,
-        lineId,
-        tag,
-      } = req.body;
+      const { lineId, level, customerLevel_id, tag, companyInfo } = req.body;
 
       const userData = req.body.authData.userInfo.userData;
 
@@ -120,19 +102,6 @@ exports.insertSaleLead = async (req, res) => {
 
       if (CustomerLevelResult.code == 1) {
         var insertLeadparams = {
-          companyName: companyName,
-          taxId: typeof taxId != "undefined" ? taxId : "",
-          branch: typeof branch != "undefined" ? branch : "",
-          address: typeof address != "undefined" ? address : "",
-          googleMap: typeof googleMap != "undefined" ? googleMap : "",
-          companyEmail: typeof companyEmail != "undefined" ? companyEmail : "",
-          companyContactNumber:
-            typeof companyContactNumber != "undefined"
-              ? companyContactNumber
-              : "",
-          firstname: firstname,
-          lastname: typeof lastname != "undefined" ? lastname : "",
-          contactNumber: contactNumber,
           lineId: typeof lineId != "undefined" ? lineId : "",
           level: level,
           customerLevel: {
@@ -140,6 +109,7 @@ exports.insertSaleLead = async (req, res) => {
             level: CustomerLevelResult.data.level,
           },
           tag: typeof tag != "undefined" ? tag : "",
+          companyInfo: Array.isArray(companyInfo) ? companyInfo : [companyInfo], // แปลงเป็นอาร์เรย์หากไม่ใช่
           createdBy: {
             user_id: userData._id,
             firstname: userData.firstname,
@@ -160,12 +130,15 @@ exports.insertSaleLead = async (req, res) => {
   res.json(result);
 };
 
+// 👉 Put/Update
+
 exports.updateSaleLead = async (req, res) => {
   var result = new DataResponse();
 
   try {
     const validation = new Validator(req.body, {
       _id: "required",
+      level: "in:low prudential,middle prudential,high prudential",
     });
 
     const matched = await validation.check();
@@ -178,7 +151,15 @@ exports.updateSaleLead = async (req, res) => {
         contactNumber,
         level,
         customerLevel_id,
+        taxId,
+        branch,
         address,
+        googleMap,
+        companyEmail,
+        companyContactNumber,
+        lastname,
+        lineId,
+        tag,
       } = req.body;
 
       var customerLevelInfo = null;
@@ -186,7 +167,7 @@ exports.updateSaleLead = async (req, res) => {
       if (typeof customerLevel_id !== "undefined") {
         //check DB
         customerLevelInfo = await SaleModel.lead.getCustomerLevelById({
-          _id: customerLevel_id,
+          _id: customerLevel_id, // ใน _id ที่ส่งมามี _id ของ ref  ไหม
         });
       }
 
@@ -203,8 +184,17 @@ exports.updateSaleLead = async (req, res) => {
       if (customerLevelInfo.data) {
         params.customerLevel = {
           customerLevel_id: customerLevelInfo.data._id,
+          level: customerLevelInfo.data.level,
         };
       }
+      if (taxId) params.address = taxId;
+      if (branch) params.address = branch;
+      if (googleMap) params.address = googleMap;
+      if (companyEmail) params.address = companyEmail;
+      if (companyContactNumber) params.address = companyContactNumber;
+      if (lastname) params.address = lastname;
+      if (lineId) params.address = lineId;
+      if (tag) params.address = tag;
 
       result = await SaleModel.lead.updateSaleLead(updateConditions, params);
     }
@@ -214,6 +204,8 @@ exports.updateSaleLead = async (req, res) => {
 
   res.json(result);
 };
+
+// 👉 Delete
 
 exports.deleteSaleLead = async (req, res) => {
   const { _id } = req.body;

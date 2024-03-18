@@ -5,7 +5,7 @@ let ProductModel = require("../../models/Products");
 const { DataResponse } = require("../../models/general_data.model");
 const { Validator } = require("node-input-validator");
 
-// 👉 Insert/Post
+// 👉 Post/Insert
 
 exports.insertProductSerial = async (req, res) => {
   var result = new DataResponse();
