@@ -36,6 +36,7 @@ exports.insertSaleInvoice = async (req, res) => {
         convertType,
         quotation_id,
         lead_id,
+        customerInfo_id,
         estimateDate,
         deliveryDate,
       } = req.body;
@@ -71,130 +72,136 @@ exports.insertSaleInvoice = async (req, res) => {
           return rest;
         });
 
-        // สร้างฟังก์ชันสำหรับคำนวณเปอร์เซ็นต์และจำนวนเงิน
-        async function checkInvoiceTotalPay(params) {
-          // ดึงยอดรวมของใบเสนอราคา
-          const totalPrice = quotationResult.data.summary.totalPrice;
+        const companyInfo = convertInfoResult.data.companyInfo.find(
+          (info) => info._id.toString() === customerInfo_id
+        );
 
-          // กำหนดตัวแปรเริ่มต้น
-          var result = [];
-          var bahtToShow = 0;
-          var percentToShow = 0;
+        if (companyInfo) {
+          // สร้างฟังก์ชันสำหรับคำนวณเปอร์เซ็นต์และจำนวนเงิน
+          async function checkInvoiceTotalPay(params) {
+            // ดึงยอดรวมของใบเสนอราคา
+            const totalPrice = quotationResult.data.summary.totalPrice;
 
-          // ตรวจสอบว่ามีการกรอก baht มาไหม
-          if (params.baht !== undefined && params.baht > 0) {
-            // กรณีกรอก baht เท่านั้น
-            const bahtValue = parseFloat(params.baht);
+            // กำหนดตัวแปรเริ่มต้น
+            var result = [];
+            var bahtToShow = 0;
+            var percentToShow = 0;
 
-            // คำนวณเปอร์เซ็นต์และจำนวนเงินจาก baht
-            result[0] = (bahtValue * 100) / totalPrice; // คำนวณ percent
-            result[1] = 100 - result[0]; // คำนวณ percent ของจำนวนที่เหลือ
-            result[2] = bahtValue; // ยอดเงินที่จ่าย
+            // ตรวจสอบว่ามีการกรอก baht มาไหม
+            if (params.baht !== undefined && params.baht > 0) {
+              // กรณีกรอก baht เท่านั้น
+              const bahtValue = parseFloat(params.baht);
 
-            result[2] = totalPrice - result[2]; // คำนวณยอดเงินที่เหลือ
-          } else if (
-            params.percent !== undefined &&
-            params.percent.length > 0
-          ) {
-            // กรณีกรอก percent เท่านั้น
-            const percentValue = parseFloat(params.percent[0]);
+              // คำนวณเปอร์เซ็นต์และจำนวนเงินจาก baht
+              result[0] = (bahtValue * 100) / totalPrice; // คำนวณ percent
+              result[1] = 100 - result[0]; // คำนวณ percent ของจำนวนที่เหลือ
+              result[2] = bahtValue; // ยอดเงินที่จ่าย
 
-            result[0] = percentValue; // percent ที่ถูกกรอก
-            result[1] = 100 - percentValue; // percent ของจำนวนที่เหลือ
-            result[2] = (percentValue * totalPrice) / 100; // ยอดเงินที่จ่าย
+              result[2] = totalPrice - result[2]; // คำนวณยอดเงินที่เหลือ
+            } else if (
+              params.percent !== undefined &&
+              params.percent.length > 0
+            ) {
+              // กรณีกรอก percent เท่านั้น
+              const percentValue = parseFloat(params.percent[0]);
 
-            if (result[2] > totalPrice) {
-              result[2] = "The amount is over the total price!";
+              result[0] = percentValue; // percent ที่ถูกกรอก
+              result[1] = 100 - percentValue; // percent ของจำนวนที่เหลือ
+              result[2] = (percentValue * totalPrice) / 100; // ยอดเงินที่จ่าย
+
+              if (result[2] > totalPrice) {
+                result[2] = "The amount is over the total price!";
+              }
             }
-          }
-          bahtToShow = result[2];
-          percentToShow = result[0];
+            bahtToShow = result[2];
+            percentToShow = result[0];
 
-          const invoiceInfo =
-            await SaleModel.invoice.getSaleInvoiceByConditions(
-              { quotation_id: quotation_id },
-              { _id: 1, quotation_id: 1, amountRecieved: 1 }
+            const invoiceInfo =
+              await SaleModel.invoice.getSaleInvoiceByConditions(
+                { quotation_id: quotation_id },
+                { _id: 1, quotation_id: 1, amountRecieved: 1 }
+              );
+
+            var invoiceCreatedTotal = 0;
+
+            for (var i = 0; i < invoiceInfo.data.length; i++) {
+              invoiceCreatedTotal += invoiceInfo.data[i].amountRecieved.baht;
+            }
+
+            var totalInvoiceNew = invoiceCreatedTotal + params.baht;
+
+            return {
+              status:
+                totalInvoiceNew > quotationResult.data.summary.totalPrice
+                  ? false
+                  : true,
+              invoiceTotalOld: invoiceCreatedTotal,
+              invoiceTotalNew: totalInvoiceNew,
+              invoiceTotalpay: quotationResult.data.summary.totalPrice,
+              baht: params.baht,
+              percent: isNaN(percentToShow) ? 0 : percentToShow,
+            };
+          }
+          // ตัวอย่างการใช้งาน
+          const invoiceInfo = await checkInvoiceTotalPay({
+            baht: baht,
+            percent: [],
+          });
+
+          if (invoiceInfo.status) {
+            var insertSaleParam = {
+              documentNumber: documentNumber,
+              issuedDate: issuedDate,
+              dueDate: dueDate,
+              amountRecieved: {
+                baht: baht,
+                percent: invoiceInfo.percent,
+              },
+              convertInfo: {
+                customerLevel: quotationResult.data.customerLevel,
+                convertType: convertType,
+              },
+              quotation_id: quotation_id,
+              customerInfo: quotationResult.data.customerInfo,
+              products: products,
+            };
+
+            if (convertType == "install") {
+              insertSaleParam.convertInfo["installationInfo"] = {
+                estimateDate:
+                  typeof estimateDate != "undefined" ? estimateDate : null,
+                address: {
+                  companyInfo_id: companyInfo._id,
+                  companyName: companyInfo.companyName,
+                  address: companyInfo.address,
+                  googleMap: companyInfo.googleMap,
+                  firstname: companyInfo.firstname,
+                  lastname: companyInfo.lastname,
+                  contactNumber: companyInfo.contactNumber,
+                },
+              };
+            } else if (convertType == "delivery") {
+              insertSaleParam.convertInfo["deliveryInfo"] = {
+                deliveryDate:
+                  typeof deliveryDate != "undefined" ? deliveryDate : null,
+                address: {
+                  companyInfo_id: companyInfo._id,
+                  companyName: companyInfo.companyName,
+                  address: companyInfo.address,
+                  googleMap: companyInfo.googleMap,
+                  firstname: companyInfo.firstname,
+                  lastname: companyInfo.lastname,
+                  contactNumber: companyInfo.contactNumber,
+                },
+              };
+            }
+
+            var result = await SaleModel.invoice.insertSaleInvoice(
+              insertSaleParam
             );
-
-          var invoiceCreatedTotal = 0;
-
-          for (var i = 0; i < invoiceInfo.data.length; i++) {
-            invoiceCreatedTotal += invoiceInfo.data[i].amountRecieved.baht;
+          } else {
+            result.doError(5, "customerInfo_id is not found!");
           }
-
-          var totalInvoiceNew = invoiceCreatedTotal + params.baht;
-
-          return {
-            status:
-              totalInvoiceNew > quotationResult.data.summary.totalPrice
-                ? false
-                : true,
-            invoiceTotalOld: invoiceCreatedTotal,
-            invoiceTotalNew: totalInvoiceNew,
-            invoiceTotalpay: quotationResult.data.summary.totalPrice,
-            baht: params.baht,
-            percent: isNaN(percentToShow) ? 0 : percentToShow,
-          };
-        }
-        // ตัวอย่างการใช้งาน
-        const invoiceInfo = await checkInvoiceTotalPay({
-          baht: baht,
-          percent: [],
-        });
-
-        if (invoiceInfo.status) {
-          var insertSaleParam = {
-            documentNumber: documentNumber,
-            issuedDate: issuedDate,
-            dueDate: dueDate,
-            amountRecieved: {
-              baht: baht,
-              percent: invoiceInfo.percent,
-            },
-            convertInfo: {
-              customerLevel: quotationResult.data.customerLevel,
-              convertType: convertType,
-            },
-            quotation_id: quotation_id,
-            customerInfo: quotationResult.data.customerInfo,
-            products: products,
-          };
-
-          if (convertType == "install") {
-            insertSaleParam.convertInfo["installationInfo"] = {
-              estimateDate:
-                typeof estimateDate != "undefined" ? estimateDate : null,
-              address: {
-                lead_id: convertInfoResult.data._id,
-                firstname: convertInfoResult.data.firstname,
-                lastname: convertInfoResult.data.lastname,
-                contactNumber: convertInfoResult.data.contactNumber,
-                companyName: convertInfoResult.data.companyName,
-                branch: convertInfoResult.data.branch,
-                address: convertInfoResult.data.address,
-                googleMap: convertInfoResult.data.googleMap,
-              },
-            };
-          } else if (convertType == "delivery") {
-            insertSaleParam.convertInfo["deliveryInfo"] = {
-              deliveryDate:
-                typeof deliveryDate != "undefined" ? deliveryDate : null,
-              address: {
-                lead_id: convertInfoResult.data._id,
-                firstname: convertInfoResult.data.firstname,
-                lastname: convertInfoResult.data.lastname,
-                contactNumber: convertInfoResult.data.contactNumber,
-                companyName: convertInfoResult.data.companyName,
-                branch: convertInfoResult.data.branch,
-                address: convertInfoResult.data.address,
-                googleMap: convertInfoResult.data.googleMap,
-              },
-            };
-          }
-
-          var result = await SaleModel.invoice.insertSaleInvoice(
-            insertSaleParam
-          );
         } else {
           result.doError(7, "Payment of this invoice is over quotation total!");
         }
@@ -207,7 +214,7 @@ exports.insertSaleInvoice = async (req, res) => {
           errorInArray[errorInArray.length] = "lead_id is not found!";
 
         if (quotationResult.code != 1)
-          errorInArray[errorInArray.length] = "deliveryInfo_id is not found!";
+          errorInArray[errorInArray.length] = "quotation_id is not found!";
 
         result.doError(5, errorInArray);
       }
@@ -320,58 +327,66 @@ exports.updateSaleInvoice = async (req, res) => {
         paymentImages: { $each: paymentImages },
       };
 
-      result = await SaleModel.invoice.updateInvoice(conditions, params);
-
-      //Delete
-
-      if (typeof paymentDocumentsRemove == "undefined")
-        paymentDocumentsRemove = [];
-      if (typeof paymentImagesRemove == "undefined") paymentImagesRemove = [];
-
-      if (typeof paymentDocumentsRemove === "string") {
-        paymentDocumentsRemove = [paymentDocumentsRemove];
-      }
-
-      if (typeof paymentImagesRemove === "string") {
-        paymentImagesRemove = [paymentImagesRemove];
-      }
-
-      params = {};
-      params["$pull"] = {
-        paymentDocuments: { _id: { $in: paymentDocumentsRemove } },
-        paymentImages: { _id: { $in: paymentImagesRemove } },
-      };
-      var updateOptions = {
-        returnOriginal: true,
-      };
-
-      result = await SaleModel.invoice.updateInvoice(
+      var updateResult = await SaleModel.invoice.updateInvoice(
         conditions,
-        params,
-        updateOptions
+        params
       );
 
-      if (result.code == 1) {
-        const filteredPaymentDocumentsToDelete =
-          result.data.paymentDocuments.filter((item) =>
-            paymentDocumentsRemove.includes(item._id.toString())
-          );
+      if (updateResult.code == 1) {
+        //Delete
 
-        for (let i = 0; i < filteredPaymentDocumentsToDelete?.length; i++) {
-          fs.rmSync(filteredPaymentDocumentsToDelete[i].path, {
-            force: true,
-          });
+        if (typeof paymentDocumentsRemove == "undefined")
+          paymentDocumentsRemove = [];
+        if (typeof paymentImagesRemove == "undefined") paymentImagesRemove = [];
+
+        if (typeof paymentDocumentsRemove === "string") {
+          paymentDocumentsRemove = [paymentDocumentsRemove];
         }
 
-        const filteredPaymentImagesToDelete = result.data.paymentImages.filter(
-          (item) => paymentImagesRemove.includes(item._id.toString())
+        if (typeof paymentImagesRemove === "string") {
+          paymentImagesRemove = [paymentImagesRemove];
+        }
+
+        params = {};
+        params["$pull"] = {
+          paymentDocuments: { _id: { $in: paymentDocumentsRemove } },
+          paymentImages: { _id: { $in: paymentImagesRemove } },
+        };
+        var updateOptions = {
+          returnOriginal: true,
+        };
+
+        var deleteResult = await SaleModel.invoice.updateInvoice(
+          conditions,
+          params,
+          updateOptions
         );
 
-        for (let i = 0; i < filteredPaymentImagesToDelete?.length; i++) {
-          fs.rmSync(filteredPaymentImagesToDelete[i].path, {
-            force: true,
-          });
+        if (deleteResult.code == 1) {
+          const filteredPaymentDocumentsToDelete =
+            deleteResult.data.paymentDocuments.filter((item) =>
+              paymentDocumentsRemove.includes(item._id.toString())
+            );
+
+          for (let i = 0; i < filteredPaymentDocumentsToDelete?.length; i++) {
+            fs.rmSync(filteredPaymentDocumentsToDelete[i].path, {
+              force: true,
+            });
+          }
+
+          const filteredPaymentImagesToDelete =
+            deleteResult.data.paymentImages.filter((item) =>
+              paymentImagesRemove.includes(item._id.toString())
+            );
+
+          for (let i = 0; i < filteredPaymentImagesToDelete?.length; i++) {
+            fs.rmSync(filteredPaymentImagesToDelete[i].path, {
+              force: true,
+            });
+          }
         }
+      } else {
+        result = updateResult; // ให้ผลลัพธ์เท่ากับผลลัพธ์จากการอัพเดต
       }
     }
 
