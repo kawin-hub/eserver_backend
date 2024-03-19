@@ -83,6 +83,11 @@ exports.insertSaleLead = async (req, res) => {
     const validation = new Validator(req.body, {
       level: "required|in:low prudential,middle prudential,high prudential",
       customerLevel_id: "required",
+      companyInfo: "array", // Validate as array
+      "companyInfo.*.companyName": "required",
+      "companyInfo.*.firstname": "required",
+      "companyInfo.*.lastname": "required|string",
+      "companyInfo.*.contactNumber": "required|string",
     });
 
     const matched = await validation.check();

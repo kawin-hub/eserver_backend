@@ -267,7 +267,6 @@ exports.updateSaleInvoice = async (req, res) => {
       var {
         _id,
         quotation_id,
-        lead_id,
         paymentStatus,
         paymentDocumentsRemove,
         paymentImagesRemove,
@@ -282,24 +281,11 @@ exports.updateSaleInvoice = async (req, res) => {
           _id: quotation_id,
         }); // ใน _id ที่ส่งมามี _id ของ ref  ไหม
       }
-      if (typeof lead_id !== "undefined") {
-        leadInfo = await SaleModel.lead.getSaleLeadById({ _id: lead_id });
-      }
 
       //Update
 
       const conditions = { _id: _id };
       var params = {};
-      if (quotationInfo.data) {
-        params.quotation = {
-          quotation_id: quotationInfo.data._id,
-        };
-      }
-      if (leadInfo && leadInfo.data) {
-        params.lead = {
-          lead_id: leadInfo.data._id,
-        };
-      }
 
       var paymentDocuments = [];
       var paymentImages = [];
