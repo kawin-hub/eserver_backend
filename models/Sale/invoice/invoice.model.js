@@ -1,6 +1,78 @@
 const SaleInvoice = require("./saleInvoice.schema");
 const { DataResponse } = require("../../general_data.model");
 
+// 👉 Get all
+
+exports.getAllSaleInvoices = async (params) => {
+  var result = new DataResponse();
+  try {
+    var limit = parseInt(params.limit);
+    var page = parseInt(params.page) ? parseInt(params.page) : 1;
+    var skip = (page - 1) * limit;
+    skip = skip < 1 ? 0 : skip;
+
+    var queryCondition =
+      params.queryCondition !== undefined ? params.queryCondition : {};
+
+    const queryResult = await SaleInvoice.find(queryCondition, {
+      _id: 1,
+      documentNumber: 1,
+      issuedDate: 1,
+      dueDate: 1,
+      amountRecieved: 1,
+      paymentStatus: 1,
+      convertInfo: 1,
+      quotation_id: 1,
+      createdBy: 1,
+    })
+      .skip(skip)
+      .limit(limit)
+      .sort({ _id: -1 })
+      .lean();
+
+    result.doSuccess(1);
+
+    var countTotalRow = await SaleInvoice.countDocuments(params.queryCondition);
+    result.doSuccess(1);
+
+    result.data = {
+      documents: queryResult,
+    };
+    result.data.limit = limit;
+    result.data.page = skip / limit + 1;
+    result.data.totalPage = Math.ceil(countTotalRow / limit);
+    result.data.totalCount = countTotalRow;
+
+    //totalCount
+  } catch (e) {
+    result.doError();
+  }
+
+  return result;
+};
+
+// 👉 Get by ID
+
+exports.getSaleInvoiceById = async (params) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await SaleInvoice.findOne(params).lean();
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e.kind);
+    if (e.kind == "ObjectId") {
+      result.doError(0, "Please check your _id format");
+    } else {
+      result.doError(0);
+    }
+  }
+
+  return result;
+};
+
 // 👉 Insert/Post
 
 exports.insertSaleInvoice = async (params) => {

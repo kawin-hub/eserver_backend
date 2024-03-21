@@ -85,9 +85,9 @@ exports.insertSaleLead = async (req, res) => {
       customerLevel_id: "required",
       companyInfo: "array", // Validate as array
       "companyInfo.*.companyName": "required",
+      "companyInfo.*.companyEmail": "email",
       "companyInfo.*.firstname": "required",
-      "companyInfo.*.lastname": "required|string",
-      "companyInfo.*.contactNumber": "required|string",
+      "companyInfo.*.contactNumber": "required",
     });
 
     const matched = await validation.check();
@@ -143,7 +143,9 @@ exports.updateSaleLead = async (req, res) => {
   try {
     const validation = new Validator(req.body, {
       _id: "required",
+      companyInfo_id: "required",
       level: "in:low prudential,middle prudential,high prudential",
+      "companyInfo.companyEmail": "email",
     });
 
     const matched = await validation.check();
@@ -151,11 +153,12 @@ exports.updateSaleLead = async (req, res) => {
     if (matched) {
       const {
         _id,
+        customerLevel_id,
+        companyInfo_id,
         companyName,
         firstname,
         contactNumber,
         level,
-        customerLevel_id,
         taxId,
         branch,
         address,
@@ -174,34 +177,39 @@ exports.updateSaleLead = async (req, res) => {
         customerLevelInfo = await SaleModel.lead.getCustomerLevelById({
           _id: customerLevel_id, // ใน _id ที่ส่งมามี _id ของ ref  ไหม
         });
-      }
 
-      //update
-      const updateConditions = {
-        _id: _id,
-      };
-      var params = {};
-      if (companyName) params.companyName = companyName;
-      if (firstname) params.firstname = firstname;
-      if (level) params.level = level;
-      if (contactNumber) params.contactNumber = contactNumber;
-      if (address) params.address = address;
-      if (customerLevelInfo.data) {
-        params.customerLevel = {
-          customerLevel_id: customerLevelInfo.data._id,
-          level: customerLevelInfo.data.level,
+        //update
+        const updateConditions = {
+          _id: _id,
+          "companyInfo._id": companyInfo_id,
         };
-      }
-      if (taxId) params.address = taxId;
-      if (branch) params.address = branch;
-      if (googleMap) params.address = googleMap;
-      if (companyEmail) params.address = companyEmail;
-      if (companyContactNumber) params.address = companyContactNumber;
-      if (lastname) params.address = lastname;
-      if (lineId) params.address = lineId;
-      if (tag) params.address = tag;
+        var params = {};
+        if (lineId) params.lineId = lineId;
+        if (level) params.level = level;
+        if (customerLevelInfo.data) {
+          params.customerLevel = {
+            customerLevel_id: customerLevelInfo.data._id,
+            level: customerLevelInfo.data.level,
+          };
+        }
+        if (tag) params.tag = tag;
+        if (companyName) params["companyInfo.$.companyName"] = companyName;
+        if (address) params["companyInfo.$.address"] = address;
+        if (taxId) params["companyInfo.$.taxId"] = taxId;
+        if (branch) params["companyInfo.$.branch"] = branch;
+        if (googleMap) params["companyInfo.$.googleMap"] = googleMap;
+        if (companyEmail) params["companyInfo.$.companyEmail"] = companyEmail;
+        if (companyContactNumber)
+          params["companyInfo.$.companyContactNumber"] = companyContactNumber;
+        if (firstname) params["companyInfo.$.firstname"] = firstname;
+        if (lastname) params["companyInfo.$.lastname"] = lastname;
+        if (contactNumber)
+          params["companyInfo.$.contactNumber"] = contactNumber;
 
-      result = await SaleModel.lead.updateSaleLead(updateConditions, params);
+        result = await SaleModel.lead.updateSaleLead(updateConditions, params);
+      } else {
+        result.doError(5, "customerLevel_id is not found!");
+      }
     }
   } catch (error) {
     console.log(error);

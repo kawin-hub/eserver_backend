@@ -76,7 +76,7 @@ exports.insertSaleQuotation = async (req, res) => {
         issuedDate,
         dueDate,
         lead_id,
-        customerInfo_id,
+        companyInfo_id,
         firstname,
         lastname,
         address,
@@ -94,12 +94,8 @@ exports.insertSaleQuotation = async (req, res) => {
         { _id: lead_id },
         {
           _id: 1,
-          firstname: 1,
-          lastname: 1,
-          contactNumber: 1,
           companyName: 1,
           branch: 1,
-          address: 1,
           taxId: 1,
           lineId: 1,
         }
@@ -107,7 +103,7 @@ exports.insertSaleQuotation = async (req, res) => {
 
       if (LeadResult.code == 1) {
         const companyInfo = LeadResult.data.companyInfo.find(
-          (info) => info._id.toString() === customerInfo_id
+          (info) => info._id.toString() === companyInfo_id
         );
 
         if (companyInfo) {
@@ -173,13 +169,25 @@ exports.insertSaleQuotation = async (req, res) => {
                 lead_id: LeadResult.data._id,
                 lineId: LeadResult.data.lineId,
                 companyInfo: {
-                  companyInfo_id: companyInfo._id, 
-                  firstname: companyInfo.firstname,
-                  lastname: companyInfo.lastname,
-                  contactNumber: companyInfo.contactNumber,
+                  companyInfo_id: companyInfo._id,
+                  firstname:
+                    typeof firstname != "undefined"
+                      ? firstname
+                      : companyInfo.firstname,
+                  lastname:
+                    typeof lastname != "undefined"
+                      ? lastname
+                      : companyInfo.lastname,
+                  contactNumber:
+                    typeof contactNumber != "undefined"
+                      ? contactNumber
+                      : companyInfo.contactNumber,
                   companyName: companyInfo.companyName,
                   branch: companyInfo.branch,
-                  address: companyInfo.address,
+                  address:
+                    typeof address != "undefined"
+                      ? address
+                      : companyInfo.address,
                 },
               },
               customerLevel: LeadResult.data.customerLevel,
@@ -218,6 +226,143 @@ exports.insertSaleQuotation = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+  }
+
+  res.json(result);
+};
+
+// 👉 Put/Update
+
+exports.updateSaleQuotation = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    const validation = new Validator(req.body, {
+      _id: "required",
+      lead_id: "required",
+      companyInfo_id: "required",
+      issuedDate: "dateFormat:YYYY-MM-DD",
+      dueDate: "dateFormat:YYYY-MM-DD",
+      quotationStatus: "in:warm,hot,cold,done",
+    });
+    const matched = await validation.check();
+
+    if (matched) {
+      const {
+        _id,
+        lead_id,
+        companyInfo_id,
+        documentNumber,
+        issuedDate,
+        dueDate,
+        firstname,
+        lastname,
+        address,
+        contactNumber,
+        paymentMethod,
+        products,
+        note,
+        quotationStatus,
+        extraDiscount,
+      } = req.body;
+
+      var LeadResult = null;
+      //check DB
+      if (typeof lead_id !== "undefined")
+        LeadResult = await SaleModel.lead.getSaleLeadById({
+          _id: lead_id,
+        });
+
+      const companyInfo = LeadResult.data.companyInfo.find(
+        (info) => info._id.toString() === customerInfo_id
+      );
+
+      if (typeof products !== "undefined")
+        productResult = await ProductModel.getProductsbyArrayId(
+          productModel_ids
+        );
+
+      //update
+      const updateConditions = {
+        _id: _id,
+        lead_id: lead_id,
+        "companyInfo.companyInfo_id": companyInfo_id,
+      };
+      var params = {};
+      // ตรวจสอบว่ามีข้อมูลที่จะใช้ในการอัปเดตหรือไม่
+
+      if (companyInfo) {
+        params["companyInfo.firstname"] = firstname || companyInfo.firstname;
+        params["companyInfo.lastname"] = lastname || companyInfo.lastname;
+        params["companyInfo.address"] = address || companyInfo.address;
+        params["companyInfo.contactNumber"] =
+          contactNumber || companyInfo.contactNumber;
+      }
+
+      // อัปเดตข้อมูลสินค้า
+      if (productResult.data) {
+        params.products = productResult.data.map((product) => {
+          const quantity = productModel_id.includes(product._id.toString())
+            ? products.find((p) => p.productModel_id === product._id).quantity
+            : 0;
+          return {
+            productModel_id: product._id,
+            quantity: quantity,
+          };
+        });
+      }
+
+      // เพิ่มส่วนที่เหลือ
+      if (documentNumber) params.documentNumber = documentNumber;
+      if (issuedDate) params.issuedDate = issuedDate;
+      if (dueDate) params.dueDate = dueDate;
+      if (paymentMethod) params.paymentMethod = paymentMethod;
+      if (note) params.note = note;
+      if (quotationStatus) params.quotationStatus = quotationStatus;
+      if (extraDiscount) params.extraDiscount = extraDiscount;
+
+      result = await SaleModel.quotation.updateSaleQuotation(
+        updateConditions,
+        params
+      );
+    }
+  } catch (error) {}
+
+  res.json(result);
+};
+
+// 👉 Delete
+exports.deleteSaleQuotation = async (req, res) => {
+  const { _id } = req.body;
+  try {
+    var result = new DataResponse();
+    if (typeof _id !== "undefined") {
+      // ค้นหา invoice ที่มี quotation_id เท่ากับ _id ของ quotation ที่ต้องการลบ
+      const invoicesResult = await SaleModel.invoice.getAllSaleInvoices({
+        quotation_id: _id,
+      });
+
+      if (invoicesResult.success && invoicesResult.data.length > 0) {
+        // ถ้ามี invoice ที่มี quotation_id ตรงกับ _id ให้แจ้งเตือน
+        result.doError(
+          3,
+          "Quotation cannot be deleted because it is associated with invoices."
+        );
+      } else {
+        // ถ้าไม่มี invoice ที่มี quotation_id ตรงกับ _id ให้ลบ quotation
+        result = await SaleModel.quotation.deleteSaleQuotation({
+          _id: _id,
+        });
+      }
+    } else {
+      result.doError(2, "_id is required.");
+    }
+  } catch (e) {
+    console.log(e);
+    result.doError(
+      0,
+      "Something wrong server side, please contact system admin."
+    );
   }
 
   res.json(result);

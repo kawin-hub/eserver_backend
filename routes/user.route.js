@@ -16,7 +16,6 @@ router.post("/refreshtoken", doRefreshToken);
 
 //Get all user
 router.get("/", verifyToken, getAllUsers);
-
 router.get("/user", verifyToken, getUser);
 
 module.exports = router;

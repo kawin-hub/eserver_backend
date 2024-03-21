@@ -6,6 +6,41 @@ const { DataResponse } = require("../../models/general_data.model");
 const { Validator } = require("node-input-validator");
 const fs = require("fs");
 
+// 👉 Get all or by ID
+
+exports.getSaleInvoices = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    const { _id } = req.query;
+
+    var SaleInvoiceModel = SaleModel.invoice;
+
+    if (typeof _id != "undefined") {
+      result = await SaleInvoiceModel.getSaleInvoiceById({
+        _id: new Object(_id),
+      });
+    } else {
+      var pageOption = general.checkPageAndLimit(
+        req.query.page,
+        req.query.limit
+      );
+
+      var params = {
+        page: pageOption.page,
+        limit: pageOption.limit,
+        queryCondition: {},
+      };
+
+      result = await SaleInvoiceModel.getAllSaleInvoices(params);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+
+  res.json(result);
+};
+
 // 👉 Post/Insert
 
 exports.insertSaleInvoice = async (req, res) => {
@@ -41,7 +76,7 @@ exports.insertSaleInvoice = async (req, res) => {
         deliveryDate,
       } = req.body;
 
-      /* const userData = req.body.authData.userInfo.userData; */
+      const userData = req.body.authData.userInfo.userData;
       // ดึงต่า QT
 
       var [quotationResult, convertInfoResult] = await Promise.all([
@@ -164,6 +199,11 @@ exports.insertSaleInvoice = async (req, res) => {
               quotation_id: quotation_id,
               customerInfo: quotationResult.data.customerInfo,
               products: products,
+              createdBy: {
+                user_id: userData._id,
+                firstname: userData.firstname,
+                lastname: userData.lastname,
+              },
             };
 
             if (convertType == "install") {
@@ -253,12 +293,7 @@ exports.updateSaleInvoice = async (req, res) => {
 
     const validation = new Validator(req.body, {
       _id: "required",
-      issuedDate: "dateFormat:YYYY-MM-DD",
-      dueDate: "dateFormat:YYYY-MM-DD",
-      baht: "numeric",
-      convertType: "in:install,delivery",
-      estimateDate: "dateFormat:YYYY-MM-DD",
-      deliveryDate: "dateFormat:YYYY-MM-DD",
+      quotation_id: "required",
     });
 
     const matched = await validation.check();
@@ -273,18 +308,17 @@ exports.updateSaleInvoice = async (req, res) => {
       } = req.body;
 
       var quotationInfo = null;
-      var leadInfo = null;
 
       if (typeof quotation_id !== "undefined") {
-        //check DB
+        // Check DB ว่ามี QT นี้จริงไหม
         quotationInfo = await SaleModel.quotation.getSaleQuotationById({
           _id: quotation_id,
-        }); // ใน _id ที่ส่งมามี _id ของ ref  ไหม
+        });
       }
 
       //Update
 
-      const conditions = { _id: _id };
+      const conditions = { _id: _id, quotation_id: quotation_id };
       var params = {};
 
       var paymentDocuments = [];
@@ -313,66 +347,58 @@ exports.updateSaleInvoice = async (req, res) => {
         paymentImages: { $each: paymentImages },
       };
 
-      var updateResult = await SaleModel.invoice.updateInvoice(
+      result = await SaleModel.invoice.updateInvoice(conditions, params);
+
+      //Delete
+
+      if (typeof paymentDocumentsRemove == "undefined")
+        paymentDocumentsRemove = [];
+      if (typeof paymentImagesRemove == "undefined") paymentImagesRemove = [];
+
+      if (typeof paymentDocumentsRemove === "string") {
+        paymentDocumentsRemove = [paymentDocumentsRemove];
+      }
+
+      if (typeof paymentImagesRemove === "string") {
+        paymentImagesRemove = [paymentImagesRemove];
+      }
+
+      params = {};
+      params["$pull"] = {
+        paymentDocuments: { _id: { $in: paymentDocumentsRemove } },
+        paymentImages: { _id: { $in: paymentImagesRemove } },
+      };
+      var updateOptions = {
+        returnOriginal: true,
+      };
+
+      result = await SaleModel.invoice.updateInvoice(
         conditions,
-        params
+        params,
+        updateOptions
       );
 
-      if (updateResult.code == 1) {
-        //Delete
+      if (result.code == 1) {
+        const filteredPaymentDocumentsToDelete =
+          result.data.paymentDocuments.filter((item) =>
+            paymentDocumentsRemove.includes(item._id.toString())
+          );
 
-        if (typeof paymentDocumentsRemove == "undefined")
-          paymentDocumentsRemove = [];
-        if (typeof paymentImagesRemove == "undefined") paymentImagesRemove = [];
-
-        if (typeof paymentDocumentsRemove === "string") {
-          paymentDocumentsRemove = [paymentDocumentsRemove];
+        for (let i = 0; i < filteredPaymentDocumentsToDelete?.length; i++) {
+          fs.rmSync(filteredPaymentDocumentsToDelete[i].path, {
+            force: true,
+          });
         }
 
-        if (typeof paymentImagesRemove === "string") {
-          paymentImagesRemove = [paymentImagesRemove];
-        }
-
-        params = {};
-        params["$pull"] = {
-          paymentDocuments: { _id: { $in: paymentDocumentsRemove } },
-          paymentImages: { _id: { $in: paymentImagesRemove } },
-        };
-        var updateOptions = {
-          returnOriginal: true,
-        };
-
-        var deleteResult = await SaleModel.invoice.updateInvoice(
-          conditions,
-          params,
-          updateOptions
+        const filteredPaymentImagesToDelete = result.data.paymentImages.filter(
+          (item) => paymentImagesRemove.includes(item._id.toString())
         );
 
-        if (deleteResult.code == 1) {
-          const filteredPaymentDocumentsToDelete =
-            deleteResult.data.paymentDocuments.filter((item) =>
-              paymentDocumentsRemove.includes(item._id.toString())
-            );
-
-          for (let i = 0; i < filteredPaymentDocumentsToDelete?.length; i++) {
-            fs.rmSync(filteredPaymentDocumentsToDelete[i].path, {
-              force: true,
-            });
-          }
-
-          const filteredPaymentImagesToDelete =
-            deleteResult.data.paymentImages.filter((item) =>
-              paymentImagesRemove.includes(item._id.toString())
-            );
-
-          for (let i = 0; i < filteredPaymentImagesToDelete?.length; i++) {
-            fs.rmSync(filteredPaymentImagesToDelete[i].path, {
-              force: true,
-            });
-          }
+        for (let i = 0; i < filteredPaymentImagesToDelete?.length; i++) {
+          fs.rmSync(filteredPaymentImagesToDelete[i].path, {
+            force: true,
+          });
         }
-      } else {
-        result = updateResult; // ให้ผลลัพธ์เท่ากับผลลัพธ์จากการอัพเดต
       }
     }
 
@@ -397,7 +423,7 @@ exports.updateSaleInvoice = async (req, res) => {
 
 // 👉 Delete
 
-exports.deleteSaleInvoice = async (req, res) => {
+/* exports.deleteSaleInvoice = async (req, res) => {
   const { _id } = req.body;
   try {
     var result = new DataResponse();
@@ -414,4 +440,61 @@ exports.deleteSaleInvoice = async (req, res) => {
   }
 
   res.json(result);
+}; */
+
+const path = require("path");
+
+exports.deleteSaleInvoice = async (req, res) => {
+  const { _id } = req.body;
+  try {
+    var result = new DataResponse();
+    if (typeof _id != "undefined") {
+      // ดึงข้อมูล invoice จากฐานข้อมูล
+      const invoice = await SaleModel.invoice.getSaleInvoiceById({ _id });
+
+      if (invoice.success) {
+        // ตรวจสอบสถานะของ invoice
+        if (invoice.data.paymentStatus === "paid") {
+          // หากสถานะเป็น "paid" ให้ลบ paymentDocuments และ paymentImages ก่อน
+          const paymentDocuments = invoice.data.paymentDocuments;
+          const paymentImages = invoice.data.paymentImages;
+
+          if (paymentDocuments && paymentDocuments.length > 0) {
+            for (const doc of paymentDocuments) {
+              fs.rmSync(path.join(__dirname, doc.path), { force: true });
+            }
+          }
+
+          if (paymentImages && paymentImages.length > 0) {
+            for (const img of paymentImages) {
+              fs.rmSync(path.join(__dirname, img.path), { force: true });
+            }
+          }
+        }
+
+        // ลบ invoice หลังจากลบ paymentDocuments และ paymentImages เสร็จ
+        result = await SaleModel.invoice.deleteSaleInvoice({ _id });
+      } else {
+        // หากไม่พบ invoice ที่ตรงกับ _id ที่ระบุ
+        result.doError(2, "Invoice not found.");
+      }
+    } else {
+      result.doError(2, "_id is required.");
+    }
+  } catch (e) {
+    console.log(e);
+  }
+
+  res.json(result);
+};
+
+// ฟังก์ชันสำหรับลบไฟล์
+const deleteFile = (filePath) => {
+  fs.unlink(filePath, (err) => {
+    if (err) {
+      console.error("Error deleting file:", err);
+    } else {
+      console.log("File deleted successfully.");
+    }
+  });
 };

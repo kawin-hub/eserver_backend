@@ -9,7 +9,6 @@ const { accountExpense } = require("../controllers/account");
 // 👉 Account Expense
 
 router.get("/expenses", verifyToken, accountExpense.getAccountExpenses);
-
 router.post("/expenses", verifyToken, accountExpense.insertAccountExpense);
 
 module.exports = router;
