@@ -183,6 +183,7 @@ exports.insertSaleQuotation = async (req, res) => {
                       ? contactNumber
                       : companyInfo.contactNumber,
                   companyName: companyInfo.companyName,
+                  taxId: companyInfo.taxId,
                   branch: companyInfo.branch,
                   address:
                     typeof address != "undefined"
@@ -331,38 +332,35 @@ exports.updateSaleQuotation = async (req, res) => {
   res.json(result);
 };
 
-// 👉 Delete
+/// 👉 Delete
 exports.deleteSaleQuotation = async (req, res) => {
   const { _id } = req.body;
   try {
     var result = new DataResponse();
     if (typeof _id !== "undefined") {
-      // ค้นหา invoice ที่มี quotation_id เท่ากับ _id ของ quotation ที่ต้องการลบ
-      const invoicesResult = await SaleModel.invoice.getAllSaleInvoices({
+      // หา invoice ที่เกี่ยวข้องกับ quotation นี้
+      const invoicesResult = await SaleModel.invoice.getSaleInvoiceById({
         quotation_id: _id,
       });
 
-      if (invoicesResult.success && invoicesResult.data.length > 0) {
-        // ถ้ามี invoice ที่มี quotation_id ตรงกับ _id ให้แจ้งเตือน
-        result.doError(
-          3,
-          "Quotation cannot be deleted because it is associated with invoices."
-        );
-      } else {
-        // ถ้าไม่มี invoice ที่มี quotation_id ตรงกับ _id ให้ลบ quotation
+      // ตรวจสอบว่ามี invoice ที่มี quotation_id เท่ากับ _id หรือไม่
+      if (invoicesResult.code == 2) {
+        // ถ้าไม่มี invoice ที่มี quotation_id เท่ากับ _id ให้ลบ quotation
         result = await SaleModel.quotation.deleteSaleQuotation({
           _id: _id,
         });
+      } else {
+        // ถ้ามี invoice ที่มี quotation_id เท่ากับ _id ให้แจ้งเตือนว่าไม่สามารถลบได้
+        result.doError(
+          3,
+          "Quotation cannot be deleted because it contains related invoices."
+        );
       }
     } else {
       result.doError(2, "_id is required.");
     }
   } catch (e) {
     console.log(e);
-    result.doError(
-      0,
-      "Something wrong server side, please contact system admin."
-    );
   }
 
   res.json(result);

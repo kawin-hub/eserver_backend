@@ -423,10 +423,11 @@ exports.updateSaleInvoice = async (req, res) => {
 
 // 👉 Delete
 
-/* exports.deleteSaleInvoice = async (req, res) => {
+exports.deleteSaleInvoice = async (req, res) => {
   const { _id } = req.body;
   try {
     var result = new DataResponse();
+
     if (typeof _id != "undefined") {
       result = await SaleModel.invoice.deleteSaleInvoice({
         _id: _id,
@@ -440,61 +441,6 @@ exports.updateSaleInvoice = async (req, res) => {
   }
 
   res.json(result);
-}; */
-
-const path = require("path");
-
-exports.deleteSaleInvoice = async (req, res) => {
-  const { _id } = req.body;
-  try {
-    var result = new DataResponse();
-    if (typeof _id != "undefined") {
-      // ดึงข้อมูล invoice จากฐานข้อมูล
-      const invoice = await SaleModel.invoice.getSaleInvoiceById({ _id });
-
-      if (invoice.success) {
-        // ตรวจสอบสถานะของ invoice
-        if (invoice.data.paymentStatus === "paid") {
-          // หากสถานะเป็น "paid" ให้ลบ paymentDocuments และ paymentImages ก่อน
-          const paymentDocuments = invoice.data.paymentDocuments;
-          const paymentImages = invoice.data.paymentImages;
-
-          if (paymentDocuments && paymentDocuments.length > 0) {
-            for (const doc of paymentDocuments) {
-              fs.rmSync(path.join(__dirname, doc.path), { force: true });
-            }
-          }
-
-          if (paymentImages && paymentImages.length > 0) {
-            for (const img of paymentImages) {
-              fs.rmSync(path.join(__dirname, img.path), { force: true });
-            }
-          }
-        }
-
-        // ลบ invoice หลังจากลบ paymentDocuments และ paymentImages เสร็จ
-        result = await SaleModel.invoice.deleteSaleInvoice({ _id });
-      } else {
-        // หากไม่พบ invoice ที่ตรงกับ _id ที่ระบุ
-        result.doError(2, "Invoice not found.");
-      }
-    } else {
-      result.doError(2, "_id is required.");
-    }
-  } catch (e) {
-    console.log(e);
-  }
-
-  res.json(result);
 };
 
-// ฟังก์ชันสำหรับลบไฟล์
-const deleteFile = (filePath) => {
-  fs.unlink(filePath, (err) => {
-    if (err) {
-      console.error("Error deleting file:", err);
-    } else {
-      console.log("File deleted successfully.");
-    }
-  });
-};
+
