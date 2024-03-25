@@ -428,12 +428,33 @@ exports.deleteSaleInvoice = async (req, res) => {
   try {
     var result = new DataResponse();
 
-    if (typeof _id != "undefined") {
+    if (typeof _id !== "undefined") {
+      // เรียกใช้เมธอดเพื่อดึงข้อมูล invoice จาก _id
+
       result = await SaleModel.invoice.deleteSaleInvoice({
         _id: _id,
         paymentStatus: "unpaid",
       });
+
+      if (result.code == 3) {
+        result.doError(3, "To delete invoice the status must be 'unpaid'");
+      }
+
+      if (result.code == 1) {
+        for (let i = 0; i < result.data.paymentDocuments?.length; i++) {
+          fs.rmSync(result.data.paymentDocuments[i].path, {
+            force: true,
+          });
+        }
+
+        for (let i = 0; i < result.data.paymentImages?.length; i++) {
+          fs.rmSync(result.data.paymentImages[i].path, {
+            force: true,
+          });
+        }
+      }
     } else {
+      // หาก _id เป็น undefined แจ้งข้อความผิดพลาด
       result.doError(2, "_id is required.");
     }
   } catch (e) {
@@ -442,5 +463,3 @@ exports.deleteSaleInvoice = async (req, res) => {
 
   res.json(result);
 };
-
-

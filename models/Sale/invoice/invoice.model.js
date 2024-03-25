@@ -21,6 +21,7 @@ exports.getAllSaleInvoices = async (params) => {
       dueDate: 1,
       amountRecieved: 1,
       paymentStatus: 1,
+      customerInfo: 1,
       convertInfo: 1,
       quotation_id: 1,
       createdBy: 1,
@@ -145,7 +146,7 @@ exports.deleteSaleInvoice = async (params) => {
   var result = new DataResponse();
 
   try {
-    result.data = await SaleInvoice.deleteOne(params);
+    result.data = await SaleInvoice.findOneAndDelete(params);
     result.data.deletedCount == 0
       ? result.doSuccess(3, "this _id isn't allowed to be removed!")
       : result.doSuccess(1);

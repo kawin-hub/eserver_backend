@@ -53,6 +53,7 @@ exports.insertSaleQuotation = async (req, res) => {
       lead_id: "required",
       products: "required",
       quotationStatus: "required|in:warm,hot,cold,done",
+      extraDiscount: "numeric",
     };
 
     /* if (typeof req.body.discountPercent != "undefined") {
@@ -217,7 +218,7 @@ exports.insertSaleQuotation = async (req, res) => {
             result.doError(5, "product_id is not found!");
           }
         } else {
-          result.doError(5, "customerInfo_id is not found!");
+          result.doError(5, "companyInfo_id is not found!");
         }
       } else {
         result.doError(5, "lead_id is not found!");
@@ -240,11 +241,10 @@ exports.updateSaleQuotation = async (req, res) => {
   try {
     const validation = new Validator(req.body, {
       _id: "required",
-      lead_id: "required",
-      companyInfo_id: "required",
       issuedDate: "dateFormat:YYYY-MM-DD",
       dueDate: "dateFormat:YYYY-MM-DD",
       quotationStatus: "in:warm,hot,cold,done",
+      extraDiscount: "numeric",
     });
     const matched = await validation.check();
 
@@ -252,7 +252,6 @@ exports.updateSaleQuotation = async (req, res) => {
       const {
         _id,
         lead_id,
-        companyInfo_id,
         documentNumber,
         issuedDate,
         dueDate,
@@ -261,71 +260,54 @@ exports.updateSaleQuotation = async (req, res) => {
         address,
         contactNumber,
         paymentMethod,
-        products,
         note,
         quotationStatus,
         extraDiscount,
       } = req.body;
 
-      var LeadResult = null;
       //check DB
-      if (typeof lead_id !== "undefined")
-        LeadResult = await SaleModel.lead.getSaleLeadById({
-          _id: lead_id,
-        });
+      if (_id !== "undefined") {
+        var leadResult = {
+          code: 1,
+        };
+        if (lead_id) {
+          leadResult = await SaleModel.lead.getSaleLeadById({
+            _id: lead_id,
+          });
+        }
 
-      const companyInfo = LeadResult.data.companyInfo.find(
-        (info) => info._id.toString() === customerInfo_id
-      );
-
-      if (typeof products !== "undefined")
-        productResult = await ProductModel.getProductsbyArrayId(
-          productModel_ids
-        );
-
-      //update
-      const updateConditions = {
-        _id: _id,
-        lead_id: lead_id,
-        "companyInfo.companyInfo_id": companyInfo_id,
-      };
-      var params = {};
-      // ตรวจสอบว่ามีข้อมูลที่จะใช้ในการอัปเดตหรือไม่
-
-      if (companyInfo) {
-        params["companyInfo.firstname"] = firstname || companyInfo.firstname;
-        params["companyInfo.lastname"] = lastname || companyInfo.lastname;
-        params["companyInfo.address"] = address || companyInfo.address;
-        params["companyInfo.contactNumber"] =
-          contactNumber || companyInfo.contactNumber;
-      }
-
-      // อัปเดตข้อมูลสินค้า
-      if (productResult.data) {
-        params.products = productResult.data.map((product) => {
-          const quantity = productModel_id.includes(product._id.toString())
-            ? products.find((p) => p.productModel_id === product._id).quantity
-            : 0;
-          return {
-            productModel_id: product._id,
-            quantity: quantity,
+        if (leadResult.code == 1) {
+          //update
+          const updateConditions = {
+            _id: _id,
           };
-        });
+
+          var params = {};
+
+          if (firstname)
+            params["customerInfo.companyInfo.firstname"] = firstname;
+          if (lastname) params["customerInfo.companyInfo.lastname"] = lastname;
+          if (contactNumber)
+            params["customerInfo.companyInfo.contactNumber"] = contactNumber;
+          if (address) params["customerInfo.companyInfo.address"] = address;
+          if (documentNumber) params.documentNumber = documentNumber;
+          if (issuedDate) params.issuedDate = issuedDate;
+          if (dueDate) params.dueDate = dueDate;
+          if (paymentMethod) params.paymentMethod = paymentMethod;
+          if (note) params.note = note;
+          if (quotationStatus) params.quotationStatus = quotationStatus;
+          if (extraDiscount) params["summary.extraDiscount"] = extraDiscount;
+
+          result = await SaleModel.quotation.updateSaleQuotation(
+            updateConditions,
+            params
+          );
+        } else {
+          result.doError(5, "lead_id is not found!");
+        }
+      } else {
+        result.doError(5, "_id is not found!");
       }
-
-      // เพิ่มส่วนที่เหลือ
-      if (documentNumber) params.documentNumber = documentNumber;
-      if (issuedDate) params.issuedDate = issuedDate;
-      if (dueDate) params.dueDate = dueDate;
-      if (paymentMethod) params.paymentMethod = paymentMethod;
-      if (note) params.note = note;
-      if (quotationStatus) params.quotationStatus = quotationStatus;
-      if (extraDiscount) params.extraDiscount = extraDiscount;
-
-      result = await SaleModel.quotation.updateSaleQuotation(
-        updateConditions,
-        params
-      );
     }
   } catch (error) {}
 
@@ -365,3 +347,23 @@ exports.deleteSaleQuotation = async (req, res) => {
 
   res.json(result);
 };
+
+/* if (typeof products !== "undefined") {
+          productResult = await ProductModel.getProductsbyArrayId(
+            productModel_ids
+          );
+        } */
+
+// อัปเดตข้อมูลสินค้า
+/* if (productResult.data) {
+            params.products = productResult.data.map((product) => {
+              const quantity = productModel_id.includes(product._id.toString())
+                ? products.find((p) => p.productModel_id === product._id)
+                    .quantity
+                : 0;
+              return {
+                productModel_id: product._id,
+                quantity: quantity,
+              };
+            });
+          } */
