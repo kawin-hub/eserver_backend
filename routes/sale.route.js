@@ -11,22 +11,21 @@ const { saleLead, saleQuotation, saleInvoice } = require("../controllers/sale");
 router.get("/leads", verifyToken, saleLead.getSaleLeads);
 router.put("/leads", verifyToken, saleLead.updateSaleLead);
 router.delete("/leads", verifyToken, saleLead.deleteSaleLead);
-
 router.get("/customerLevels", saleLead.getCustomerLevels);
-
 router.post("/leads", verifyToken, saleLead.insertSaleLead);
 
 // 👉 Sale Quotation
 
 router.get("/quotations", verifyToken, saleQuotation.getSaleQuotations);
-
+router.put("/quotations", verifyToken, saleQuotation.updateSaleQuotation);
 router.post("/quotations", verifyToken, saleQuotation.insertSaleQuotation);
+router.delete("/quotations", verifyToken, saleQuotation.deleteSaleQuotation);
 
 // 👉 Sale Invoice
 
-/* router.get("/invoices", verifyToken, saleInvoice.getSaleInvoices); */
-
-router.post("/invoices", /* verifyToken, */ saleInvoice.insertSaleInvoice);
+router.get("/invoices", verifyToken, saleInvoice.getSaleInvoices);
+router.post("/invoices", verifyToken, saleInvoice.insertSaleInvoice);
 router.put("/invoices", verifyToken, saleInvoice.updateSaleInvoice);
+router.delete("/invoices", verifyToken, saleInvoice.deleteSaleInvoice);
 
 module.exports = router;

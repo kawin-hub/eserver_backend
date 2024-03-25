@@ -25,19 +25,16 @@ router.get("/totals", inventoryTotal.getInventoryTotals);
 // 👉 Inventory Location
 
 router.get("/locations", verifyToken, inventoryLocation.getInventoryLocations);
-
 router.post(
   "/locations",
   verifyToken,
   inventoryLocation.insertInventoryLocation
 );
-
 router.put(
   "/locations",
   verifyToken,
   inventoryLocation.updateInventoryLocation
 );
-
 router.delete(
   "/locations",
   verifyToken,
@@ -47,21 +44,17 @@ router.delete(
 // 👉 Inventory Lot
 
 router.get("/lots", verifyToken, inventoryLot.getInventoryLots);
-
 router.post("/lots", verifyToken, inventoryLot.insertInventoryLot);
-
 router.delete("/lots", verifyToken, inventoryLot.deleteInventoryLot);
 
 // 👉 Inventory Move
 
 router.get("/moves", verifyToken, inventoryMove.getInventoryMoves);
-
 router.post("/moves", verifyToken, inventoryMove.insertInventoryMove);
 
 // 👉 Inventory Request
 
 router.get("/requests", verifyToken, inventoryRequest.getInventoryRequests);
-
 router.post("/requests", verifyToken, inventoryRequest.insertInventoryRequest);
 
 // 👉 Inventory Refund
@@ -75,7 +68,6 @@ router.post(
   verifyToken,
   inventoryProductSerial.insertProductSerial
 );
-
 router.delete("/productSerial", inventoryProductSerial.deleteProductSerial);
 
 // 👉 Inventory Product Serial Move

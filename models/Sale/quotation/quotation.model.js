@@ -96,3 +96,37 @@ exports.insertSaleQuotation = async (params) => {
 
   return result;
 };
+
+// 👉 Put/Update
+
+exports.updateSaleQuotation = async (conditions, params) => {
+  var result = new DataResponse();
+  try {
+    result.data = await SaleQuotation.updateOne(conditions, params);
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e);
+    result.doError(0);
+  }
+
+  return result;
+};
+
+// 👉 Delete
+
+exports.deleteSaleQuotation = async (params) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await SaleQuotation.deleteOne(params);
+    result.data.deletedCount == 0
+      ? result.doSuccess(3, "this _id isn't allowed to be removed!")
+      : result.doSuccess(1);
+  } catch (e) {
+    result.doError();
+  }
+
+  return result;
+};

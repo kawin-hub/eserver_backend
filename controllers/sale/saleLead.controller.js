@@ -74,39 +74,26 @@ exports.getSaleLeads = async (req, res) => {
   res.json(result);
 };
 
-// 👉 Insert/Post
+// 👉 Post/Insert
 
 exports.insertSaleLead = async (req, res) => {
   var result = new DataResponse();
 
   try {
     const validation = new Validator(req.body, {
-      companyName: "required",
-      firstname: "required",
-      contactNumber: "required",
       level: "required|in:low prudential,middle prudential,high prudential",
       customerLevel_id: "required",
+      companyInfo: "array", // Validate as array
+      "companyInfo.*.companyName": "required",
+      "companyInfo.*.companyEmail": "email",
+      "companyInfo.*.firstname": "required",
+      "companyInfo.*.contactNumber": "required",
     });
 
     const matched = await validation.check();
 
     if (matched) {
-      const {
-        companyName,
-        firstname,
-        contactNumber,
-        level,
-        customerLevel_id,
-        taxId,
-        branch,
-        address,
-        googleMap,
-        companyEmail,
-        companyContactNumber,
-        lastname,
-        lineId,
-        tag,
-      } = req.body;
+      const { lineId, level, customerLevel_id, tag, companyInfo } = req.body;
 
       const userData = req.body.authData.userInfo.userData;
 
@@ -120,19 +107,6 @@ exports.insertSaleLead = async (req, res) => {
 
       if (CustomerLevelResult.code == 1) {
         var insertLeadparams = {
-          companyName: companyName,
-          taxId: typeof taxId != "undefined" ? taxId : "",
-          branch: typeof branch != "undefined" ? branch : "",
-          address: typeof address != "undefined" ? address : "",
-          googleMap: typeof googleMap != "undefined" ? googleMap : "",
-          companyEmail: typeof companyEmail != "undefined" ? companyEmail : "",
-          companyContactNumber:
-            typeof companyContactNumber != "undefined"
-              ? companyContactNumber
-              : "",
-          firstname: firstname,
-          lastname: typeof lastname != "undefined" ? lastname : "",
-          contactNumber: contactNumber,
           lineId: typeof lineId != "undefined" ? lineId : "",
           level: level,
           customerLevel: {
@@ -140,6 +114,7 @@ exports.insertSaleLead = async (req, res) => {
             level: CustomerLevelResult.data.level,
           },
           tag: typeof tag != "undefined" ? tag : "",
+          companyInfo: Array.isArray(companyInfo) ? companyInfo : [companyInfo], // แปลงเป็นอาร์เรย์หากไม่ใช่
           createdBy: {
             user_id: userData._id,
             firstname: userData.firstname,
@@ -160,12 +135,17 @@ exports.insertSaleLead = async (req, res) => {
   res.json(result);
 };
 
+// 👉 Put/Update
+
 exports.updateSaleLead = async (req, res) => {
   var result = new DataResponse();
 
   try {
     const validation = new Validator(req.body, {
       _id: "required",
+      companyInfo_id: "required",
+      level: "in:low prudential,middle prudential,high prudential",
+      "companyInfo.companyEmail": "email",
     });
 
     const matched = await validation.check();
@@ -173,12 +153,21 @@ exports.updateSaleLead = async (req, res) => {
     if (matched) {
       const {
         _id,
+        customerLevel_id,
+        companyInfo_id,
         companyName,
         firstname,
         contactNumber,
         level,
-        customerLevel_id,
+        taxId,
+        branch,
         address,
+        googleMap,
+        companyEmail,
+        companyContactNumber,
+        lastname,
+        lineId,
+        tag,
       } = req.body;
 
       var customerLevelInfo = null;
@@ -186,27 +175,41 @@ exports.updateSaleLead = async (req, res) => {
       if (typeof customerLevel_id !== "undefined") {
         //check DB
         customerLevelInfo = await SaleModel.lead.getCustomerLevelById({
-          _id: customerLevel_id,
+          _id: customerLevel_id, // ใน _id ที่ส่งมามี _id ของ ref  ไหม
         });
-      }
 
-      //update
-      const updateConditions = {
-        _id: _id,
-      };
-      var params = {};
-      if (companyName) params.companyName = companyName;
-      if (firstname) params.firstname = firstname;
-      if (level) params.level = level;
-      if (contactNumber) params.contactNumber = contactNumber;
-      if (address) params.address = address;
-      if (customerLevelInfo.data) {
-        params.customerLevel = {
-          customerLevel_id: customerLevelInfo.data._id,
+        //update
+        const updateConditions = {
+          _id: _id,
+          "companyInfo._id": companyInfo_id,
         };
-      }
+        var params = {};
+        if (lineId) params.lineId = lineId;
+        if (level) params.level = level;
+        if (customerLevelInfo.data) {
+          params.customerLevel = {
+            customerLevel_id: customerLevelInfo.data._id,
+            level: customerLevelInfo.data.level,
+          };
+        }
+        if (tag) params.tag = tag;
+        if (companyName) params["companyInfo.$.companyName"] = companyName;
+        if (address) params["companyInfo.$.address"] = address;
+        if (taxId) params["companyInfo.$.taxId"] = taxId;
+        if (branch) params["companyInfo.$.branch"] = branch;
+        if (googleMap) params["companyInfo.$.googleMap"] = googleMap;
+        if (companyEmail) params["companyInfo.$.companyEmail"] = companyEmail;
+        if (companyContactNumber)
+          params["companyInfo.$.companyContactNumber"] = companyContactNumber;
+        if (firstname) params["companyInfo.$.firstname"] = firstname;
+        if (lastname) params["companyInfo.$.lastname"] = lastname;
+        if (contactNumber)
+          params["companyInfo.$.contactNumber"] = contactNumber;
 
-      result = await SaleModel.lead.updateSaleLead(updateConditions, params);
+        result = await SaleModel.lead.updateSaleLead(updateConditions, params);
+      } else {
+        result.doError(5, "customerLevel_id is not found!");
+      }
     }
   } catch (error) {
     console.log(error);
@@ -214,6 +217,8 @@ exports.updateSaleLead = async (req, res) => {
 
   res.json(result);
 };
+
+// 👉 Delete
 
 exports.deleteSaleLead = async (req, res) => {
   const { _id } = req.body;

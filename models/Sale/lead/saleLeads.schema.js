@@ -3,39 +3,6 @@ const collection = "SaleLeads";
 
 let saleLeadSchema = new Schema(
   {
-    companyName: {
-      type: String,
-      required: true,
-    },
-    taxId: {
-      type: String,
-    },
-    branch: {
-      type: String,
-    },
-    address: {
-      type: String,
-    },
-    googleMap: {
-      type: String,
-    },
-    companyEmail: {
-      type: String,
-    },
-    companyContactNumber: {
-      type: String,
-    },
-    firstname: {
-      type: String,
-      required: true,
-    },
-    lastname: {
-      type: String,
-    },
-    contactNumber: {
-      type: String,
-      required: true,
-    },
     lineId: {
       type: String,
     },
@@ -51,6 +18,43 @@ let saleLeadSchema = new Schema(
     tag: [
       {
         type: String,
+      },
+    ],
+    companyInfo: [
+      {
+        companyName: {
+          type: String,
+          required: true,
+        },
+        taxId: {
+          type: String,
+        },
+        branch: {
+          type: String,
+        },
+        address: {
+          type: String,
+        },
+        googleMap: {
+          type: String,
+        },
+        companyEmail: {
+          type: String,
+        },
+        companyContactNumber: {
+          type: String,
+        },
+        firstname: {
+          type: String,
+          required: true,
+        },
+        lastname: {
+          type: String,
+        },
+        contactNumber: {
+          type: String,
+          required: true,
+        },
       },
     ],
     createdBy: {

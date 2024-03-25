@@ -42,7 +42,7 @@ exports.getInventoryLots = async (req, res) => {
   res.json(result);
 };
 
-// 👉 Insert/Post
+// 👉 Post/Insert
 
 exports.insertInventoryLot = async (req, res) => {
   var result = new DataResponse();

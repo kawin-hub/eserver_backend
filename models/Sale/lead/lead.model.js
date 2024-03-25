@@ -113,15 +113,11 @@ exports.getAllSaleLeads = async (params) => {
     const queryResult = await SaleLead.find(queryCondition, {
       _id: 1,
       createdAt: 1,
-      companyName: 1,
-      firstname: 1,
-      lastname: 1,
-      contactNumber: 1,
+      lineId: 1,
       level: 1,
-      address: 1,
-      branch: 1,
-      taxId: 1,
-      googleMap: 1,
+      customerLevel_id: 1,
+      tag: 1,
+      companyInfo: 1,
       createdBy: 1,
     })
       .skip(skip)
@@ -191,6 +187,8 @@ exports.insertSaleLead = async (params) => {
   return result;
 };
 
+// 👉 Put/Update
+
 exports.updateSaleLead = async (conditions, params) => {
   var result = new DataResponse();
   try {
@@ -205,6 +203,8 @@ exports.updateSaleLead = async (conditions, params) => {
 
   return result;
 };
+
+// 👉 Delete
 
 exports.deleteSaleLead = async (params) => {
   var result = new DataResponse();
