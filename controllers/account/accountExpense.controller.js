@@ -77,6 +77,9 @@ exports.insertAccountExpense = async (req, res) => {
 
       var AccountExpenseModel = AccountModel.expense;
 
+      console.log(req.files);
+      console.log(req.body);
+
       if (matched) {
         const {
           documentNumber,
