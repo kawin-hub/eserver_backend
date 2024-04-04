@@ -58,6 +58,8 @@ exports.insertSaleInvoice = async (req, res) => {
       deliveryDate: "dateFormat:YYYY-MM-DD", // เพิ่มการตรวจสอบรูปแบบของ deliveryDate
     };
 
+    console.log(req.body);
+
     const validation = new Validator(req.body, validationParams);
 
     const matched = await validation.check();
@@ -110,6 +112,7 @@ exports.insertSaleInvoice = async (req, res) => {
         const companyInfo = convertInfoResult.data.companyInfo.find(
           (info) => info._id.toString() === customerInfo_id
         );
+        console.log(companyInfo);
 
         if (companyInfo) {
           // สร้างฟังก์ชันสำหรับคำนวณเปอร์เซ็นต์และจำนวนเงิน
@@ -162,7 +165,7 @@ exports.insertSaleInvoice = async (req, res) => {
             for (var i = 0; i < invoiceInfo.data.length; i++) {
               invoiceCreatedTotal += invoiceInfo.data[i].amountRecieved.baht;
             }
-
+            console.log(invoiceCreatedTotal);
             var totalInvoiceNew = invoiceCreatedTotal + params.baht;
 
             return {
@@ -182,7 +185,7 @@ exports.insertSaleInvoice = async (req, res) => {
             baht: baht,
             percent: [],
           });
-
+          console.log(invoiceInfo);
           if (invoiceInfo.status) {
             var insertSaleParam = {
               documentNumber: documentNumber,
@@ -240,10 +243,13 @@ exports.insertSaleInvoice = async (req, res) => {
               insertSaleParam
             );
           } else {
-            result.doError(5, "customerInfo_id is not found!");
+            result.doError(
+              7,
+              "Payment of this invoice is over quotation total!"
+            );
           }
         } else {
-          result.doError(7, "Payment of this invoice is over quotation total!");
+          result.doError(5, "customerInfo_id is not found!");
         }
 
         // ตรวจสอบว่า installationInfo_id หรือ deliveryInfo_id มีการส่งมาหรือไม่
