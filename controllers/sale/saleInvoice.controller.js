@@ -12,15 +12,27 @@ exports.getSaleInvoices = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    const { _id } = req.query;
+    const { _id, getby } = req.query;
 
     var SaleInvoiceModel = SaleModel.invoice;
 
-    if (typeof _id != "undefined") {
-      result = await SaleInvoiceModel.getSaleInvoiceById({
-        _id: new Object(_id),
-      });
+    if (typeof getby != "undefined" && getby == "quotation") {
+      // get by quotation_id
+      if (typeof _id != "undefined") {
+        result = await SaleInvoiceModel.getSaleInvoiceByConditions({
+          quotation_id: new Object(_id),
+        });
+      }
     } else {
+      // get by invoice_id
+      if (typeof _id != "undefined") {
+        result = await SaleInvoiceModel.getSaleInvoiceByConditions({
+          _id: new Object(_id),
+        });
+      }
+    }
+
+    if (typeof _id === "undefined") {
       var pageOption = general.checkPageAndLimit(
         req.query.page,
         req.query.limit

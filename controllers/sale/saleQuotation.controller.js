@@ -321,9 +321,11 @@ exports.deleteSaleQuotation = async (req, res) => {
     var result = new DataResponse();
     if (typeof _id !== "undefined") {
       // หา invoice ที่เกี่ยวข้องกับ quotation นี้
-      const invoicesResult = await SaleModel.invoice.getSaleInvoiceById({
-        quotation_id: _id,
-      });
+      const invoicesResult = await SaleModel.invoice.getSaleInvoiceByConditions(
+        {
+          quotation_id: _id,
+        }
+      );
 
       // ตรวจสอบว่ามี invoice ที่มี quotation_id เท่ากับ _id หรือไม่
       if (invoicesResult.code == 2) {
