@@ -13,7 +13,7 @@ exports.getSaleInvoices = async (req, res) => {
 
   try {
     const { _id, getby } = req.query;
-
+    
     var SaleInvoiceModel = SaleModel.invoice;
 
     if (typeof getby != "undefined" && getby == "quotation") {
