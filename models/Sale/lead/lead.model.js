@@ -1,6 +1,7 @@
 const SaleLead = require("./saleLeads.schema");
 const CustomerLevel = require("./customerLevel.schema");
 const { DataResponse } = require("../../general_data.model");
+const { param } = require("express/lib/request");
 
 async function initLead() {
   var result;
@@ -110,16 +111,10 @@ exports.getAllSaleLeads = async (params) => {
     var queryCondition =
       params.queryCondition !== undefined ? params.queryCondition : {};
 
-    const queryResult = await SaleLead.find(queryCondition, {
-      _id: 1,
-      createdAt: 1,
-      lineId: 1,
-      level: 1,
-      customerLevel_id: 1,
-      tag: 1,
-      companyInfo: 1,
-      createdBy: 1,
-    })
+    const queryResult = await SaleLead.find(
+      queryCondition,
+      (params.projector)
+    )
       .skip(skip)
       .limit(limit)
       .sort({ _id: -1 })

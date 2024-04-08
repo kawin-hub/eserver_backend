@@ -45,7 +45,7 @@ exports.getSaleLeads = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    const { _id } = req.query;
+    const { _id, txtSearch, level } = req.query;
 
     var SaleLeadModel = SaleModel.lead;
 
@@ -54,6 +54,7 @@ exports.getSaleLeads = async (req, res) => {
         _id: new Object(_id),
       });
     } else {
+      // get all
       var pageOption = general.checkPageAndLimit(
         req.query.page,
         req.query.limit
@@ -63,7 +64,40 @@ exports.getSaleLeads = async (req, res) => {
         page: pageOption.page,
         limit: pageOption.limit,
         queryCondition: {},
+        projector: {
+          _id: 1,
+          createdAt: 1,
+          lineId: 1,
+          level: 1,
+          customerLevel_id: 1,
+          tag: 1,
+          companyInfo: 1,
+          createdBy: 1,
+        },
       };
+
+      var orConditions;
+
+      if (typeof txtSearch !== "undefined") {
+        const searchRegex = new RegExp(txtSearch, "i");
+        orConditions = [
+          {
+            "companyInfo.companyName": searchRegex,
+          },
+          {
+            "companyInfo.firstname": searchRegex,
+          },
+          {
+            "companyInfo.contactNumber": searchRegex,
+          },
+        ];
+
+        params.queryCondition["$or"] = orConditions;
+      }
+
+      if (typeof level !== "undefined") {
+        params.queryCondition["level"] = level;
+      }
 
       result = await SaleLeadModel.getAllSaleLeads(params);
     }
