@@ -35,7 +35,7 @@ const getUser = async (req, res, next) => {
 
 const auth = async (req, res, next) => {
   const { email, password } = req.body;
-
+  
   if (email === undefined || password === undefined) {
     res.json({ error: 1, message: "Email and Password are required!" });
     return 0;
@@ -47,7 +47,7 @@ const auth = async (req, res, next) => {
 
   let dataReturn = {};
   let statusCode = 200;
-
+  console.log(userData);
   if (!userData) {
     dataReturn = { errors: { email: ["Email or Password is Invalid"] } };
     statusCode = 400;
