@@ -181,12 +181,9 @@ exports.updateSaleLead = async (req, res) => {
       level: "in:low prudential,middle prudential,high prudential",
       "companyInfo.companyEmail": "email",
     });
-    console.log(validation.errors);
-    console.log(123);
     console.log(req.body);
-
     const matched = await validation.check();
-
+    console.log(matched);
     if (matched) {
       const {
         _id,

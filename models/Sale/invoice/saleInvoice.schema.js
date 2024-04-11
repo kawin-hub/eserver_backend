@@ -51,6 +51,8 @@ let saleInvoiceSchema = new Schema(
         address: {
           companyInfo_id: { type: ObjectId, ref: "SaleLeads" },
           companyName: { type: String },
+          branch: { type: String },
+          taxId: { type: String },
           address: { type: String },
           googleMap: { type: String },
           firstname: { type: String },
@@ -65,6 +67,8 @@ let saleInvoiceSchema = new Schema(
         address: {
           companyInfo_id: { type: ObjectId, ref: "SaleLeads" },
           companyName: { type: String },
+          branch: { type: String },
+          taxId: { type: String },
           address: { type: String },
           googleMap: { type: String },
           firstname: { type: String },

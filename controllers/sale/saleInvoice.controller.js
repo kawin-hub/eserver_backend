@@ -12,8 +12,8 @@ exports.getSaleInvoices = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    const { _id, getby } = req.query;
-    
+    const { _id, getby, txtSearch, paymentStatus } = req.query;
+
     var SaleInvoiceModel = SaleModel.invoice;
 
     if (typeof getby != "undefined" && getby == "quotation") {
@@ -43,6 +43,29 @@ exports.getSaleInvoices = async (req, res) => {
         limit: pageOption.limit,
         queryCondition: {},
       };
+
+      var orConditions;
+
+      if (typeof txtSearch !== "undefined") {
+        const searchRegex = new RegExp(txtSearch, "i");
+        orConditions = [
+          {
+            documentNumber: searchRegex,
+          },
+          {
+            "customerInfo.companyInfo.companyName": searchRegex,
+          },
+          {
+            "customerInfo.companyInfo.contactNumber": searchRegex,
+          },
+        ];
+
+        params.queryCondition["$or"] = orConditions;
+      }
+
+      if (typeof paymentStatus !== "undefined") {
+        params.queryCondition["paymentStatus"] = paymentStatus;
+      }
 
       result = await SaleInvoiceModel.getAllSaleInvoices(params);
     }
@@ -228,6 +251,8 @@ exports.insertSaleInvoice = async (req, res) => {
                 address: {
                   companyInfo_id: companyInfo._id,
                   companyName: companyInfo.companyName,
+                  branch: companyInfo.branch,
+                  taxId: companyInfo.taxId,
                   address: companyInfo.address,
                   googleMap: companyInfo.googleMap,
                   firstname: companyInfo.firstname,
@@ -242,6 +267,8 @@ exports.insertSaleInvoice = async (req, res) => {
                 address: {
                   companyInfo_id: companyInfo._id,
                   companyName: companyInfo.companyName,
+                  branch: companyInfo.branch,
+                  taxId: companyInfo.taxId,
                   address: companyInfo.address,
                   googleMap: companyInfo.googleMap,
                   firstname: companyInfo.firstname,
