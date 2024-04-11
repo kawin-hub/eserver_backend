@@ -11,7 +11,7 @@ exports.getAccountExpenses = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    const { _id } = req.query;
+    const { _id, txtSearch, category, type } = req.query;
 
     var AccountExpenseModel = AccountModel.expense;
 
@@ -30,6 +30,29 @@ exports.getAccountExpenses = async (req, res) => {
         limit: pageOption.limit,
         queryCondition: {},
       };
+
+      var orConditions;
+
+      if (typeof txtSearch !== "undefined") {
+        const searchRegex = new RegExp(txtSearch, "i");
+        orConditions = [
+          {
+            documentNumber: searchRegex,
+          },
+          {
+            whom: searchRegex,
+          },
+        ];
+        params.queryCondition["$or"] = orConditions;
+      }
+
+      if (typeof category !== "undefined") {
+        params.queryCondition["category"] = category;
+      }
+
+      if (typeof type !== "undefined") {
+        params.queryCondition["type"] = type;
+      }
 
       result = await AccountExpenseModel.getAllAccountExpenses(params);
     }
@@ -76,9 +99,6 @@ exports.insertAccountExpense = async (req, res) => {
       const matched = await validation.check();
 
       var AccountExpenseModel = AccountModel.expense;
-
-      console.log(req.files);
-      console.log(req.body);
 
       if (matched) {
         const {

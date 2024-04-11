@@ -4,6 +4,7 @@ let ProductModel = require("../../models/Products");
 let { general } = require("../../middleware");
 const { DataResponse } = require("../../models/general_data.model");
 const { Validator } = require("node-input-validator");
+const { param } = require("express/lib/request");
 
 // 👉 Get all or by ID
 
@@ -11,7 +12,7 @@ exports.getSaleQuotations = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    const { _id } = req.query;
+    const { _id, txtSearch, quotationStatus, currentStatus } = req.query;
 
     var SaleQuotationModel = SaleModel.quotation;
 
@@ -31,6 +32,29 @@ exports.getSaleQuotations = async (req, res) => {
         queryCondition: {},
       };
 
+      var orConditions;
+
+      if (typeof txtSearch !== "undefined") {
+        const searchRegex = new RegExp(txtSearch, "i");
+        orConditions = [
+          {
+            documentNumber: searchRegex,
+          },
+          {
+            "customerInfo.companyInfo.companyName": searchRegex,
+          },
+        ];
+
+        params.queryCondition["$or"] = orConditions;
+      }
+
+      if (typeof quotationStatus !== "undefined") {
+        params.queryCondition["quotationStatus"] = quotationStatus;
+      }
+
+      if (typeof currentStatus !== "undefined") {
+        params.queryCondition["currentStatus"] = currentStatus;
+      }
       result = await SaleQuotationModel.getAllSaleQuotations(params);
     }
   } catch (error) {
