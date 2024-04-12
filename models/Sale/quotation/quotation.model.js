@@ -1,4 +1,5 @@
 const SaleQuotation = require("./saleQuotations.schema");
+const SaleInvoice = require("../invoice/saleInvoice.schema");
 const { DataResponse } = require("../../general_data.model");
 
 // 👉 Get all
@@ -14,20 +15,52 @@ exports.getAllSaleQuotations = async (params) => {
     var queryCondition =
       params.queryCondition !== undefined ? params.queryCondition : {};
 
-    const queryResult = await SaleQuotation.find(queryCondition, {
-      _id: 1,
-      createdAt: 1,
-      documentNumber: 1,
-      customerInfo: 1,
-      quotationStatus: 1,
-      currentStatus: 1,
-      createdBy: 1,
-      summary: 1,
-    })
-      .skip(skip)
-      .limit(limit)
-      .sort({ _id: -1 })
-      .lean();
+    const queryResult = await SaleQuotation.aggregate([
+      {
+        $match: queryCondition,
+      },
+      {
+        $lookup: {
+          from: "SaleInvoices",
+          localField: "_id",
+          foreignField: "quotation_id",
+          as: "invoice",
+        },
+      },
+      {
+        $addFields: {
+          purchased: {
+            $cond: {
+              if: { $gt: [{ $size: "$invoice" }, 0] },
+              then: 1,
+              else: 0,
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          createdAt: 1,
+          documentNumber: 1,
+          customerInfo: 1,
+          quotationStatus: 1,
+          currentStatus: 1,
+          createdBy: 1,
+          summary: 1,
+          purchased: 1,
+        },
+      },
+      {
+        $sort: { _id: -1 }, // Sort by issuedDate in descending order
+      },
+      {
+        $skip: skip, // Skip first n documents
+      },
+      {
+        $limit: limit, // Limit to n documents
+      },
+    ]);
 
     result.doSuccess(1);
 
