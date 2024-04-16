@@ -10,5 +10,7 @@ const { accountExpense } = require("../controllers/account");
 
 router.get("/expenses", verifyToken, accountExpense.getAccountExpenses);
 router.post("/expenses", verifyToken, accountExpense.insertAccountExpense);
+router.put("/expenses", verifyToken, accountExpense.updateAccountExpense);
+router.delete("/expenses", verifyToken, accountExpense.deleteAccountExpense);
 
 module.exports = router;
