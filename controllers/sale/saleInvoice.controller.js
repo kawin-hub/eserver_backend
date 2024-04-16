@@ -408,6 +408,7 @@ exports.updateSaleInvoice = async (req, res) => {
         paymentImagesRemove = [paymentImagesRemove];
       }
 
+      console.log(paymentImagesRemove);
       params = {};
       params["$pull"] = {
         paymentDocuments: { _id: { $in: paymentDocumentsRemove } },
