@@ -96,3 +96,38 @@ exports.insertAccountExpense = async (params) => {
 
   return result;
 };
+
+exports.updateAccountExpense = async (params, conditions) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await AccountExpense.updateOne(params, conditions);
+
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e);
+    result.doError(0);
+  }
+
+  return result;
+};
+
+exports.deleteAccountExpense = async (params) => {
+  var result = new DataResponse();
+
+  console.log(" in model");
+  try {
+    result.data = await AccountExpense.deleteOne(params);
+    console.log(result.data);
+    result.data.deletedCount == 0
+      ? result.doSuccess(3, "this _id isn't allowed to be removed!")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e);
+    result.doError();
+  }
+  console.log(result);
+  return result;
+};
