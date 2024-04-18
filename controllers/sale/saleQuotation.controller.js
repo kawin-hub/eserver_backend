@@ -4,15 +4,15 @@ let ProductModel = require("../../models/Products");
 let { general } = require("../../middleware");
 const { DataResponse } = require("../../models/general_data.model");
 const { Validator } = require("node-input-validator");
-const { param } = require("express/lib/request");
+const { ObjectId } = require("mongodb");
 
 // 👉 Get all or by ID
-
 exports.getSaleQuotations = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    const { _id, txtSearch, quotationStatus, currentStatus } = req.query;
+    const { _id, txtSearch, quotationStatus, currentStatus, lead_id } =
+      req.query;
 
     var SaleQuotationModel = SaleModel.quotation;
 
@@ -55,9 +55,15 @@ exports.getSaleQuotations = async (req, res) => {
       if (typeof currentStatus !== "undefined") {
         params.queryCondition["currentStatus"] = currentStatus;
       }
+
+      if (typeof lead_id !== "undefined") {
+        params.queryCondition["customerInfo.lead_id"] = new ObjectId(lead_id);
+      }
+
       result = await SaleQuotationModel.getAllSaleQuotations(params);
     }
   } catch (error) {
+    result.doError(7,error.message)
     console.log(error);
   }
 
@@ -373,23 +379,3 @@ exports.deleteSaleQuotation = async (req, res) => {
 
   res.json(result);
 };
-
-/* if (typeof products !== "undefined") {
-          productResult = await ProductModel.getProductsbyArrayId(
-            productModel_ids
-          );
-        } */
-
-// อัปเดตข้อมูลสินค้า
-/* if (productResult.data) {
-            params.products = productResult.data.map((product) => {
-              const quantity = productModel_id.includes(product._id.toString())
-                ? products.find((p) => p.productModel_id === product._id)
-                    .quantity
-                : 0;
-              return {
-                productModel_id: product._id,
-                quantity: quantity,
-              };
-            });
-          } */

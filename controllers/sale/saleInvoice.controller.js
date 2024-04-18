@@ -4,6 +4,7 @@ let ProductModel = require("../../models/Products");
 let { upload, general } = require("../../middleware");
 const { DataResponse } = require("../../models/general_data.model");
 const { Validator } = require("node-input-validator");
+const { ObjectId } = require("mongodb");
 const fs = require("fs");
 
 // 👉 Get all or by ID
@@ -12,7 +13,7 @@ exports.getSaleInvoices = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    const { _id, getby, txtSearch, paymentStatus } = req.query;
+    const { _id, getby, txtSearch, paymentStatus, lead_id } = req.query;
 
     var SaleInvoiceModel = SaleModel.invoice;
 
@@ -65,6 +66,10 @@ exports.getSaleInvoices = async (req, res) => {
 
       if (typeof paymentStatus !== "undefined") {
         params.queryCondition["paymentStatus"] = paymentStatus;
+      }
+
+      if (typeof lead_id !== "undefined") {
+        params.queryCondition["customerInfo.lead_id"] = new ObjectId(lead_id);
       }
 
       result = await SaleInvoiceModel.getAllSaleInvoices(params);

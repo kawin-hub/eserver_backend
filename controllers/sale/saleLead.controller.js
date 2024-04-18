@@ -177,13 +177,67 @@ exports.updateSaleLead = async (req, res) => {
   try {
     const validation = new Validator(req.body, {
       _id: "required",
+      level: "in:low prudential,middle prudential,high prudential",
+      customerLevel_id: "required",
+      tag: "required|array",
+      lineId: "required",
+      /* "companyInfo.*.address": "required|string",
+      "companyInfo.*.branch": "required|string",
+      "companyInfo.*.companyContactNumber": "required|string",
+      "companyInfo.*.companyEmail": "required|email",
+      "companyInfo.*.companyName": "required|string",
+      "companyInfo.*.googleMap": "required|string",
+      "companyInfo.*.taxId": "required|string", */
+      "companyInfo.*.contactNumber": "required|string",
+      "companyInfo.*.firstname": "required|string",
+      /* "companyInfo.*.lastname": "required|string", */
+    });
+
+    const matched = await validation.check();
+    if (matched) {
+      const { _id, lineId, level, customerLevel_id, tag, companyInfo } =
+        req.body;
+
+      const customerLevelResult = await SaleModel.lead.getCustomerLevelById({
+        _id: customerLevel_id,
+      });
+
+      if (customerLevelResult.code == 1) {
+        params = {
+          lineId: lineId,
+          level: level,
+          tag: tag,
+          customerLevel: {
+            customerLevel_id: customerLevelResult.data._id,
+            level: customerLevelResult.data.level,
+          },
+          companyInfo: companyInfo,
+        };
+
+        result = await SaleModel.lead.updateSaleLead({ _id: _id }, params);
+      }
+    } else {
+      result.doError(2, validation.errors);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+
+  res.json(result);
+};
+
+/* exports.updateSaleLeadTemp = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    const validation = new Validator(req.body, {
+      _id: "required",
       companyInfo_id: "required",
       level: "in:low prudential,middle prudential,high prudential",
       "companyInfo.companyEmail": "email",
     });
-    console.log(req.body);
+
     const matched = await validation.check();
-    console.log(matched);
     if (matched) {
       const {
         _id,
@@ -244,13 +298,15 @@ exports.updateSaleLead = async (req, res) => {
       } else {
         result.doError(5, "customerLevel_id is not found!");
       }
+    } else {
+      result.doError(2, validation.errors);
     }
   } catch (error) {
     console.log(error);
   }
 
   res.json(result);
-};
+}; */
 
 // 👉 Delete
 
