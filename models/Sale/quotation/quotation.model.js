@@ -14,7 +14,6 @@ exports.getAllSaleQuotations = async (params) => {
 
     var queryCondition =
       params.queryCondition !== undefined ? params.queryCondition : {};
-
     const queryResult = await SaleQuotation.aggregate([
       {
         $match: queryCondition,

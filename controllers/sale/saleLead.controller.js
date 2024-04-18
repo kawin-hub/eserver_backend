@@ -181,16 +181,16 @@ exports.updateSaleLead = async (req, res) => {
       customerLevel_id: "required",
       tag: "required|array",
       lineId: "required",
-      "companyInfo.*.address": "required|string",
+      /* "companyInfo.*.address": "required|string",
       "companyInfo.*.branch": "required|string",
       "companyInfo.*.companyContactNumber": "required|string",
       "companyInfo.*.companyEmail": "required|email",
       "companyInfo.*.companyName": "required|string",
+      "companyInfo.*.googleMap": "required|string",
+      "companyInfo.*.taxId": "required|string", */
       "companyInfo.*.contactNumber": "required|string",
       "companyInfo.*.firstname": "required|string",
-      "companyInfo.*.googleMap": "required|string",
-      "companyInfo.*.lastname": "required|string",
-      "companyInfo.*.taxId": "required|string",
+      /* "companyInfo.*.lastname": "required|string", */
     });
 
     const matched = await validation.check();
