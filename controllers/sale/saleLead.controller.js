@@ -179,7 +179,7 @@ exports.updateSaleLead = async (req, res) => {
       _id: "required",
       level: "in:low prudential,middle prudential,high prudential",
       customerLevel_id: "required",
-      tag: "required|array",
+      /* tag: "required|array", */
       lineId: "required",
       /* "companyInfo.*.address": "required|string",
       "companyInfo.*.branch": "required|string",
@@ -321,6 +321,29 @@ exports.deleteSaleLead = async (req, res) => {
     }
   } catch (e) {
     console.log(e);
+  }
+
+  res.json(result);
+};
+
+// 👉 Get Line Users
+
+exports.getLineUsers = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    const { _id } = req.query;
+
+    var SaleLeadModel = SaleModel.lead;
+    var params = {};
+
+    if (typeof _id != "undefined") {
+      params = { _id: _id };
+    }
+
+    result = await SaleLeadModel.getLineUsersByConditions(params);
+  } catch (error) {
+    console.log(error);
   }
 
   res.json(result);

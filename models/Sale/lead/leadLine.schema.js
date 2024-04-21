@@ -7,7 +7,7 @@ let LineLeadlSchema = new Schema(
       type: String,
       unique: true,
     },
-    displayName: {
+    name: {
       type: String,
     },
     pictureUrl: {

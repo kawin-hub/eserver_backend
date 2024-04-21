@@ -28,4 +28,8 @@ router.post("/invoices", verifyToken, saleInvoice.insertSaleInvoice);
 router.put("/invoices", verifyToken, saleInvoice.updateSaleInvoice);
 router.delete("/invoices", verifyToken, saleInvoice.deleteSaleInvoice);
 
+// 👉 Line
+
+router.get("/line/users", verifyToken, saleLead.getLineUsers);
+
 module.exports = router;

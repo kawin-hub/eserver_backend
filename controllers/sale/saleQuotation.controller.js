@@ -63,7 +63,7 @@ exports.getSaleQuotations = async (req, res) => {
       result = await SaleQuotationModel.getAllSaleQuotations(params);
     }
   } catch (error) {
-    result.doError(7,error.message)
+    result.doError(7, error.message);
     console.log(error);
   }
 

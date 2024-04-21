@@ -20,9 +20,17 @@ exports.getSaleInvoices = async (req, res) => {
     if (typeof getby != "undefined" && getby == "quotation") {
       // get by quotation_id
       if (typeof _id != "undefined") {
-        result = await SaleInvoiceModel.getSaleInvoiceByConditions({
+        var params = {
           quotation_id: new Object(_id),
-        });
+        };
+
+        if (typeof paymentStatus != "undefined") {
+          params.paymentStatus = paymentStatus;
+        }
+
+        console.log(params);
+
+        result = await SaleInvoiceModel.getSaleInvoiceByConditions(params);
       }
     } else {
       // get by invoice_id
