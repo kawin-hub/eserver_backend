@@ -1,5 +1,6 @@
 const SaleLead = require("./saleLeads.schema");
 const CustomerLevel = require("./customerLevel.schema");
+const LineLead = require("./leadLine.schema");
 const { DataResponse } = require("../../general_data.model");
 const { param } = require("express/lib/request");
 
@@ -111,10 +112,7 @@ exports.getAllSaleLeads = async (params) => {
     var queryCondition =
       params.queryCondition !== undefined ? params.queryCondition : {};
 
-    const queryResult = await SaleLead.find(
-      queryCondition,
-      (params.projector)
-    )
+    const queryResult = await SaleLead.find(queryCondition, params.projector)
       .skip(skip)
       .limit(limit)
       .sort({ _id: -1 })
@@ -163,7 +161,6 @@ exports.getSaleLeadById = async (params) => {
 };
 
 // 👉 Insert/Post SaleLead
-
 exports.insertSaleLead = async (params) => {
   var result = new DataResponse();
 
@@ -211,6 +208,28 @@ exports.deleteSaleLead = async (params) => {
       : result.doSuccess(1);
   } catch (e) {
     result.doError();
+  }
+
+  return result;
+};
+
+// 👉 Get Line Users
+
+exports.getLineUsersByConditions = async (params) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await LineLead.find(params).lean();
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e.kind);
+    if (e.kind == "ObjectId") {
+      result.doError(0, "Please check your _id format");
+    } else {
+      result.doError(0);
+    }
   }
 
   return result;

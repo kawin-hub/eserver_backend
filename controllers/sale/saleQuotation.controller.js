@@ -63,7 +63,36 @@ exports.getSaleQuotations = async (req, res) => {
       result = await SaleQuotationModel.getAllSaleQuotations(params);
     }
   } catch (error) {
-    result.doError(7,error.message)
+    result.doError(7, error.message);
+    console.log(error);
+  }
+
+  res.json(result);
+};
+
+exports.getNewQuationId = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    result = await SaleModel.quotation.getNewSaleQuationId();
+
+    var newDocumentNumber = "759-01388";
+
+    if (result.data != null) {
+      var documentNumberParseInt = parseInt(
+        result.data.documentNumber.replace(/-/g, "")
+      );
+
+      newDocumentNumber = documentNumberParseInt + 1;
+      newDocumentNumber =
+        newDocumentNumber.toString().slice(0, 3) +
+        "-" +
+        newDocumentNumber.toString().slice(3);
+    } else {
+      result.data._id = null;
+    }
+    result.data.documentNumber = newDocumentNumber;
+  } catch (error) {
     console.log(error);
   }
 
