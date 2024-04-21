@@ -39,7 +39,7 @@ exports.getInventoryLocations = async (req, res) => {
   res.json(result);
 };
 
-// 👉 Insert/Post
+// 👉 Post/Insert
 
 exports.insertInventoryLocation = async (req, res) => {
   var result = new DataResponse();

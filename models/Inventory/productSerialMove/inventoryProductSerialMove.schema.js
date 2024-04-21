@@ -3,6 +3,9 @@ const collection = "InventoryProductSerialMove";
 
 let inventoryProductSerailMoveSchema = new Schema(
   {
+    // ดึงข้อมูลของ Move มาทั้งหมด
+    move_id: { type: ObjectId, ref: "InventoryMoves" },
+    // ดึงมาและเก็บไว้
     inventoryMove: {
       move_id: { type: ObjectId, ref: "InventoryMoves" },
       documentNumber: { type: String },
@@ -23,15 +26,16 @@ let inventoryProductSerailMoveSchema = new Schema(
       modelCode: String,
       name: String,
     },
-    jobStatus: {
-      type: String,
-    },
     InventoryProductSerial: [
       {
         productSerial_id: { type: ObjectId, ref: "InventoryProductSerial" },
         serialNumber: { type: String },
       },
     ],
+    // ข้อมูลที่ต้องเพิ่มตอน Move
+    jobStatus: {
+      type: String,
+    },
     currentStatus: {
       type: String,
       default: "move",
@@ -68,6 +72,7 @@ let inventoryProductSerailMoveSchema = new Schema(
         },
       },
     ],
+    //สร้างและอัปเดตโดยใคร
     createdBy: {
       user_id: { type: ObjectId, ref: "Users" },
       firstname: { type: String },

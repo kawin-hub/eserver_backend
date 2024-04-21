@@ -32,12 +32,12 @@ let inventoryLocationSchema = new Schema(
     createdBy: {
       user_id: { type: ObjectId, ref: "Users" },
       firstname: { type: String },
-      lastname: { type: String }
+      lastname: { type: String },
     },
     updatedBy: {
       user_id: { type: ObjectId, ref: "Users" },
       firstname: { type: String },
-      lastname: { type: String }
+      lastname: { type: String },
     },
   },
   {

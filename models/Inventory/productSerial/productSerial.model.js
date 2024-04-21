@@ -24,12 +24,15 @@ exports.insertProductSerial = async (params) => {
 
 // 👉 Get by Array ID
 
-exports.getProducSerialtsbyArrayId = async (inventoryProductSerial_ids) => {
+exports.getProductSerialsbyArrayId = async (
+  inventoryProductSerial_ids,
+  projection = {}
+) => {
   var result = new DataResponse();
   try {
     result.data = await InventoryProductSerial.find(
       { _id: { $in: inventoryProductSerial_ids } },
-      { _id: 1, serialNumber: 1 }
+      projection
     ).lean();
     result.data == null
       ? result.doSuccess(2, "_id not found in database")
