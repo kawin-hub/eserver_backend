@@ -17,6 +17,11 @@ router.post("/leads", verifyToken, saleLead.insertSaleLead);
 // 👉 Sale Quotation
 
 router.get("/quotations", verifyToken, saleQuotation.getSaleQuotations);
+router.get(
+  "/quotations/newQuatationId",
+  verifyToken,
+  saleQuotation.getNewQuationId
+);
 router.put("/quotations", verifyToken, saleQuotation.updateSaleQuotation);
 router.post("/quotations", verifyToken, saleQuotation.insertSaleQuotation);
 router.delete("/quotations", verifyToken, saleQuotation.deleteSaleQuotation);
