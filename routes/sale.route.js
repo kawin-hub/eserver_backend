@@ -29,6 +29,7 @@ router.delete("/quotations", verifyToken, saleQuotation.deleteSaleQuotation);
 // 👉 Sale Invoice
 
 router.get("/invoices", verifyToken, saleInvoice.getSaleInvoices);
+router.get("/invoices/newInvoiceId", verifyToken, saleInvoice.getNewInvoiceId);
 router.post("/invoices", verifyToken, saleInvoice.insertSaleInvoice);
 router.put("/invoices", verifyToken, saleInvoice.updateSaleInvoice);
 router.delete("/invoices", verifyToken, saleInvoice.deleteSaleInvoice);

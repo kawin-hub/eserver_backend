@@ -89,6 +89,35 @@ exports.getSaleInvoices = async (req, res) => {
   res.json(result);
 };
 
+exports.getNewInvoiceId = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    result = await SaleModel.invoice.getNewSaleInvoiceId();
+
+    var newDocumentNumber = "759-01388";
+
+    if (result.data != null) {
+      var documentNumberParseInt = parseInt(
+        result.data.documentNumber.replace(/-/g, "")
+      );
+
+      newDocumentNumber = documentNumberParseInt + 1;
+      newDocumentNumber =
+        newDocumentNumber.toString().slice(0, 3) +
+        "-" +
+        newDocumentNumber.toString().slice(3);
+    } else {
+      result.data._id = null;
+    }
+    result.data.documentNumber = newDocumentNumber;
+  } catch (error) {
+    console.log(error);
+  }
+
+  res.json(result);
+};
+
 // 👉 Post/Insert
 
 exports.insertSaleInvoice = async (req, res) => {
