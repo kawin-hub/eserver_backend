@@ -27,7 +27,6 @@ exports.getSaleInvoices = async (req, res) => {
         if (typeof paymentStatus != "undefined") {
           params.paymentStatus = paymentStatus;
         }
-
         result = await SaleInvoiceModel.getSaleInvoiceByConditions(params);
       }
     } else {
@@ -80,6 +79,35 @@ exports.getSaleInvoices = async (req, res) => {
 
       result = await SaleInvoiceModel.getAllSaleInvoices(params);
     }
+  } catch (error) {
+    console.log(error);
+  }
+
+  res.json(result);
+};
+
+exports.getNewInvoiceId = async (req, res) => {
+  var result = new DataResponse();
+  console.log("In controller");
+  try {
+    result = await SaleModel.invoice.getNewSaleInvoiceId();
+
+    var newDocumentNumber = "759-01388";
+
+    if (result.data != null) {
+      var documentNumberParseInt = parseInt(
+        result.data.documentNumber.replace(/-/g, "")
+      );
+
+      newDocumentNumber = documentNumberParseInt + 1;
+      newDocumentNumber =
+        newDocumentNumber.toString().slice(0, 3) +
+        "-" +
+        newDocumentNumber.toString().slice(3);
+    } else {
+      result.data._id = null;
+    }
+    result.data.documentNumber = newDocumentNumber;
   } catch (error) {
     console.log(error);
   }
@@ -208,7 +236,6 @@ exports.insertSaleInvoice = async (req, res) => {
             for (var i = 0; i < invoiceInfo.data.length; i++) {
               invoiceCreatedTotal += invoiceInfo.data[i].amountRecieved.baht;
             }
-
             var totalInvoiceNew = invoiceCreatedTotal + params.baht;
 
             return {
@@ -228,7 +255,6 @@ exports.insertSaleInvoice = async (req, res) => {
             baht: baht,
             percent: [],
           });
-
           if (invoiceInfo.status) {
             var insertSaleParam = {
               documentNumber: documentNumber,
