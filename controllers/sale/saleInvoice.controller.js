@@ -27,8 +27,6 @@ exports.getSaleInvoices = async (req, res) => {
         if (typeof paymentStatus != "undefined") {
           params.paymentStatus = paymentStatus;
         }
-
-
         result = await SaleInvoiceModel.getSaleInvoiceByConditions(params);
       }
     } else {
@@ -133,7 +131,6 @@ exports.insertSaleInvoice = async (req, res) => {
       estimateDate: "dateFormat:YYYY-MM-DD", // เพิ่มการตรวจสอบรูปแบบของ estimateDate
       deliveryDate: "dateFormat:YYYY-MM-DD", // เพิ่มการตรวจสอบรูปแบบของ deliveryDate
     };
-
 
     const validation = new Validator(req.body, validationParams);
 
@@ -460,6 +457,12 @@ exports.updateSaleInvoice = async (req, res) => {
         updateOptions
       );
 
+      if (result.code == 1 && paymentStatus == "paid") {
+        await SaleModel.quotation.updateSaleQuotation(
+          { _id: quotation_id },
+          { currentStatus: "purchased" }
+        );
+      }
       if (result.code == 1) {
         const filteredPaymentDocumentsToDelete =
           result.data.paymentDocuments.filter((item) =>
