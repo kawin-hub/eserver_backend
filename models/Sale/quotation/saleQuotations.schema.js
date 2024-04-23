@@ -90,6 +90,7 @@ let saleQuotationSchema = new Schema(
     },
     currentStatus: {
       type: String,
+      enum: ["purchased", "not yet purchased"],
       default: "not yet purchased",
     },
   },
