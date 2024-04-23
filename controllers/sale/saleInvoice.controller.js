@@ -28,7 +28,6 @@ exports.getSaleInvoices = async (req, res) => {
           params.paymentStatus = paymentStatus;
         }
 
-        console.log(params);
 
         result = await SaleInvoiceModel.getSaleInvoiceByConditions(params);
       }
@@ -91,7 +90,7 @@ exports.getSaleInvoices = async (req, res) => {
 
 exports.getNewInvoiceId = async (req, res) => {
   var result = new DataResponse();
-
+  console.log("In controller");
   try {
     result = await SaleModel.invoice.getNewSaleInvoiceId();
 
@@ -135,7 +134,6 @@ exports.insertSaleInvoice = async (req, res) => {
       deliveryDate: "dateFormat:YYYY-MM-DD", // เพิ่มการตรวจสอบรูปแบบของ deliveryDate
     };
 
-    console.log(req.body);
 
     const validation = new Validator(req.body, validationParams);
 
@@ -189,7 +187,6 @@ exports.insertSaleInvoice = async (req, res) => {
         const companyInfo = convertInfoResult.data.companyInfo.find(
           (info) => info._id.toString() === customerInfo_id
         );
-        console.log(companyInfo);
 
         if (companyInfo) {
           // สร้างฟังก์ชันสำหรับคำนวณเปอร์เซ็นต์และจำนวนเงิน
@@ -242,7 +239,6 @@ exports.insertSaleInvoice = async (req, res) => {
             for (var i = 0; i < invoiceInfo.data.length; i++) {
               invoiceCreatedTotal += invoiceInfo.data[i].amountRecieved.baht;
             }
-            console.log(invoiceCreatedTotal);
             var totalInvoiceNew = invoiceCreatedTotal + params.baht;
 
             return {
@@ -262,7 +258,6 @@ exports.insertSaleInvoice = async (req, res) => {
             baht: baht,
             percent: [],
           });
-          console.log(invoiceInfo);
           if (invoiceInfo.status) {
             var insertSaleParam = {
               documentNumber: documentNumber,
@@ -450,7 +445,6 @@ exports.updateSaleInvoice = async (req, res) => {
         paymentImagesRemove = [paymentImagesRemove];
       }
 
-      console.log(paymentImagesRemove);
       params = {};
       params["$pull"] = {
         paymentDocuments: { _id: { $in: paymentDocumentsRemove } },
