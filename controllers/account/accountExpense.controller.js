@@ -63,6 +63,35 @@ exports.getAccountExpenses = async (req, res) => {
   res.json(result);
 };
 
+exports.getNewExpenseId = async (req, res) => {
+  var result = new DataResponse();
+  console.log("In controller");
+  try {
+    result = await AccountModel.expense.getNewAccountExpenseId();
+
+    var newDocumentNumber = "100000";
+
+    if (result.data != null) {
+      var documentNumberParseInt = parseInt(
+        result.data.documentNumber.replace(/-/g, "")
+      );
+
+      newDocumentNumber = documentNumberParseInt + 1;
+      newDocumentNumber =
+        newDocumentNumber.toString().slice(0, 3) +
+        "-" +
+        newDocumentNumber.toString().slice(3);
+    } else {
+      result.data._id = null;
+    }
+    result.data.documentNumber = newDocumentNumber;
+  } catch (error) {
+    console.log(error);
+  }
+
+  res.json(result);
+};
+
 // 👉 Post/Insert
 
 exports.insertAccountExpense = async (req, res) => {

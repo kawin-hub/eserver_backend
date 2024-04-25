@@ -131,3 +131,27 @@ exports.deleteAccountExpense = async (params) => {
   console.log(result);
   return result;
 };
+
+exports.getNewAccountExpenseId = async () => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await AccountExpense.findOne(
+      {},
+      { documentNumber: -1 },
+      { sort: { _id: -1 } }
+    );
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e.kind);
+    if (e.kind == "ObjectId") {
+      result.doError(0, "Please check your _id format");
+    } else {
+      result.doError(0);
+    }
+  }
+
+  return result;
+};

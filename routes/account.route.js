@@ -9,6 +9,11 @@ const { accountExpense } = require("../controllers/account");
 // 👉 Account Expense
 
 router.get("/expenses", verifyToken, accountExpense.getAccountExpenses);
+router.get(
+  "/expenses/newExpenseId",
+  verifyToken,
+  accountExpense.getNewExpenseId
+);
 router.post("/expenses", verifyToken, accountExpense.insertAccountExpense);
 router.put("/expenses", verifyToken, accountExpense.updateAccountExpense);
 router.delete("/expenses", verifyToken, accountExpense.deleteAccountExpense);
