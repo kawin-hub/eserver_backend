@@ -112,14 +112,48 @@ const insertProductModel = async (data) => {
   return model;
 };
 
-const getProductModels = async (param = {}) => {
-  var productModels = null;
+const getProductModels = async (params) => {
+  var result = new DataResponse();
   try {
-    productModels = await ProductModel.find(param).lean();
+    var limit = parseInt(params.limit);
+    var page = parseInt(params.page) ? parseInt(params.page) : 1;
+    var skip = (page - 1) * limit;
+    skip = skip < 1 ? 0 : skip;
+
+    var queryCondition =
+      params.queryCondition !== undefined ? params.queryCondition : {};
+
+    const queryResult = await ProductModel.find(
+      queryCondition,
+      params.projector
+    )
+      .skip(skip)
+      .limit(limit)
+      .sort({ _id: -1 })
+      .lean();
+
+    result.doSuccess(1);
+
+    var countTotalRow = await ProductModel.countDocuments(
+      params.queryCondition
+    );
+    result.doSuccess(1);
+
+    result.data = {
+      documents: queryResult,
+    };
+    result.data.limit = limit;
+    result.data.page = skip / limit + 1;
+    result.data.totalPage = Math.ceil(countTotalRow / limit);
+    result.data.totalCount = countTotalRow;
+
+    //totalCount
   } catch (e) {
-    productModels = e;
+    console.log(e);
+    result.doError();
   }
-  return productModels;
+
+  return result;
 };
 
 const getProductModelsByParams = async (param = {}, projection = {}) => {
@@ -186,6 +220,22 @@ const getProductsbyArrayId = async (product_ids, projection = {}) => {
   return result;
 };
 
+const updateProductDiscountGroup = async (conditions, params) => {
+  console.log("In Model ");
+  var result = new DataResponse();
+  try {
+    result.data = await ProductModel.findOneAndUpdate(conditions, params);
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e);
+    result.doError(0);
+  }
+
+  return result;
+};
+
 module.exports = {
   insertProductCategory,
   getAllProductCategories,
@@ -201,4 +251,5 @@ module.exports = {
   updateProductModel,
   getProductsbyArrayId,
   getProductModelsByParams,
+  updateProductDiscountGroup,
 };
