@@ -3,6 +3,7 @@ let SaleModel = require("../../models/Sale");
 let { general } = require("../../middleware");
 const { DataResponse } = require("../../models/general_data.model");
 const { Validator } = require("node-input-validator");
+const { LineClient } = require("../../services/third_party/line");
 
 // 👉 Get CustomerLevel all or by ID
 
@@ -342,6 +343,35 @@ exports.getLineUsers = async (req, res) => {
     }
 
     result = await SaleLeadModel.getLineUsersByConditions(params);
+  } catch (error) {
+    console.log(error);
+  }
+
+  res.json(result);
+};
+
+exports.getLineUserFromLineDeveloper = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    const { line_id } = req.query;
+
+    if (typeof line_id != "undefined") {
+      const profile = await LineClient.getProfile(line_id);
+
+      if (profile) {
+        result.doSuccess();
+        result.data = {
+          id: line_id,
+          name: profile.displayName,
+          pictureUrl: profile.pictureUrl,
+        };
+      } else {
+        result.doError(5, "This line_id is not found.");
+      }
+    } else {
+      result.doError(2, "line_id is required.");
+    }
   } catch (error) {
     console.log(error);
   }
