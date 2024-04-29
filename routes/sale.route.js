@@ -37,5 +37,11 @@ router.delete("/invoices", verifyToken, saleInvoice.deleteSaleInvoice);
 // 👉 Line
 
 router.get("/line/users", verifyToken, saleLead.getLineUsers);
+router.get("/line/profile", verifyToken, saleLead.getLineUserFromLineDeveloper);
+router.post(
+  "/line/sendQuotation",
+  verifyToken,
+  saleQuotation.sendQuotationToLine
+);
 
 module.exports = router;

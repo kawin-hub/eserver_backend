@@ -5,6 +5,12 @@ let { general } = require("../../middleware");
 const { DataResponse } = require("../../models/general_data.model");
 const { Validator } = require("node-input-validator");
 const { ObjectId } = require("mongodb");
+const fs = require("fs");
+const { LineClient } = require("../../services/third_party/line");
+
+const {
+  createInvoice,
+} = require("../../services/file_management/invoice.service");
 
 // 👉 Get all or by ID
 exports.getSaleQuotations = async (req, res) => {
@@ -178,6 +184,7 @@ exports.insertSaleQuotation = async (req, res) => {
             {
               _id: 1,
               name: 1,
+              description: 1,
               modelCode: 1,
               price: 1,
             }
@@ -220,6 +227,38 @@ exports.insertSaleQuotation = async (req, res) => {
 
             var totalVat = (totalPrice * vat) / 100;
             totalPrice += totalVat;
+
+            // ************* Create pdf and save ****************//
+            const quotation = {
+              header: {
+                fileType: "Quatation",
+                documentNumber: documentNumber,
+                createdDate: issuedDate,
+                dueDate: dueDate,
+              },
+              shipping: {
+                name:
+                  companyInfo.companyName != ""
+                    ? companyInfo.companyName
+                    : companyInfo.firstname + " " + companyInfo.lastname,
+                address: companyInfo.address,
+              },
+              items: productResult.data,
+              extraDiscount: extraDiscountFloat,
+            };
+
+            const pdfName =
+              documentNumber +
+              "-" +
+              (companyInfo.companyName != ""
+                ? companyInfo.companyName
+                : companyInfo.firstname) +
+              "-" +
+              Date.now() +
+              ".pdf";
+            const pdfPath = "assets/documents/quotations/" + pdfName;
+            createInvoice(quotation, pdfPath);
+            ///////////////////////
 
             var insertQuotationparams = {
               documentNumber: documentNumber,
@@ -268,11 +307,18 @@ exports.insertSaleQuotation = async (req, res) => {
                 vat: vat,
                 totalPrice: totalPrice,
               },
+              pdfPath: pdfPath,
             };
 
             result = await SaleQuotationModel.insertSaleQuotation(
               insertQuotationparams
             );
+
+            if (result.code != 1) {
+              /* fs.rmSync(pdfPath, {
+                force: true,
+              }); */
+            }
           } else {
             result.doError(5, "product_id is not found!");
           }
@@ -387,7 +433,7 @@ exports.deleteSaleQuotation = async (req, res) => {
       );
 
       // ตรวจสอบว่ามี invoice ที่มี quotation_id เท่ากับ _id หรือไม่
-      if (invoicesResult.code == 2) {
+      if (invoicesResult.code == 1 && invoicesResult.data.length == 0) {
         // ถ้าไม่มี invoice ที่มี quotation_id เท่ากับ _id ให้ลบ quotation
         result = await SaleModel.quotation.deleteSaleQuotation({
           _id: _id,
@@ -404,6 +450,66 @@ exports.deleteSaleQuotation = async (req, res) => {
     }
   } catch (e) {
     console.log(e);
+  }
+
+  res.json(result);
+};
+
+/// Send pdf to line
+
+exports.sendQuotationToLine = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    const { quotation_id } = req.body;
+
+    if (typeof quotation_id != "undefined") {
+      var SaleQuotationModel = SaleModel.quotation;
+      result = await SaleQuotationModel.getSaleQuotationById({
+        _id: quotation_id,
+      });
+
+      if (result.code == 1) {
+        const line_id = result.data.customerInfo.lineId;
+        const pdfPath = result.data.pdfPath;
+
+        await LineClient.pushMessage(line_id, {
+          type: "template",
+          altText: "ใบเสนอราคา ฟิล์มไฟฟ้า",
+          template: {
+            type: "buttons",
+            title: "ใบเสนอราคา",
+            text: "กดปุ่มด้านล่างเพื่อดูใบเสนอราคา",
+            actions: [
+              {
+                type: "uri",
+                label: "ใบเสนอราคา 83%",
+                uri: "https://inhouse.co.th",
+              },
+              {
+                type: "uri",
+                label: "ใบเสนอราคา 89%",
+                uri: "http://example.com/page/123",
+              },
+              {
+                type: "uri",
+                label: "ใบเสนอราคา 92%",
+                uri: "http://example.com/page/123",
+              },
+              {
+                type: "uri",
+                label: "ใบเสนอราคา 93%",
+                uri: "http://example.com/page/123",
+              },
+            ],
+          },
+        });
+      } else {
+        result.doError(5, "This quotation_id is not exist!");
+      }
+    }
+  } catch (error) {
+    console.log(error);
   }
 
   res.json(result);

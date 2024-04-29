@@ -78,6 +78,9 @@ let saleQuotationSchema = new Schema(
       enum: ["draft", "warm", "hot", "cold", "done"],
       default: "draft",
     },
+    pdfPath: {
+      type: String,
+    },
     createdBy: {
       user_id: { type: ObjectId, ref: "Users" },
       firstname: { type: String },
