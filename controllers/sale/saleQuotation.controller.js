@@ -315,9 +315,9 @@ exports.insertSaleQuotation = async (req, res) => {
             );
 
             if (result.code != 1) {
-              /* fs.rmSync(pdfPath, {
+              fs.rmSync(pdfPath, {
                 force: true,
-              }); */
+              });
             }
           } else {
             result.doError(5, "product_id is not found!");
