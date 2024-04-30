@@ -481,6 +481,9 @@ const getProductModels = async (req, res, next) => {
         category_ids: 1,
         price: 1,
         discountGroup: 1,
+        description: 1,
+        installationPrice: 1,
+        status: 1,
       },
     };
 

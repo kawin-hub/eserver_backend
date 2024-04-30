@@ -6,6 +6,9 @@ const { DataResponse } = require("../../models/general_data.model");
 const { Validator } = require("node-input-validator");
 const { ObjectId } = require("mongodb");
 const fs = require("fs");
+const {
+  createInvoice,
+} = require("../../services/file_management/invoice.service");
 
 // 👉 Get all or by ID
 
@@ -88,7 +91,6 @@ exports.getSaleInvoices = async (req, res) => {
 
 exports.getNewInvoiceId = async (req, res) => {
   var result = new DataResponse();
-  console.log("In controller");
   try {
     result = await SaleModel.invoice.getNewSaleInvoiceId();
 
@@ -250,6 +252,40 @@ exports.insertSaleInvoice = async (req, res) => {
               percent: isNaN(percentToShow) ? 0 : percentToShow,
             };
           }
+
+          // ************* Create pdf and save ****************//
+          const invoice = {
+            header: {
+              fileType: "Invoice",
+              documentNumber: documentNumber,
+              createdDate: issuedDate,
+              dueDate: dueDate,
+            },
+            shipping: {
+              name:
+                companyInfo.companyName != ""
+                  ? companyInfo.companyName
+                  : companyInfo.firstname + " " + companyInfo.lastname,
+              address: companyInfo.address,
+            },
+            items: products,
+            extraDiscount: 0,
+          };
+
+          const pdfName =
+            documentNumber +
+            "-" +
+            (companyInfo.companyName != ""
+              ? companyInfo.companyName
+              : companyInfo.firstname) +
+            "-" +
+            Date.now() +
+            ".pdf";
+          const pdfPath = "assets/documents/invoices/" + pdfName;
+
+          createInvoice(invoice, pdfPath);
+          ///////////////////////
+
           // ตัวอย่างการใช้งาน
           const invoiceInfo = await checkInvoiceTotalPay({
             baht: baht,
@@ -276,6 +312,7 @@ exports.insertSaleInvoice = async (req, res) => {
                 firstname: userData.firstname,
                 lastname: userData.lastname,
               },
+              pdfPath: pdfPath,
             };
 
             if (convertType == "install") {
@@ -315,6 +352,12 @@ exports.insertSaleInvoice = async (req, res) => {
             var result = await SaleModel.invoice.insertSaleInvoice(
               insertSaleParam
             );
+
+            if (result.code != 1) {
+              fs.rmSync(pdfPath, {
+                force: true,
+              });
+            }
           } else {
             result.doError(
               7,
@@ -508,7 +551,7 @@ exports.updateSaleInvoice = async (req, res) => {
 
 // 👉 Delete
 
-exports.deleteSaleInvoice = async (req, res) => {
+exports.deleteInvoice = async (req, res) => {
   const { _id } = req.body;
   try {
     var result = new DataResponse();
@@ -516,27 +559,21 @@ exports.deleteSaleInvoice = async (req, res) => {
     if (typeof _id !== "undefined") {
       // เรียกใช้เมธอดเพื่อดึงข้อมูล invoice จาก _id
 
+      var resultInvioiceDeleted =
+        await SaleModel.invoice.getSaleInvoiceByConditions({
+          _id: new ObjectId(_id),
+        });
+
       result = await SaleModel.invoice.deleteSaleInvoice({
         _id: _id,
         paymentStatus: "unpaid",
       });
-
-      if (result.code == 3) {
+      if (result.code == 1 && resultInvioiceDeleted.data.length > 0) {
+        if (resultInvioiceDeleted.data[0]?.pdfPath) {
+          upload.deleteFiles([resultInvioiceDeleted.data[0].pdfPath]);
+        }
+      } else if (result.code == 3) {
         result.doError(3, "To delete invoice the status must be 'unpaid'");
-      }
-
-      if (result.code == 1) {
-        for (let i = 0; i < result.data.paymentDocuments?.length; i++) {
-          fs.rmSync(result.data.paymentDocuments[i].path, {
-            force: true,
-          });
-        }
-
-        for (let i = 0; i < result.data.paymentImages?.length; i++) {
-          fs.rmSync(result.data.paymentImages[i].path, {
-            force: true,
-          });
-        }
       }
     } else {
       // หาก _id เป็น undefined แจ้งข้อความผิดพลาด

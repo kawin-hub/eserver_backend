@@ -4,7 +4,7 @@ const path = require("path");
 const fs = require("fs");
 exports.uploadFiles = async (req, res, uploadArray = []) => {
   const responseUpload = await doUploadFiles(req, res, uploadArray);
-  
+
   if (!responseUpload.success) {
     try {
       for (var i in req.files) {
@@ -76,4 +76,17 @@ const doUploadFiles = async (req, res, uploadArray = []) => {
       resolve(result);
     });
   });
+};
+exports.deleteFiles = (files) => {
+  try {
+    if (files !== undefined) {
+      for (let i = 0; i < files.length; i++) {
+        fs.rmSync(files[i], {
+          force: true,
+        });
+      }
+    }
+  } catch (e) {
+    console.log(e);
+  }
 };
