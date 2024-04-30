@@ -2,8 +2,12 @@
 let productModel = require("../models/Products");
 let dotenv = require("dotenv");
 let { upload } = require("../middleware");
+let SaleModel = require("../models/Sale");
+let { general } = require("../middleware");
 const fs = require("fs");
 const { filter } = require("compression");
+const { DataResponse } = require("../models/general_data.model");
+const { Validator } = require("node-input-validator");
 
 dotenv.config();
 // Insert productCategory
@@ -457,12 +461,46 @@ const insertProductModel = async (req, res, next) => {
 };
 
 const getProductModels = async (req, res, next) => {
-  var productModels = await productModel.getProductModels();
+  var result = new DataResponse();
 
-  res.status(200).send({
-    message: "Get product Models successfully!",
-    productModels,
-  });
+  try {
+    const { _id, txtSearch, brand_id, category_id } = req.query;
+
+    // get all
+    var pageOption = general.checkPageAndLimit(req.query.page, req.query.limit);
+
+    var params = {
+      page: pageOption.page,
+      limit: pageOption.limit,
+      queryCondition: {},
+      projector: {
+        _id: 1,
+        modelCode: 1,
+        name: 1,
+        brand_id: 1,
+        category_ids: 1,
+        price: 1,
+        discountGroup: 1,
+        description: 1,
+        installationPrice: 1,
+        status: 1,
+      },
+    };
+
+    if (typeof brand_id !== "undefined") {
+      params.queryCondition["brand_id"] = brand_id;
+    }
+
+    if (typeof category_id !== "undefined") {
+      params.queryCondition["category_ids"] = category_id;
+    }
+
+    result = await productModel.getProductModels(params);
+  } catch (error) {
+    console.log(error);
+  }
+
+  res.json(result);
 };
 
 const deleteProductModel = async (req, res, next) => {
@@ -769,6 +807,38 @@ const updateProductModel = async (req, res, next) => {
   });
 };
 
+const updateDiscountGroup = async (req, res, next) => {
+  var result = new DataResponse();
+
+  try {
+    const validation = new Validator(req.body, {
+      _id: "required",
+      discountGroup: "required|array",
+    });
+
+    const matched = await validation.check();
+    if (matched) {
+      const { _id, discountGroup } = req.body;
+
+      const conditions = { _id: _id };
+
+      var params = {
+        discountGroup: discountGroup,
+      };
+
+      result = await productModel.updateProductDiscountGroup(
+        conditions,
+        params
+      );
+    } else {
+      result.doError(2, validation.errors);
+    }
+  } catch (e) {
+    console.log(e);
+  }
+  res.json(result);
+};
+
 module.exports = {
   insertProductCategory,
   getAllProductCategories,
@@ -782,4 +852,5 @@ module.exports = {
   getProductModels,
   deleteProductModel,
   updateProductModel,
+  updateDiscountGroup,
 };

@@ -32,10 +32,16 @@ router.get("/invoices", verifyToken, saleInvoice.getSaleInvoices);
 router.get("/invoices/newInvoiceId", verifyToken, saleInvoice.getNewInvoiceId);
 router.post("/invoices", verifyToken, saleInvoice.insertSaleInvoice);
 router.put("/invoices", verifyToken, saleInvoice.updateSaleInvoice);
-router.delete("/invoices", verifyToken, saleInvoice.deleteSaleInvoice);
+router.delete("/invoices", verifyToken, saleInvoice.deleteInvoice);
 
 // 👉 Line
 
 router.get("/line/users", verifyToken, saleLead.getLineUsers);
+router.get("/line/profile", verifyToken, saleLead.getLineUserFromLineDeveloper);
+router.post(
+  "/line/sendQuotation",
+  verifyToken,
+  saleQuotation.sendQuotationToLine
+);
 
 module.exports = router;

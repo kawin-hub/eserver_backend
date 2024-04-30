@@ -9,7 +9,7 @@ async function initLead() {
 
   const params = [
     {
-      level: "end user",
+      level: "end_user",
     },
     {
       level: "project",

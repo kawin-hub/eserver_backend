@@ -7,4 +7,4 @@ const config = {
   channelSecret: process.env.LINE_CHANNEL_SECRET,
 };
 
-exports.client = new Client(config);
+exports.LineClient = new Client(config);

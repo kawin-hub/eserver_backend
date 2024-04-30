@@ -170,7 +170,7 @@ exports.deleteSaleInvoice = async (params) => {
   var result = new DataResponse();
 
   try {
-    result.data = await SaleInvoice.findOneAndDelete(params);
+    result.data = await SaleInvoice.deleteOne(params);
     result.data.deletedCount == 0
       ? result.doSuccess(3, "this _id isn't allowed to be removed!")
       : result.doSuccess(1);
