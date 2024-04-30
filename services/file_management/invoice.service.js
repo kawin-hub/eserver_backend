@@ -27,7 +27,7 @@ function createInvoice(data, path) {
   const subtotalResult = generateInvoiceTable(doc, data);
   generatePaymentMethod(doc);
   generateSummary(doc, subtotalResult);
-  generateRemarkAndAuthorized(doc);
+  generateRemarkAndAuthorized(doc, data);
 
   doc.end();
   doc.pipe(fs.createWriteStream(path));
@@ -155,7 +155,7 @@ function generatePaymentMethod(doc) {
 
   doc
     .fillColor(color.black)
-    .text("SCB Bank", margin.left + 200, docY + 40)
+    .text("SCB Bank", margin.left + 200, docY + 60)
     .text("Inhouse technology", margin.left + 156, doc.y + 5)
     .text("171-430192-2", margin.left + 185, doc.y + 5);
 }
@@ -202,7 +202,7 @@ function generateSummary(doc, subtotalResult) {
     });
 }
 
-function generateRemarkAndAuthorized(doc) {
+function generateRemarkAndAuthorized(doc, data) {
   const docY = doc.y;
   const marginTop = 30;
 
@@ -211,13 +211,13 @@ function generateRemarkAndAuthorized(doc) {
     .text("Remark", margin.left, docY + marginTop)
     .font(font.extraThin)
     .text(
-      "• 50% pre-production payment required for the smart film.",
+      data.note != "undefined" ? data.note : "",
       margin.left,
       docY + marginTop + 20
-    )
-    .text("• Remaining 50% due prior to installation.")
+    );
+  /* .text("• 50% pre-production payment required for the smart film.\n• Remaining 50% due prior to installation.")
     .text("• Production and shipping timeframe: 30-45 days.")
-    .text("• Two-years warranty included.");
+    .text("• Two-years warranty included."); */
 
   doc.text(
     "We appreciate your selection of our services.",
@@ -290,20 +290,6 @@ function formatCurrency(price, prefix = "฿") {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })
-  );
-}
-
-function formatDate(date) {
-  const day = date.getDate();
-  const month = date.getMonth() + 1;
-  const year = date.getFullYear();
-
-  return (
-    String(day).padStart(2, "0") +
-    "/" +
-    String(month).padStart(2, "0") +
-    "/" +
-    year
   );
 }
 

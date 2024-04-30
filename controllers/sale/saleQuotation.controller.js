@@ -245,6 +245,7 @@ exports.insertSaleQuotation = async (req, res) => {
               },
               items: productResult.data,
               extraDiscount: extraDiscountFloat,
+              note: note,
             };
 
             const pdfName =
