@@ -36,7 +36,7 @@ router.put("/brands", verifyToken, updateProductBrand);
 router.post("/models", verifyToken, insertProductModel);
 router.get("/models", verifyToken, getProductModels);
 router.put("/models", verifyToken, updateProductModel);
-router.put("/updateDiscountGroup", verifyToken, updateDiscountGroup);
+router.put("/models/updateDiscountGroup", verifyToken, updateDiscountGroup);
 router.delete("/models", verifyToken, deleteProductModel);
 
 module.exports = router;

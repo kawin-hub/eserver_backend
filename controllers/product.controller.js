@@ -805,39 +805,28 @@ const updateProductModel = async (req, res, next) => {
 };
 
 const updateDiscountGroup = async (req, res, next) => {
-  console.log("In controller updateDiscountGroup ");
   var result = new DataResponse();
 
   try {
     const validation = new Validator(req.body, {
       _id: "required",
-      customerLevel_id: "required",
-      price: "required",
+      discountGroup: "required|array",
     });
-
-    console.log(req.body);
 
     const matched = await validation.check();
     if (matched) {
-      const { _id, price } = req.body;
+      const { _id, discountGroup } = req.body;
 
-      if (customerLevelResult.code == 1) {
-        const conditions = { _id: _id, "discountGroup._id": discountGroup_id };
+      const conditions = { _id: _id };
 
-        var params = {
-          discountGroup: {
-            customerLevel_id: customerLevelResult.data._id,
-            level: customerLevelResult.data.level,
-            discount: price,
-          },
-        };
+      var params = {
+        discountGroup: discountGroup,
+      };
 
-        result = await productModel.updateProductDiscountGroup(
-          conditions,
-          params
-        );
-        console.log(params);
-      }
+      result = await productModel.updateProductDiscountGroup(
+        conditions,
+        params
+      );
     } else {
       result.doError(2, validation.errors);
     }
