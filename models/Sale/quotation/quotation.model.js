@@ -106,6 +106,28 @@ exports.getSaleQuotationById = async (params) => {
   return result;
 };
 
+// 👉 Get by conditions
+
+exports.getSaleQuotationByCondition = async (params, projector) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await SaleQuotation.find(params, projector).lean();
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e.kind);
+    if (e.kind == "ObjectId") {
+      result.doError(0, "Please check your _id format");
+    } else {
+      result.doError(0);
+    }
+  }
+
+  return result;
+};
+
 // 👉 Get by ID
 
 exports.getNewSaleQuationId = async () => {
