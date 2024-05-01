@@ -28,7 +28,7 @@ exports.getSaleInvoices = async (req, res) => {
         };
 
         if (typeof paymentStatus != "undefined") {
-          params.paymentStatus = paymentStatus;
+          params.paymentStatus = paymparamstus;
         }
         result = await SaleInvoiceModel.getSaleInvoiceByConditions(params);
       }

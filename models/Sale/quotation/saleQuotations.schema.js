@@ -81,6 +81,10 @@ let saleQuotationSchema = new Schema(
     pdfPath: {
       type: String,
     },
+    documentName: {
+      type: String,
+      default: "เอกสาร",
+    },
     createdBy: {
       user_id: { type: ObjectId, ref: "Users" },
       firstname: { type: String },

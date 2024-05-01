@@ -7,6 +7,8 @@ const { Validator } = require("node-input-validator");
 const { ObjectId } = require("mongodb");
 const fs = require("fs");
 const { LineClient } = require("../../services/third_party/line");
+const dotenv = require("dotenv");
+dotenv.config();
 
 const {
   createInvoice,
@@ -152,6 +154,7 @@ exports.insertSaleQuotation = async (req, res) => {
         note,
         quotationStatus,
         extraDiscount,
+        documentName,
       } = req.body;
 
       const userData = req.body.authData.userInfo.userData;
@@ -248,15 +251,7 @@ exports.insertSaleQuotation = async (req, res) => {
               note: note,
             };
 
-            const pdfName =
-              documentNumber +
-              "-" +
-              (companyInfo.companyName != ""
-                ? companyInfo.companyName
-                : companyInfo.firstname) +
-              "-" +
-              Date.now() +
-              ".pdf";
+            const pdfName = documentNumber + "-" + Date.now() + ".pdf";
             const pdfPath = "assets/documents/quotations/" + pdfName;
             createInvoice(quotation, pdfPath);
             ///////////////////////
@@ -309,6 +304,8 @@ exports.insertSaleQuotation = async (req, res) => {
                 totalPrice: totalPrice,
               },
               pdfPath: pdfPath,
+              documentName:
+                typeof documentName != "undefined" ? documentName : "",
             };
 
             result = await SaleQuotationModel.insertSaleQuotation(
@@ -462,49 +459,361 @@ exports.sendQuotationToLine = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    const { quotation_id } = req.body;
+    const { quotation_ids } = req.body;
 
-    if (typeof quotation_id != "undefined") {
+    if (typeof quotation_ids != "undefined") {
       var SaleQuotationModel = SaleModel.quotation;
-      result = await SaleQuotationModel.getSaleQuotationById({
-        _id: quotation_id,
-      });
+      result = await SaleQuotationModel.getSaleQuotationByCondition(
+        {
+          _id: { $in: quotation_ids.map((id) => new ObjectId(id)) },
+        },
+        {
+          _id: -1,
+          documentNumber: -1,
+          customerInfo: -1,
+          pdfPath: -1,
+          documentName: -1,
+          products: -1,
+          summary: -1,
+        }
+      );
 
-      if (result.code == 1) {
-        const line_id = result.data.customerInfo.lineId;
-        const pdfPath = result.data.pdfPath;
+      if (result.code == 1 && result.data.length > 0) {
+        const line_id = result.data[0].customerInfo.lineId;
+        var contents = [];
 
-        await LineClient.pushMessage(line_id, {
-          type: "template",
-          altText: "ใบเสนอราคา ฟิล์มไฟฟ้า",
-          template: {
-            type: "buttons",
-            title: "ใบเสนอราคา",
-            text: "กดปุ่มด้านล่างเพื่อดูใบเสนอราคา",
-            actions: [
+        var colors = ["#FFBE98", "#96B6C5", "#94A684", "#8E7AB5"];
+
+        for (var i = 0; i < result.data.length; i++) {
+          const quotation_id = result.data[i].documentNumber;
+          const pdfURI = process.env.URI + "/api/" + result.data[i].pdfPath;
+          const documentName = result.data[i].documentName;
+
+          const subtotal =
+            result.data[i].summary.totalPrice / 1.07 +
+            result.data[i].summary.totalDiscount;
+
+          const discount = result.data[i].summary.totalDiscount;
+          const vat = result.data[i].summary.totalDiscount * 1.07;
+          const totalPrice = result.data[i].summary.totalPrice;
+          const items = result.data[i].products.length;
+
+          contents[contents.length] = {
+            type: "bubble",
+            body: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: "QUOTATION",
+                  weight: "bold",
+                  color: colors[contents.length % colors.length],
+                  size: "sm",
+                },
+                {
+                  type: "text",
+                  text: documentName,
+                  weight: "bold",
+                  size: "xl",
+                  margin: "md",
+                },
+                {
+                  type: "text",
+                  text: "To view full quotation detail, please click download quotation below.",
+                  size: "xs",
+                  color: "#aaaaaa",
+                  margin: "sm",
+                  wrap: true,
+                },
+                {
+                  type: "separator",
+                  margin: "xxl",
+                },
+                {
+                  type: "box",
+                  layout: "vertical",
+                  margin: "none",
+                  spacing: "sm",
+                  contents: [
+                    {
+                      type: "box",
+                      layout: "horizontal",
+                      margin: "xxl",
+                      contents: [
+                        {
+                          type: "text",
+                          text: "ITEMS",
+                          size: "sm",
+                          color: "#555555",
+                        },
+                        {
+                          type: "text",
+                          text: items.toString(),
+                          size: "sm",
+                          color: "#111111",
+                          align: "end",
+                        },
+                      ],
+                    },
+                    {
+                      type: "box",
+                      layout: "horizontal",
+                      contents: [
+                        {
+                          type: "text",
+                          text: "SUBTOTAL",
+                          size: "sm",
+                          color: "#555555",
+                        },
+                        {
+                          type: "text",
+                          text:
+                            "฿" +
+                            subtotal.toLocaleString("en-US", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }),
+                          size: "sm",
+                          color: "#111111",
+                          align: "end",
+                        },
+                      ],
+                    },
+                    {
+                      type: "box",
+                      layout: "horizontal",
+                      contents: [
+                        {
+                          type: "text",
+                          text: "DISCOUNT",
+                          size: "sm",
+                          color: "#555555",
+                        },
+                        {
+                          type: "text",
+                          text:
+                            "฿" +
+                            discount.toLocaleString("en-US", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }),
+                          size: "sm",
+                          color: "#111111",
+                          align: "end",
+                        },
+                      ],
+                    },
+                    {
+                      type: "box",
+                      layout: "horizontal",
+                      contents: [
+                        {
+                          type: "text",
+                          text: "VAT ( 7% )",
+                          size: "sm",
+                          color: "#555555",
+                        },
+                        {
+                          type: "text",
+                          text:
+                            "฿" +
+                            vat.toLocaleString("en-US", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }),
+                          size: "sm",
+                          color: "#111111",
+                          align: "end",
+                        },
+                      ],
+                    },
+                    {
+                      type: "box",
+                      layout: "horizontal",
+                      contents: [
+                        {
+                          type: "text",
+                          text: "TOTAL",
+                          size: "sm",
+                          color: "#555555",
+                        },
+                        {
+                          type: "text",
+                          text:
+                            "฿" +
+                            totalPrice.toLocaleString("en-US", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }),
+                          align: "end",
+                          color: "#111111",
+                          size: "sm",
+                        },
+                      ],
+                    },
+                  ],
+                },
+                {
+                  type: "separator",
+                  margin: "xxl",
+                },
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  margin: "xxl",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "QUOTATION ID",
+                      size: "xs",
+                      color: "#aaaaaa",
+                      flex: 0,
+                    },
+                    {
+                      type: "text",
+                      text: "#" + quotation_id,
+                      color: "#aaaaaa",
+                      size: "xs",
+                      align: "end",
+                    },
+                  ],
+                },
+                {
+                  type: "separator",
+                  margin: "xxl",
+                },
+                {
+                  type: "box",
+                  margin: "xxl",
+                  layout: "vertical",
+                  contents: [
+                    {
+                      type: "button",
+                      action: {
+                        type: "uri",
+                        label: "DOWNLOAD QUOTATION",
+                        uri: pdfURI,
+                      },
+                      style: "primary",
+                      color: colors[contents.length % colors.length],
+                    },
+                  ],
+                },
+              ],
+            },
+            styles: {
+              footer: {
+                separator: true,
+              },
+            },
+          };
+        }
+
+        contents[contents.length] = {
+          type: "bubble",
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: [
               {
-                type: "uri",
-                label: "ใบเสนอราคา 83%",
-                uri: "https://inhouse.co.th",
+                type: "text",
+                text: "SPEC SHEET",
+                weight: "bold",
+                color: "#CA8787",
+                size: "sm",
               },
               {
-                type: "uri",
-                label: "ใบเสนอราคา 89%",
-                uri: "http://example.com/page/123",
+                type: "text",
+                text: "SMART FILM",
+                weight: "bold",
+                size: "xl",
+                margin: "md",
               },
               {
-                type: "uri",
-                label: "ใบเสนอราคา 92%",
-                uri: "http://example.com/page/123",
+                type: "text",
+                text: "To view full spec sheet, please click download quotation below.",
+                size: "xs",
+                color: "#aaaaaa",
+                margin: "md",
+                wrap: true,
               },
               {
-                type: "uri",
-                label: "ใบเสนอราคา 93%",
-                uri: "http://example.com/page/123",
+                type: "box",
+                layout: "vertical",
+                margin: "0px",
+                spacing: "none",
+                contents: [
+                  {
+                    type: "image",
+                    url: "https://inhouse.co.th/assets/images/system/smartfilm.png",
+                    size: "full",
+                    position: "relative",
+                    aspectMode: "cover",
+                    aspectRatio: "20:10",
+                    margin: "xxl",
+                  },
+                ],
+              },
+              {
+                type: "separator",
+                margin: "xl",
+              },
+              {
+                type: "box",
+                layout: "vertical",
+                contents: [
+                  {
+                    type: "button",
+                    action: {
+                      type: "uri",
+                      label: "SPEC SHEET ( ENG )",
+                      uri: "https://inhouse.co.th/assets/pdf/smart-film/thai-version.pdf",
+                    },
+                    style: "primary",
+                    color: "#CA8787",
+                  },
+                ],
+                margin: "xxl",
+              },
+              {
+                type: "box",
+                layout: "vertical",
+                contents: [
+                  {
+                    type: "button",
+                    action: {
+                      type: "uri",
+                      label: "เอกสารสินค้า ( ภาษาไทย )",
+                      uri: "https://inhouse.co.th/assets/pdf/smart-film/thai-version.pdf",
+                    },
+                    style: "primary",
+                    color: "#CA8787",
+                  },
+                ],
+                margin: "lg",
               },
             ],
           },
-        });
+          styles: {
+            footer: {
+              separator: true,
+            },
+          },
+        };
+
+        const message = {
+          type: "flex",
+          altText: "ใบเสนอราคา", // Alternative text for accessibility
+          contents: {
+            type: "carousel",
+            contents: contents,
+          }, // Your Flex Message JSON object
+        };
+
+        await LineClient.pushMessage(line_id, message);
+
+        result.doSuccess();
       } else {
         result.doError(5, "This quotation_id is not exist!");
       }
