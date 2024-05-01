@@ -1,7 +1,7 @@
 //Quotation model
 let SaleModel = require("../../models/Sale");
 let ProductModel = require("../../models/Products");
-let { general } = require("../../middleware");
+let { general, upload } = require("../../middleware");
 const { DataResponse } = require("../../models/general_data.model");
 const { Validator } = require("node-input-validator");
 const { ObjectId } = require("mongodb");
@@ -429,13 +429,22 @@ exports.deleteSaleQuotation = async (req, res) => {
           quotation_id: _id,
         }
       );
-
       // ตรวจสอบว่ามี invoice ที่มี quotation_id เท่ากับ _id หรือไม่
       if (invoicesResult.code == 1 && invoicesResult.data.length == 0) {
-        // ถ้าไม่มี invoice ที่มี quotation_id เท่ากับ _id ให้ลบ quotation
+        var resultQuotationDeleted =
+          await SaleModel.quotation.getSaleQuotationById({
+            _id: new ObjectId(_id),
+          });
+
         result = await SaleModel.quotation.deleteSaleQuotation({
           _id: _id,
         });
+
+        if (result.code == 1) {
+          if (resultQuotationDeleted.data?.pdfPath) {
+            upload.deleteFiles([resultQuotationDeleted.data.pdfPath]);
+          }
+        }
       } else {
         // ถ้ามี invoice ที่มี quotation_id เท่ากับ _id ให้แจ้งเตือนว่าไม่สามารถลบได้
         result.doError(

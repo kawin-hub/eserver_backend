@@ -150,6 +150,8 @@ exports.insertSaleInvoice = async (req, res) => {
         customerInfo_id,
         estimateDate,
         deliveryDate,
+        note,
+        invoiceNumbers,
       } = req.body;
 
       const userData = req.body.authData.userInfo.userData;
@@ -253,6 +255,17 @@ exports.insertSaleInvoice = async (req, res) => {
             };
           }
 
+          var invoiceDescriptionData = [
+            {
+              modelCode: "Invoice",
+              name: invoiceNumbers,
+              price: baht,
+              quantity: 1,
+              discountPercent: 0,
+              discountBaht: 0,
+            },
+          ];
+
           // ************* Create pdf and save ****************//
           const invoice = {
             header: {
@@ -268,10 +281,9 @@ exports.insertSaleInvoice = async (req, res) => {
                   : companyInfo.firstname + " " + companyInfo.lastname,
               address: companyInfo.address,
             },
-            items: products,
+            items: invoiceDescriptionData,
             extraDiscount: 0,
           };
-
           const pdfName =
             documentNumber +
             "-" +
@@ -313,6 +325,8 @@ exports.insertSaleInvoice = async (req, res) => {
                 lastname: userData.lastname,
               },
               pdfPath: pdfPath,
+              note: note,
+              invoiceNumbers: invoiceNumbers,
             };
 
             if (convertType == "install") {
@@ -427,8 +441,12 @@ exports.updateSaleInvoice = async (req, res) => {
         paymentStatus,
         paymentDocumentsRemove,
         paymentImagesRemove,
+        invoiceNumbers,
+        baht,
+        documentNumber,
+        companyInfo_id,
+        lead_id,
       } = req.body;
-
       var quotationInfo = null;
 
       if (typeof quotation_id !== "undefined") {
@@ -437,7 +455,6 @@ exports.updateSaleInvoice = async (req, res) => {
           _id: quotation_id,
         });
       }
-
       //Update
 
       const conditions = { _id: _id, quotation_id: quotation_id };
@@ -462,7 +479,77 @@ exports.updateSaleInvoice = async (req, res) => {
       params["$set"] = {}; // replace
       params["$push"] = {}; // add new
 
-      if (paymentStatus) params["$set"].paymentStatus = paymentStatus;
+      if (typeof paymentStatus !== "undefined" && paymentStatus == "paid") {
+        params["$set"].paymentStatus = paymentStatus;
+
+        const LeadResult = await SaleModel.lead.getSaleLeadById(
+          { _id: lead_id },
+          {
+            _id: 1,
+            companyName: 1,
+            branch: 1,
+            taxId: 1,
+            lineId: 1,
+          }
+        );
+
+        if (LeadResult.code == 1) {
+          const companyInfo = LeadResult.data.companyInfo.find(
+            (info) => info._id.toString() === companyInfo_id
+          );
+
+          var taxInvoiceDescriptionData = [
+            {
+              modelCode: "Invoice",
+              name: invoiceNumbers + ", \n " + "invoice No: #" + documentNumber,
+              price: baht,
+              quantity: 1,
+              discountPercent: 0,
+              discountBaht: 0,
+            },
+          ];
+
+          var documentNumberTax = "Tax:" + documentNumber;
+
+          var today = new Date();
+          today = general.formatDate(today);
+
+          // ************* Create pdf and save ****************//
+          const taxInvoice = {
+            header: {
+              fileType: "TAX INVOICE / RECEIPT",
+              documentNumber: documentNumberTax,
+              createdDate: today,
+              dueDate: today,
+            },
+            shipping: {
+              name:
+                companyInfo.companyName != ""
+                  ? companyInfo.companyName
+                  : companyInfo.firstname + " " + companyInfo.lastname,
+              address: companyInfo.address,
+            },
+            items: taxInvoiceDescriptionData,
+            extraDiscount: 0,
+          };
+          const pdfTaxInvoice =
+            documentNumberTax +
+            "-" +
+            (companyInfo.companyName != ""
+              ? companyInfo.companyName
+              : companyInfo.firstname) +
+            "-" +
+            Date.now() +
+            ".pdf";
+          const pdfTaxInvoicePath =
+            "assets/documents/taxInvoice/" + pdfTaxInvoice;
+
+          createInvoice(taxInvoice, pdfTaxInvoicePath);
+
+          params["$set"].pdfTaxPath = "";
+          ///////////////////////
+        }
+      }
 
       params["$push"] = {
         paymentDocuments: { $each: paymentDocuments },
@@ -585,3 +672,6 @@ exports.deleteInvoice = async (req, res) => {
 
   res.json(result);
 };
+
+const today = new Date();
+console.log(general.formatDate(today));

@@ -33,7 +33,23 @@ let saleInvoiceSchema = new Schema(
       default: "unpaid",
     },
 
+    note: {
+      type: String,
+    },
+
+    invoiceNumbers: {
+      type: String,
+    },
+
+    taxInvoiceNumber: {
+      type: String,
+    },
+
     pdfPath: {
+      type: String,
+    },
+
+    pdfTaxPath: {
       type: String,
     },
     // ข้อมูลที่ฝากไว้ในหน้า Invoice ก่อนเพราะยังไม่มี Schema ของตัวแม่รองรับ (Project ยังไม่ได้ถูกสร้าง)
