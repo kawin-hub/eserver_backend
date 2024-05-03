@@ -37,17 +37,20 @@ exports.getAllSaleQuotations = async (params) => {
           },
         },
       },
+      
       {
         $project: {
           _id: 1,
           createdAt: 1,
           documentNumber: 1,
+          documentName: 1,
           customerInfo: 1,
           quotationStatus: 1,
           currentStatus: 1,
           createdBy: 1,
           summary: 1,
           purchased: 1,
+          pdfPath: 1,
         },
       },
       {

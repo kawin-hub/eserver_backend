@@ -24,6 +24,24 @@ exports.getSaleQuotations = async (req, res) => {
 
     var SaleQuotationModel = SaleModel.quotation;
 
+    if (typeof getby != "undefined" && getby == "lead") {
+      // get by quotation_id
+      if (typeof _id != "undefined") {
+        var params = {
+          "customerInfo.lead_id": lead_id,
+        };
+
+        result = await SaleQuotationModel.getSaleQuotationByCondition(params);
+      }
+    } else {
+      // get by invoice_id
+      if (typeof _id != "undefined") {
+        result = await SaleQuotationModel.getSaleQuotationByCondition({
+          _id: new Object(_id),
+        });
+      }
+    }
+
     if (typeof _id != "undefined") {
       result = await SaleQuotationModel.getSaleQuotationById({
         _id: new Object(_id),

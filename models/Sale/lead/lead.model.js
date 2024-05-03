@@ -160,6 +160,26 @@ exports.getSaleLeadById = async (params) => {
   return result;
 };
 
+exports.getSaleLeadByCondition = async (params, projector) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await SaleLead.find(params, projector).lean();
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e.kind);
+    if (e.kind == "ObjectId") {
+      result.doError(0, "Please check your _id format");
+    } else {
+      result.doError(0);
+    }
+  }
+
+  return result;
+};
+
 // 👉 Insert/Post SaleLead
 exports.insertSaleLead = async (params) => {
   var result = new DataResponse();
