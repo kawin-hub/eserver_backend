@@ -316,6 +316,9 @@ exports.deleteSaleLead = async (req, res) => {
   try {
     var result = new DataResponse();
     if (typeof _id != "undefined") {
+
+      const quotationResult = await SaleModel.quotation.getSaleQuotationById({ _id})
+
       result = await SaleModel.lead.deleteSaleLead({ _id: _id });
     } else {
       result.doError(2, "_id is required.");

@@ -28,7 +28,7 @@ exports.getSaleInvoices = async (req, res) => {
         };
 
         if (typeof paymentStatus != "undefined") {
-          params.paymentStatus = paymparamstus;
+          params.paymentStatus = paymentStatus;
         }
         result = await SaleInvoiceModel.getSaleInvoiceByConditions(params);
       }
@@ -283,6 +283,7 @@ exports.insertSaleInvoice = async (req, res) => {
             },
             items: invoiceDescriptionData,
             extraDiscount: 0,
+            note: note,
           };
           const pdfName =
             documentNumber +
@@ -445,6 +446,7 @@ exports.updateSaleInvoice = async (req, res) => {
         baht,
         documentNumber,
         companyInfo_id,
+        note,
         lead_id,
       } = req.body;
       var quotationInfo = null;
@@ -501,7 +503,7 @@ exports.updateSaleInvoice = async (req, res) => {
           var taxInvoiceDescriptionData = [
             {
               modelCode: "Invoice",
-              name: invoiceNumbers + ", \n " + "invoice No: #" + documentNumber,
+              name: invoiceNumbers + ",\n" + "invoice No: #" + documentNumber,
               price: baht,
               quantity: 1,
               discountPercent: 0,
@@ -531,7 +533,9 @@ exports.updateSaleInvoice = async (req, res) => {
             },
             items: taxInvoiceDescriptionData,
             extraDiscount: 0,
+            note: note,
           };
+          console.log(taxInvoice);
           const pdfTaxInvoice =
             documentNumberTax +
             "-" +
@@ -546,7 +550,7 @@ exports.updateSaleInvoice = async (req, res) => {
 
           createInvoice(taxInvoice, pdfTaxInvoicePath);
 
-          params["$set"].pdfTaxPath = "";
+          params["$set"].pdfTaxPath = pdfTaxInvoicePath;
           ///////////////////////
         }
       }
