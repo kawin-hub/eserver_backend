@@ -499,7 +499,7 @@ exports.sendQuotationToLine = async (req, res) => {
           const documentName = result.data[i].documentName;
 
           const subtotal =
-            result.data[i].summary.totalPrice / 1.07 +
+            result.data[i].summary.totalPrice / 0.07 +
             result.data[i].summary.totalDiscount;
 
           const discount = result.data[i].summary.totalDiscount;

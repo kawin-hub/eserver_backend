@@ -17,7 +17,7 @@ const font = {
   bold: "./system/fonts/Kanit/Kanit-Bold.ttf",
   medium: "./system/fonts/Kanit/Kanit-Medium.ttf",
   thin: "./system/fonts/Kanit/Kanit-Light.ttf",
-  extraThin: "./system/fonts/Kanit/Kanit-thin.ttf",
+  extraThin: "./system/fonts/Kanit/Kanit-Thin.ttf",
 };
 
 function createInvoice(data, path) {
@@ -45,7 +45,7 @@ function generateHeader(doc, data) {
     .fillColor(color.black)
     .fontSize(10)
     .text(
-      "Inhouse Technology Co., Ltd.\n77/577 Chatuchot 19,OrNgoen Subdistrict,Sai Mai District, Bangkok 10220",
+      "Inhouse Technology Co., Ltd.\n77/577 OrNgoen Subdistrict,Sai Mai District, Bangkok 10220",
       {
         width: 240,
       }
@@ -204,7 +204,7 @@ function generateSummary(doc, subtotalResult) {
 
 function generateRemarkAndAuthorized(doc, data) {
   const docY = doc.y;
-  const marginTop = 30;
+  const marginTop = 20;
 
   doc
     .font(font.medium)

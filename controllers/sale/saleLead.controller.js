@@ -378,3 +378,33 @@ exports.getLineUserFromLineDeveloper = async (req, res) => {
 
   res.json(result);
 };
+
+exports.lineWebHook = async (req, res) => {
+  try {
+    Promise.all(req.body.events.map(handleLineEvent))
+      .then((result) => res.json(result))
+      .catch((err) => {
+        console.error(err);
+        res.status(500).end();
+      });
+  } catch (error) {}
+};
+
+async function handleLineEvent(event) {
+  var result = new DataResponse();
+  try {
+    if (event.type === "message") {
+      const userId = event.source.userId;
+      const profile = await LineClient.getProfile(userId);
+
+      var SaleLeadModel = SaleModel.lead;
+      result = await SaleLeadModel.insertLineLead({
+        lineId: userId,
+        name: profile.displayName,
+        pictureUrl: profile.pictureUrl,
+      });
+
+      return { message: "success" };
+    }
+  } catch (error) {}
+}
