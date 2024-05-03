@@ -36,6 +36,8 @@ router.delete("/invoices", verifyToken, saleInvoice.deleteInvoice);
 
 // 👉 Line
 
+router.post("/line/webhook", saleLead.lineWebHook);
+
 router.get("/line/users", verifyToken, saleLead.getLineUsers);
 router.get("/line/profile", verifyToken, saleLead.getLineUserFromLineDeveloper);
 router.post(

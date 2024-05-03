@@ -213,6 +213,27 @@ exports.deleteSaleLead = async (params) => {
   return result;
 };
 
+// 👉 insert leadLine
+
+exports.insertLineLead = async (params) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await LineLead.create(params);
+    result.data == null
+      ? result.doSuccess(
+          0,
+          "Can't insert to database, please check your request!"
+        )
+      : result.doSuccess(1);
+  } catch (e) {
+    if (e.code == 11000) console.log("This lineId is already exist!");
+    else console.log(e);
+  }
+
+  return result;
+};
+
 // 👉 Get Line Users
 
 exports.getLineUsersByConditions = async (params) => {
