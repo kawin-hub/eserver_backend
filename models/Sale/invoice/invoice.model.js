@@ -25,6 +25,8 @@ exports.getAllSaleInvoices = async (params) => {
       convertInfo: 1,
       quotation_id: 1,
       createdBy: 1,
+      pdfPath: 1,
+      pdfTaxPath: 1,
     })
       .skip(skip)
       .limit(limit)

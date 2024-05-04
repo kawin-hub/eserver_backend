@@ -4,7 +4,7 @@ let { general } = require("../../middleware");
 const { DataResponse } = require("../../models/general_data.model");
 const { Validator } = require("node-input-validator");
 const { LineClient } = require("../../services/third_party/line");
-
+const { ObjectId } = require("mongodb");
 // 👉 Get CustomerLevel all or by ID
 
 exports.getCustomerLevels = async (req, res) => {
@@ -74,6 +74,7 @@ exports.getSaleLeads = async (req, res) => {
           tag: 1,
           companyInfo: 1,
           createdBy: 1,
+          customerLevel: 1,
         },
       };
 
@@ -316,10 +317,33 @@ exports.deleteSaleLead = async (req, res) => {
   try {
     var result = new DataResponse();
     if (typeof _id != "undefined") {
+      const quotationResult =
+        await SaleModel.quotation.getSaleQuotationByCondition({
+          "customerInfo.lead_id": _id,
+        });
 
-      const quotationResult = await SaleModel.quotation.getSaleQuotationById({ _id})
+      if (quotationResult.code == 1 && quotationResult.data.length == 0) {
+        var resultLeadDelete = await SaleModel.lead.getSaleLeadById({
+          _id: new ObjectId(_id),
+        });
 
-      result = await SaleModel.lead.deleteSaleLead({ _id: _id });
+        result = await SaleModel.lead.deleteSaleLead({ _id: _id });
+
+        if (result.code == 1) {
+          if (resultLeadDelete.data?.pdfPath) {
+            upload.deleteFiles([resultLeadDelete.data.pdfPath]);
+          }
+        }
+      } else {
+        // ถ้ามี invoice ที่มี quotation_id เท่ากับ _id ให้แจ้งเตือนว่าไม่สามารถลบได้
+        result.doError(
+          3,
+          "Lead cannot be deleted because it contains related Quotation."
+        );
+        result.data = {
+          documentNumber: quotationResult.data[0].documentNumber,
+        };
+      }
     } else {
       result.doError(2, "_id is required.");
     }
