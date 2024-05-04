@@ -28,17 +28,10 @@ exports.getSaleQuotations = async (req, res) => {
       // get by quotation_id
       if (typeof _id != "undefined") {
         var params = {
-          "customerInfo.lead_id": lead_id,
+          "customerInfo.lead_id": new Object(_id),
         };
-
+        console.log(124);
         result = await SaleQuotationModel.getSaleQuotationByCondition(params);
-      }
-    } else {
-      // get by invoice_id
-      if (typeof _id != "undefined") {
-        result = await SaleQuotationModel.getSaleQuotationByCondition({
-          _id: new Object(_id),
-        });
       }
     }
 
@@ -46,6 +39,7 @@ exports.getSaleQuotations = async (req, res) => {
       result = await SaleQuotationModel.getSaleQuotationById({
         _id: new Object(_id),
       });
+      console.log(123);
     } else {
       var pageOption = general.checkPageAndLimit(
         req.query.page,
@@ -85,7 +79,7 @@ exports.getSaleQuotations = async (req, res) => {
       if (typeof lead_id !== "undefined") {
         params.queryCondition["customerInfo.lead_id"] = new ObjectId(lead_id);
       }
-
+      console.log(1);
       result = await SaleQuotationModel.getAllSaleQuotations(params);
     }
   } catch (error) {
@@ -449,6 +443,7 @@ exports.deleteSaleQuotation = async (req, res) => {
       );
       // ตรวจสอบว่ามี invoice ที่มี quotation_id เท่ากับ _id หรือไม่
       if (invoicesResult.code == 1 && invoicesResult.data.length == 0) {
+        console.log(invoicesResult);
         var resultQuotationDeleted =
           await SaleModel.quotation.getSaleQuotationById({
             _id: new ObjectId(_id),
