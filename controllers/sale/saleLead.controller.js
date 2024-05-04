@@ -74,6 +74,7 @@ exports.getSaleLeads = async (req, res) => {
           tag: 1,
           companyInfo: 1,
           createdBy: 1,
+          customerLevel: 1,
         },
       };
 
@@ -316,8 +317,9 @@ exports.deleteSaleLead = async (req, res) => {
   try {
     var result = new DataResponse();
     if (typeof _id != "undefined") {
-
-      const quotationResult = await SaleModel.quotation.getSaleQuotationById({ _id})
+      const quotationResult = await SaleModel.quotation.getSaleQuotationById({
+        _id,
+      });
 
       result = await SaleModel.lead.deleteSaleLead({ _id: _id });
     } else {
