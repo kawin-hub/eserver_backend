@@ -45,5 +45,6 @@ router.post(
   verifyToken,
   saleQuotation.sendQuotationToLine
 );
+router.post("/line/sendInvoice", verifyToken, saleInvoice.sendInvoiceToLine);
 
 module.exports = router;
