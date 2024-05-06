@@ -142,7 +142,6 @@ const insertProductBrand = async (req, res, next) => {
       allowType: ["jpeg", "jpg", "png"],
     },
   ]);
-  console.log(req.body);
   let { name, description, status, avatar } = req.body;
 
   let result = null;
@@ -403,8 +402,6 @@ const insertProductModel = async (req, res, next) => {
 
       let documents = [];
       try {
-        console.log(req.files.documents);
-
         if (req.files.documents) {
           req.files.documents.forEach((element) => {
             documents[documents.length] = {
@@ -484,6 +481,14 @@ const getProductModels = async (req, res, next) => {
         description: 1,
         installationPrice: 1,
         status: 1,
+        relatedModels: 1,
+        images: 1,
+        documents: 1,
+        stock: 1,
+        minimum: 1,
+        maximum: 1,
+        createdAt: 1,
+        updatedAt: 1,
       },
     };
 
@@ -598,7 +603,6 @@ const updateProductModel = async (req, res, next) => {
     deletedImage,
     deletedPdf,
   } = req.body;
-
   var myModel = await productModel.getProductModels({ _id: _id });
 
   let category_ids = [];
@@ -618,9 +622,13 @@ const updateProductModel = async (req, res, next) => {
       subcontractorInstallationPrice !== undefined
         ? subcontractorInstallationPrice
         : 0;
-    minimum = minimum != "" || minimum !== undefined ? minimum : 0;
-    maximum = maximum != "" || maximum !== undefined ? maximum : 0;
-    stock = stock != 0 || stock !== undefined ? stock : 0;
+    minimum = minimum != "" || typeof minimum !== "undefined" ? minimum : 0;
+
+    maximum = maximum != "" || typeof maximum !== "undefined" ? maximum : 0;
+    stock = stock != 0 || typeof stock !== "undefined" ? stock : 0;
+
+    minimum = isNaN(minimum) ? 0 : minimum;
+    maximum = isNaN(maximum) ? 0 : maximum;
 
     defaultWarrantyNumber =
       defaultWarrantyNumber != "" && defaultWarrantyNumber !== undefined
@@ -689,7 +697,7 @@ const updateProductModel = async (req, res, next) => {
       unit: defaultWarrantyUnit,
     };
 
-    if (!myModel.length) {
+    if (!myModel.data.documents.length) {
       // Incorrect _id
     } else {
       let dataUpdate = null;
@@ -787,7 +795,6 @@ const updateProductModel = async (req, res, next) => {
         stock,
         relatedModels,
       };
-
       result = await productModel.updateProductModel(_id, dataUpdate);
     }
 
