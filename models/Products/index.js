@@ -188,11 +188,11 @@ const deleteProductModel = async (data) => {
 
 const updateProductModel = async (_id, update) => {
   var model = null;
-
   try {
     model = await ProductModel.findByIdAndUpdate(_id, update);
   } catch (e) {
     model = e;
+    /* console.log(e); */
   }
 
   return model;
