@@ -1,6 +1,6 @@
 //Quotation model
 let SaleModel = require("../../models/Sale");
-let ProductModel = require("../../models/Products");
+const { LineClient } = require("../../services/third_party/line");
 let { upload, general } = require("../../middleware");
 const { DataResponse } = require("../../models/general_data.model");
 const { Validator } = require("node-input-validator");
@@ -285,15 +285,7 @@ exports.insertSaleInvoice = async (req, res) => {
             extraDiscount: 0,
             note: note,
           };
-          const pdfName =
-            documentNumber +
-            "-" +
-            (companyInfo.companyName != ""
-              ? companyInfo.companyName
-              : companyInfo.firstname) +
-            "-" +
-            Date.now() +
-            ".pdf";
+          const pdfName = documentNumber + Date.now() + ".pdf";
           const pdfPath = "assets/documents/invoices/" + pdfName;
 
           createInvoice(invoice, pdfPath);
@@ -677,5 +669,253 @@ exports.deleteInvoice = async (req, res) => {
   res.json(result);
 };
 
-const today = new Date();
-console.log(general.formatDate(today));
+exports.sendInvoiceToLine = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    const { invoice_id, method } = req.body;
+
+    result = await createInvoiceParamToLine(invoice_id, method);
+
+    if (result.code == 1) {
+      await LineClient.pushMessage(result.data.line_id, result.data.message);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+
+  res.json(result);
+};
+
+const createInvoiceParamToLine = async (invoice_id, method) => {
+  var result = new DataResponse();
+
+  var SaleInvoiceModel = SaleModel.invoice;
+  var SaleQuotationModel = SaleModel.quotation;
+  result = await SaleInvoiceModel.getSaleInvoiceByConditions({
+    _id: invoice_id,
+  });
+
+  if (result.code == 1 && result.data.length > 0) {
+    const invoiceInfo = result.data[0];
+
+    quotationResult = await SaleQuotationModel.getSaleQuotationById({
+      _id: invoiceInfo.quotation_id,
+    });
+
+    if (quotationResult.code == 1 && quotationResult.data) {
+      var pdfURI = process.env.URI + "/api/" + invoiceInfo.pdfPath;
+      const line_id = invoiceInfo.customerInfo.lineId;
+      var contents = {};
+      var documentNumber = invoiceInfo.documentNumber;
+      const quotation_id = quotationResult.data.documentNumber;
+      var documentName = documentNumber;
+      const subtotal = invoiceInfo.amountRecieved.baht;
+      const displayText = invoiceInfo.invoiceNumbers;
+
+      const vat = subtotal * 0.07;
+      const totalPrice = subtotal + vat;
+
+      var txtDisplay = "INVOICE";
+      var refIDTxtDisplay = "REF QUOTATION ID : ";
+      var refIDDisplay = quotation_id;
+
+      if (method == "receipt") {
+        pdfURI = process.env.URI + "/api/" + invoiceInfo.pdfTaxPath;
+        txtDisplay = "RECEIPT";
+        refIDTxtDisplay = "REF INVOICE ID : ";
+        refIDDisplay = documentNumber;
+        documentNumber = "TAX" + documentNumber;
+        documentName = "TAX" + documentName;
+      }
+
+      contents = {
+        type: "bubble",
+        body: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: txtDisplay,
+              weight: "bold",
+              color: "#FFBE98",
+              size: "sm",
+            },
+            {
+              type: "text",
+              text: "#" + documentName,
+              weight: "bold",
+              size: "xl",
+              margin: "md",
+            },
+            {
+              type: "text",
+              text: displayText,
+              size: "xs",
+              color: "#aaaaaa",
+              margin: "sm",
+              wrap: true,
+            },
+            {
+              type: "separator",
+              margin: "xxl",
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              margin: "none",
+              spacing: "sm",
+              contents: [
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  margin: "xxl",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "SUBTOTAL",
+                      size: "sm",
+                      color: "#555555",
+                    },
+                    {
+                      type: "text",
+                      text:
+                        "฿" +
+                        subtotal.toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }),
+                      size: "sm",
+                      color: "#111111",
+                      align: "end",
+                    },
+                  ],
+                },
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "VAT ( 7% )",
+                      size: "sm",
+                      color: "#555555",
+                    },
+                    {
+                      type: "text",
+                      text:
+                        "฿" +
+                        vat.toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }),
+                      size: "sm",
+                      color: "#111111",
+                      align: "end",
+                    },
+                  ],
+                },
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "TOTAL",
+                      size: "sm",
+                      color: "#555555",
+                    },
+                    {
+                      type: "text",
+                      text:
+                        "฿" +
+                        totalPrice.toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }),
+                      align: "end",
+                      color: "#111111",
+                      size: "sm",
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              type: "separator",
+              margin: "xxl",
+            },
+            {
+              type: "box",
+              layout: "horizontal",
+              margin: "xxl",
+              contents: [
+                {
+                  type: "text",
+                  text: refIDTxtDisplay,
+                  size: "xs",
+                  color: "#aaaaaa",
+                  flex: 0,
+                },
+                {
+                  type: "text",
+                  text: "#" + refIDDisplay,
+                  color: "#aaaaaa",
+                  size: "xs",
+                  align: "end",
+                },
+              ],
+            },
+            {
+              type: "separator",
+              margin: "xxl",
+            },
+            {
+              type: "box",
+              margin: "xxl",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "button",
+                  action: {
+                    type: "uri",
+                    label: "DOWNLOAD " + txtDisplay,
+                    uri: pdfURI,
+                  },
+                  style: "primary",
+                  color: "#FFBE98",
+                },
+              ],
+            },
+          ],
+        },
+        styles: {
+          footer: {
+            separator: true,
+          },
+        },
+      };
+
+      const message = {
+        type: "flex",
+        altText: "Invoice", // Alternative text for accessibility
+        contents: {
+          type: "carousel",
+          contents: [contents],
+        }, // Your Flex Message JSON object
+      };
+
+      result.doSuccess();
+
+      result.data = {
+        line_id: line_id,
+        message: message,
+      };
+    }
+  } else {
+    result.doError(5, "This invoice_id is not exist!");
+  }
+
+  return result;
+};
