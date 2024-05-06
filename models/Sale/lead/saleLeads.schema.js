@@ -1,4 +1,5 @@
 const { Schema, model, ObjectId } = require("mongoose");
+const { general } = require("../../../middleware");
 const collection = "SaleLeads";
 
 let saleLeadSchema = new Schema(
@@ -74,5 +75,27 @@ let saleLeadSchema = new Schema(
     collection,
   }
 );
+
+saleLeadSchema.pre("save", function (next) {
+  var now = general.getDateTimeForDB();
+  this.createdAt = now;
+  this.updatedAt = now;
+  next();
+});
+
+saleLeadSchema.pre("findOneAndUpdate", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
+
+saleLeadSchema.pre("updateOne", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
+
+saleLeadSchema.pre("updateMany", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
 
 module.exports = model(collection, saleLeadSchema);
