@@ -43,3 +43,12 @@ exports.getDateTimeForDB = () => {
   dateTime.setHours(dateTime.getHours() + 7);
   return dateTime;
 };
+
+exports.getPreTaxId = (date) => {
+  // Extract year and month components from the date
+  const year = (date.getFullYear() + 543).toString().slice(-2); // Extract last two digits of the year
+  const month = (date.getMonth() + 1).toString().padStart(2, "0"); // Month is zero-indexed, so add 1, and pad with zero if necessary
+
+  // Combine year and month with the desired separator
+  return year + month;
+};
