@@ -4,7 +4,12 @@ const { verifyToken } = (mw = require("../middleware"));
 //const multer = require("multer");
 //const upload = multer({ dest: "./assets/images/product/brands/" });
 
-const { saleLead, saleQuotation, saleInvoice } = require("../controllers/sale");
+const {
+  saleLead,
+  saleQuotation,
+  saleInvoice,
+  saleCertificate,
+} = require("../controllers/sale");
 
 // 👉 Sale Lead
 
@@ -46,5 +51,9 @@ router.post(
   saleQuotation.sendQuotationToLine
 );
 router.post("/line/sendInvoice", verifyToken, saleInvoice.sendInvoiceToLine);
+
+// 👉 Sale Certificate
+router.get("/certificate", verifyToken, saleCertificate.getSaleCertificate);
+router.post("/certificate", verifyToken, saleCertificate.insertSaleCertificate);
 
 module.exports = router;
