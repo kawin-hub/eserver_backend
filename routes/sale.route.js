@@ -8,6 +8,7 @@ const {
   saleLead,
   saleQuotation,
   saleInvoice,
+  saleCertificate,
   saleReceipt,
 } = require("../controllers/sale");
 
@@ -55,5 +56,9 @@ router.post(
   saleQuotation.sendQuotationToLine
 );
 router.post("/line/sendInvoice", verifyToken, saleInvoice.sendInvoiceToLine);
+
+// 👉 Sale Certificate
+router.get("/certificate", verifyToken, saleCertificate.getSaleCertificate);
+router.post("/certificate", verifyToken, saleCertificate.insertSaleCertificate);
 
 module.exports = router;
