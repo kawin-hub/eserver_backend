@@ -30,7 +30,7 @@ exports.getSaleQuotations = async (req, res) => {
         var params = {
           "customerInfo.lead_id": new Object(_id),
         };
-        console.log(124);
+
         result = await SaleQuotationModel.getSaleQuotationByCondition(params);
       }
     }
@@ -39,7 +39,6 @@ exports.getSaleQuotations = async (req, res) => {
       result = await SaleQuotationModel.getSaleQuotationById({
         _id: new Object(_id),
       });
-      console.log(123);
     } else {
       var pageOption = general.checkPageAndLimit(
         req.query.page,
@@ -79,7 +78,7 @@ exports.getSaleQuotations = async (req, res) => {
       if (typeof lead_id !== "undefined") {
         params.queryCondition["customerInfo.lead_id"] = new ObjectId(lead_id);
       }
-      console.log(1);
+
       result = await SaleQuotationModel.getAllSaleQuotations(params);
     }
   } catch (error) {

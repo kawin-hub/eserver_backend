@@ -9,6 +9,7 @@ const {
   saleQuotation,
   saleInvoice,
   saleCertificate,
+  saleReceipt,
 } = require("../controllers/sale");
 
 // 👉 Sale Lead
@@ -38,6 +39,10 @@ router.get("/invoices/newInvoiceId", verifyToken, saleInvoice.getNewInvoiceId);
 router.post("/invoices", verifyToken, saleInvoice.insertSaleInvoice);
 router.put("/invoices", verifyToken, saleInvoice.updateSaleInvoice);
 router.delete("/invoices", verifyToken, saleInvoice.deleteInvoice);
+
+// 👉 Sale Receipt
+
+router.get("/receipt", verifyToken, saleReceipt.getSaleReceipts);
 
 // 👉 Line
 
