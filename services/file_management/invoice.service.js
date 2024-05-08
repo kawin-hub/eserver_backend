@@ -20,14 +20,14 @@ const font = {
   extraThin: "./system/fonts/Kanit/Kanit-Thin.ttf",
 };
 
-function createInvoice(data, path) {
+function createInvoice(data, path, type = "quotation") {
   let doc = new PDFDocument({ size: "A4", margin: 30 });
 
   generateHeader(doc, data);
   const subtotalResult = generateInvoiceTable(doc, data);
   generatePaymentMethod(doc);
   generateSummary(doc, subtotalResult);
-  generateRemarkAndAuthorized(doc, data);
+  generateRemarkAndAuthorized(doc, data, type);
 
   doc.end();
   doc.pipe(fs.createWriteStream(path));
@@ -202,28 +202,36 @@ function generateSummary(doc, subtotalResult) {
     });
 }
 
-function generateRemarkAndAuthorized(doc, data) {
+function generateRemarkAndAuthorized(doc, data, type) {
   const docY = doc.y;
   const marginTop = 20;
 
-  doc
-    .font(font.medium)
-    .text("Remark", margin.left, docY + marginTop)
-    .font(font.extraThin)
-    .text(
-      data.note != "undefined" ? data.note : "",
-      margin.left,
-      docY + marginTop + 20
-    );
-  /* .text("• 50% pre-production payment required for the smart film.\n• Remaining 50% due prior to installation.")
-    .text("• Production and shipping timeframe: 30-45 days.")
-    .text("• Two-years warranty included."); */
+  if (type != "receipt") {
+    doc.font(font.medium).text("Remark", margin.left, docY + marginTop);
+    doc
+      .font(font.extraThin)
+      .text(
+        data.note != "undefined" ? data.note : "",
+        margin.left,
+        docY + marginTop + 20
+      );
 
-  doc.text(
-    "We appreciate your selection of our services.",
-    margin.left,
-    doc.y + 10
-  );
+    doc.text(
+      "We appreciate your selection of our services.",
+      margin.left,
+      doc.y + 10
+    );
+  } else {
+    doc
+      .font(font.thin)
+      .text("Customer signature", margin.left + 80, docY + marginTop)
+      .text("Date", margin.left + 115, docY + marginTop + 90)
+      .text(
+        ".................../.................../...................",
+        margin.left + 68,
+        docY + marginTop + 110
+      );
+  }
 
   doc
     .font(font.thin)

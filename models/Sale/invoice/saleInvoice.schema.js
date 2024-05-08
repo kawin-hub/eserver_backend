@@ -48,10 +48,6 @@ let saleInvoiceSchema = new Schema(
     pdfPath: {
       type: String,
     },
-
-    pdfTaxPath: {
-      type: String,
-    },
     // ข้อมูลที่ฝากไว้ในหน้า Invoice ก่อนเพราะยังไม่มี Schema ของตัวแม่รองรับ (Project ยังไม่ได้ถูกสร้าง)
     convertInfo: {
       // ต้องดึงมาแบบนี้ใช่ไหม

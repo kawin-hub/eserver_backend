@@ -1,5 +1,8 @@
 //Quotation model
 let SaleModel = require("../../models/Sale");
+let {
+  insertSaleReceipt,
+} = require("../../controllers/sale/saleReceipt.controller");
 const { LineClient } = require("../../services/third_party/line");
 let { upload, general } = require("../../middleware");
 const { DataResponse } = require("../../models/general_data.model");
@@ -419,7 +422,7 @@ exports.updateSaleInvoice = async (req, res) => {
         allowType: ["pdf"],
       },
     ]);
-
+    const userData = req.body.authData.userInfo.userData;
     const validation = new Validator(req.body, {
       _id: "required",
       quotation_id: "required",
@@ -476,75 +479,21 @@ exports.updateSaleInvoice = async (req, res) => {
       if (typeof paymentStatus !== "undefined" && paymentStatus == "paid") {
         params["$set"].paymentStatus = paymentStatus;
 
-        const LeadResult = await SaleModel.lead.getSaleLeadById(
-          { _id: lead_id },
-          {
-            _id: 1,
-            companyName: 1,
-            branch: 1,
-            taxId: 1,
-            lineId: 1,
-          }
-        );
+        var receiptParam = {
+          invoice_id: _id,
+          userData: userData,
+          customerInfo: {
+            taxId: quotationInfo.data.customerInfo.companyInfo.taxId,
+            address: quotationInfo.data.customerInfo.companyInfo.address,
+            name:
+              quotationInfo.data.customerInfo.companyInfo.firstname +
+              " " +
+              quotationInfo.data.customerInfo.companyInfo.lastname,
+            contact: quotationInfo.data.customerInfo.companyInfo.contactNumber,
+          },
+        };
 
-        if (LeadResult.code == 1) {
-          const companyInfo = LeadResult.data.companyInfo.find(
-            (info) => info._id.toString() === companyInfo_id
-          );
-
-          var taxInvoiceDescriptionData = [
-            {
-              modelCode: "Invoice",
-              name: invoiceNumbers + ",\n" + "invoice No: #" + documentNumber,
-              price: baht,
-              quantity: 1,
-              discountPercent: 0,
-              discountBaht: 0,
-            },
-          ];
-
-          var documentNumberTax = "Tax:" + documentNumber;
-
-          var today = new Date();
-          today = general.formatDate(today);
-
-          // ************* Create pdf and save ****************//
-          const taxInvoice = {
-            header: {
-              fileType: "TAX INVOICE / RECEIPT",
-              documentNumber: documentNumberTax,
-              createdDate: today,
-              dueDate: today,
-            },
-            shipping: {
-              name:
-                companyInfo.companyName != ""
-                  ? companyInfo.companyName
-                  : companyInfo.firstname + " " + companyInfo.lastname,
-              address: companyInfo.address,
-            },
-            items: taxInvoiceDescriptionData,
-            extraDiscount: 0,
-            note: note,
-          };
-          console.log(taxInvoice);
-          const pdfTaxInvoice =
-            documentNumberTax +
-            "-" +
-            (companyInfo.companyName != ""
-              ? companyInfo.companyName
-              : companyInfo.firstname) +
-            "-" +
-            Date.now() +
-            ".pdf";
-          const pdfTaxInvoicePath =
-            "assets/documents/taxInvoice/" + pdfTaxInvoice;
-
-          createInvoice(taxInvoice, pdfTaxInvoicePath);
-
-          params["$set"].pdfTaxPath = pdfTaxInvoicePath;
-          ///////////////////////
-        }
+        await insertSaleReceipt(receiptParam);
       }
 
       params["$push"] = {
@@ -673,9 +622,9 @@ exports.sendInvoiceToLine = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    const { invoice_id, method } = req.body;
+    const { _id, method } = req.body;
 
-    result = await createInvoiceParamToLine(invoice_id, method);
+    result = await createInvoiceParamToLine(_id, method);
 
     if (result.code == 1) {
       await LineClient.pushMessage(result.data.line_id, result.data.message);
@@ -687,31 +636,38 @@ exports.sendInvoiceToLine = async (req, res) => {
   res.json(result);
 };
 
-const createInvoiceParamToLine = async (invoice_id, method) => {
+const createInvoiceParamToLine = async (_id, method) => {
   var result = new DataResponse();
 
-  var SaleInvoiceModel = SaleModel.invoice;
+  if (method == "receipt") {
+    var SaleReceiptModel = SaleModel.receipt;
+    result = await SaleReceiptModel.getSaleReceiptByConditions({
+      _id: _id,
+    });
+  } else if (method == "invoice") {
+    var SaleInvoiceModel = SaleModel.invoice;
+    result = await SaleInvoiceModel.getSaleInvoiceByConditions({
+      _id: _id,
+    });
+  }
   var SaleQuotationModel = SaleModel.quotation;
-  result = await SaleInvoiceModel.getSaleInvoiceByConditions({
-    _id: invoice_id,
-  });
 
   if (result.code == 1 && result.data.length > 0) {
-    const invoiceInfo = result.data[0];
+    const dataInfo = result.data[0];
 
     quotationResult = await SaleQuotationModel.getSaleQuotationById({
-      _id: invoiceInfo.quotation_id,
+      _id: dataInfo.quotation_id,
     });
 
     if (quotationResult.code == 1 && quotationResult.data) {
-      var pdfURI = process.env.URI + "/api/" + invoiceInfo.pdfPath;
-      const line_id = invoiceInfo.customerInfo.lineId;
+      var pdfURI = process.env.URI + "/api/" + dataInfo.pdfPath;
+      const line_id = dataInfo.customerInfo.lineId;
       var contents = {};
-      var documentNumber = invoiceInfo.documentNumber;
+      var documentNumber = dataInfo.documentNumber;
       const quotation_id = quotationResult.data.documentNumber;
       var documentName = documentNumber;
-      const subtotal = invoiceInfo.amountRecieved.baht;
-      const displayText = invoiceInfo.invoiceNumbers;
+      const subtotal = dataInfo.amountRecieved.baht;
+      var displayText = "";
 
       const vat = subtotal * 0.07;
       const totalPrice = subtotal + vat;
@@ -721,12 +677,15 @@ const createInvoiceParamToLine = async (invoice_id, method) => {
       var refIDDisplay = quotation_id;
 
       if (method == "receipt") {
-        pdfURI = process.env.URI + "/api/" + invoiceInfo.pdfTaxPath;
+        pdfURI = process.env.URI + "/api/";
         txtDisplay = "RECEIPT";
         refIDTxtDisplay = "REF INVOICE ID : ";
-        refIDDisplay = documentNumber;
+        refIDDisplay = dataInfo.invoice.documentNumber;
         documentNumber = "TAX" + documentNumber;
         documentName = "TAX" + documentName;
+        displayText = dataInfo?.detail;
+      } else if (method == "invoice") {
+        displayText = dataInfo?.invoiceNumbers;
       }
 
       contents = {

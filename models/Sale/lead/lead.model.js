@@ -88,7 +88,6 @@ exports.getCustomerLevelById = async (params) => {
       ? result.doSuccess(2, "_id not found in database")
       : result.doSuccess(1);
   } catch (e) {
-    console.log(e.kind);
     if (e.kind == "ObjectId") {
       result.doError(0, "Please check your _id format");
     } else {
@@ -149,7 +148,6 @@ exports.getSaleLeadById = async (params) => {
       ? result.doSuccess(2, "_id not found in database")
       : result.doSuccess(1);
   } catch (e) {
-    console.log(e.kind);
     if (e.kind == "ObjectId") {
       result.doError(0, "Please check your _id format");
     } else {
@@ -169,7 +167,6 @@ exports.getSaleLeadByCondition = async (params, projector) => {
       ? result.doSuccess(2, "_id not found in database")
       : result.doSuccess(1);
   } catch (e) {
-    console.log(e.kind);
     if (e.kind == "ObjectId") {
       result.doError(0, "Please check your _id format");
     } else {
@@ -265,7 +262,6 @@ exports.getLineUsersByConditions = async (params) => {
       ? result.doSuccess(2, "_id not found in database")
       : result.doSuccess(1);
   } catch (e) {
-    console.log(e.kind);
     if (e.kind == "ObjectId") {
       result.doError(0, "Please check your _id format");
     } else {

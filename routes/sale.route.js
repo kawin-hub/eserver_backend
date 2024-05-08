@@ -4,7 +4,12 @@ const { verifyToken } = (mw = require("../middleware"));
 //const multer = require("multer");
 //const upload = multer({ dest: "./assets/images/product/brands/" });
 
-const { saleLead, saleQuotation, saleInvoice } = require("../controllers/sale");
+const {
+  saleLead,
+  saleQuotation,
+  saleInvoice,
+  saleReceipt,
+} = require("../controllers/sale");
 
 // 👉 Sale Lead
 
@@ -33,6 +38,10 @@ router.get("/invoices/newInvoiceId", verifyToken, saleInvoice.getNewInvoiceId);
 router.post("/invoices", verifyToken, saleInvoice.insertSaleInvoice);
 router.put("/invoices", verifyToken, saleInvoice.updateSaleInvoice);
 router.delete("/invoices", verifyToken, saleInvoice.deleteInvoice);
+
+// 👉 Sale Receipt
+
+router.get("/receipt", verifyToken, saleReceipt.getSaleReceipts);
 
 // 👉 Line
 
