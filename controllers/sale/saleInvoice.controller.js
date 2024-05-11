@@ -187,7 +187,7 @@ exports.insertSaleInvoice = async (req, res) => {
           const { _id, ...rest } = item;
           return rest;
         });
-
+        const vat = quotationResult.data.summary.vat;
         const companyInfo = convertInfoResult.data.companyInfo.find(
           (info) => info._id.toString() === customerInfo_id
         );
@@ -258,11 +258,16 @@ exports.insertSaleInvoice = async (req, res) => {
             };
           }
 
+          var backwardInPercent = vat / 100 + 1;
+
+          var numberBeforeVat = parseFloat(
+            (baht / backwardInPercent).toFixed(2)
+          );
           var invoiceDescriptionData = [
             {
               modelCode: "Invoice",
               name: invoiceNumbers,
-              price: baht,
+              price: numberBeforeVat,
               quantity: 1,
               discountPercent: 0,
               discountBaht: 0,
@@ -287,6 +292,7 @@ exports.insertSaleInvoice = async (req, res) => {
             items: invoiceDescriptionData,
             extraDiscount: 0,
             note: note,
+            vat: vat,
           };
           const pdfName = documentNumber + Date.now() + ".pdf";
           const pdfPath = "assets/documents/invoices/" + pdfName;
@@ -480,6 +486,7 @@ exports.updateSaleInvoice = async (req, res) => {
         params["$set"].paymentStatus = paymentStatus;
 
         var receiptParam = {
+          quotation_id: quotation_id,
           invoice_id: _id,
           userData: userData,
           customerInfo: {

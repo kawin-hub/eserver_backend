@@ -43,6 +43,7 @@ router.delete("/invoices", verifyToken, saleInvoice.deleteInvoice);
 // 👉 Sale Receipt
 
 router.get("/receipt", verifyToken, saleReceipt.getSaleReceipts);
+router.put("/receipt", verifyToken, saleReceipt.updateReceipt);
 
 // 👉 Line
 
