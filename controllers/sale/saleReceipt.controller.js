@@ -11,14 +11,17 @@ const {
 
 exports.insertSaleReceipt = async (data) => {
   var result = new DataResponse();
-
+  console.log("In");
   try {
-    const { invoice_id, userData, customerInfo } = data;
+    const { invoice_id, userData, customerInfo, quotation_id } = data;
 
     const invoiceResultDB = await SaleModel.invoice.getSaleInvoiceByConditions({
       _id: invoice_id,
     });
-
+    const quotationResultDB = await SaleModel.quotation.getSaleQuotationById({
+      _id: quotation_id,
+    });
+    const vat = quotationResultDB.data.summary.vat;
     if (invoiceResultDB.code == 1 && invoiceResultDB.data.length > 0) {
       const receiptResult = await SaleModel.receipt.getLastestSaleReceiptId();
       const currentDate = new Date();
@@ -37,17 +40,22 @@ exports.insertSaleReceipt = async (data) => {
       var documentNumberTax = "Tax:" + newDocumentNumber;
       const itemDetail =
         invoiceResult.invoiceNumbers +
-        ",\ninvoice NO: #" +
+        ",\ninvoice No: #" +
         invoiceResult.documentNumber;
       today = general.formatDate(currentDate);
 
       // ************* Create pdf and save ****************//
 
+      var backwardInPercent = vat / 100 + 1;
+
+      var numberBeforeVat = parseFloat(
+        (invoiceResult.amountRecieved.baht / backwardInPercent).toFixed(2)
+      );
       var taxInvoiceDescriptionData = [
         {
           modelCode: "Invoice",
           name: itemDetail,
-          price: invoiceResult.amountRecieved.baht,
+          price: numberBeforeVat,
           quantity: 1,
           discountPercent: 0,
           discountBaht: 0,
@@ -71,6 +79,7 @@ exports.insertSaleReceipt = async (data) => {
         items: taxInvoiceDescriptionData,
         extraDiscount: 0,
         note: "",
+        vat: vat,
       };
 
       const pdfTaxInvoice = newDocumentNumber + "-" + Date.now() + ".pdf";
@@ -189,6 +198,121 @@ exports.getSaleReceipts = async (req, res) => {
       }
       result = await SaleReceiptModel.getAllSaleInvoices(params);
     } else {
+    }
+  } catch (error) {
+    console.log(error);
+  }
+
+  res.json(result);
+};
+
+exports.updateReceipt = async (req, res) => {
+  console.log(134);
+  var result = new DataResponse();
+  try {
+    const validationParams = {
+      quotation_id: "required",
+    };
+
+    const validation = new Validator(req.body, validationParams);
+    const matched = await validation.check();
+    if (matched) {
+      const { _id, customerInfo, quotation_id } = req.body;
+      console.log(req.body);
+      const receiptResultDB =
+        await SaleModel.receipt.getSaleReceiptByConditions({
+          _id: _id,
+        });
+
+      const quotationResultDB = await SaleModel.quotation.getSaleQuotationById({
+        _id: quotation_id,
+      });
+
+      const vat = quotationResultDB.data.summary.vat;
+
+      if (receiptResultDB.code == 1) {
+        const receiptResult = receiptResultDB.data[0];
+        console.log(receiptResult);
+        const pdfDefaultName =
+          receiptResult.documentNumber + Date.now() + ".pdf";
+        var pdfPath = "assets/documents/invoices/" + pdfDefaultName;
+        if (typeof receiptResult.pdfPath !== "undefined") {
+          pdfPath = receiptResult.pdfPath;
+        }
+        console.log(pdfPath);
+
+        var backwardInPercent = vat / 100 + 1;
+
+        var numberBeforeVat = parseFloat(
+          (receiptResult.amountRecieved.baht / backwardInPercent).toFixed(2)
+        );
+
+        var receiptDescription = [
+          {
+            modelCode: "Invoice",
+            name: receiptResult.detail,
+            price: numberBeforeVat,
+            quantity: 1,
+            discountPercent: 0,
+            discountBaht: 0,
+          },
+        ];
+
+        // ************* Create pdf and save ****************//
+        const taxInvoice = {
+          header: {
+            fileType: "TAX INVOICE / RECEIPT",
+            documentNumber: receiptResult.documentNumber,
+            createdDate: receiptResult.createdDate,
+            dueDate: receiptResult.dueDate,
+          },
+          shipping: {
+            name: customerInfo.name,
+            address:
+              customerInfo.address +
+              "\nTaxpayer identification number :" +
+              customerInfo.taxId,
+          },
+          items: receiptDescription,
+          extraDiscount: 0,
+          note: "",
+          vat: vat,
+        };
+        console.log(taxInvoice);
+
+        createInvoice(taxInvoice, pdfPath, "receipt");
+
+        const updateConditions = {
+          _id: _id,
+        };
+
+        var params = {
+          "customerInfo.name": customerInfo.name,
+        };
+
+        if (typeof customerInfo.taxId != "undefined") {
+          params["customerInfo.taxId"] = customerInfo.taxId;
+        }
+        if (typeof customerInfo.name != "undefined") {
+          params["customerInfo.name"] = customerInfo.name;
+        }
+        if (typeof customerInfo.address != "undefined") {
+          params["customerInfo.address"] = customerInfo.address;
+        }
+        if (typeof customerInfo.contactNumber != "undefined") {
+          params["customerInfo.contactNumber"] = customerInfo.contactNumber;
+        }
+
+        const options = { returnOriginal: false };
+
+        result = await SaleModel.receipt.updateSaleReceipt(
+          updateConditions,
+          params,
+          options
+        );
+      }
+    } else {
+      result.doError(2, validation.errors);
     }
   } catch (error) {
     console.log(error);

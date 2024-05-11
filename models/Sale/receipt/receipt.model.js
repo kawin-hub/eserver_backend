@@ -50,7 +50,7 @@ exports.getLastestSaleReceiptId = async () => {
 
 exports.getSaleReceiptByConditions = async (params, projection = {}) => {
   var result = new DataResponse();
-
+  console.log("In model");
   try {
     result.data = await SaleReceipt.find(params, projection).lean();
     result.data == null
@@ -121,6 +121,25 @@ exports.getSaleReceiptByConditions = async (params, projection = {}) => {
     } else {
       result.doError(0);
     }
+  }
+
+  return result;
+};
+
+exports.updateSaleReceipt = async (conditions, params, options = {}) => {
+  var result = new DataResponse();
+  try {
+    result.data = await SaleReceipt.findOneAndUpdate(
+      conditions,
+      params,
+      options
+    );
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e);
+    result.doError(0);
   }
 
   return result;

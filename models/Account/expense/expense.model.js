@@ -1,7 +1,7 @@
 const AccountExpense = require("./accountExpenses.schema");
 const { DataResponse } = require("../../general_data.model");
 
-// 👉 Get all
+
 
 exports.getAllAccountExpenses = async (params) => {
   var result = new DataResponse();

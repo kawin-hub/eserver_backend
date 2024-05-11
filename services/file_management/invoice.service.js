@@ -1,6 +1,5 @@
 const fs = require("fs");
 const PDFDocument = require("pdfkit");
-const vatInPerCent = 7;
 
 const margin = {
   top: 30,
@@ -25,8 +24,8 @@ function createInvoice(data, path, type = "quotation") {
 
   generateHeader(doc, data);
   const subtotalResult = generateInvoiceTable(doc, data);
-  generatePaymentMethod(doc);
-  generateSummary(doc, subtotalResult);
+  generatePaymentMethod(doc, data);
+  generateSummary(doc, subtotalResult, data.vat);
   generateRemarkAndAuthorized(doc, data, type);
 
   doc.end();
@@ -135,7 +134,7 @@ function generateInvoiceTable(doc, invoice) {
 
   subtotalResult.discount += invoice.extraDiscount;
   subtotalResult.total = subtotalResult.subtotal - subtotalResult.discount;
-  subtotalResult.vat = (subtotalResult.total * vatInPerCent) / 100;
+  subtotalResult.vat = (subtotalResult.total * invoice.vat) / 100;
   subtotalResult.total += subtotalResult.vat;
 
   return subtotalResult;
@@ -160,7 +159,7 @@ function generatePaymentMethod(doc) {
     .text("171-430192-2", margin.left + 185, doc.y + 5);
 }
 
-function generateSummary(doc, subtotalResult) {
+function generateSummary(doc, subtotalResult, vatInPerCent) {
   const docY = doc.y;
   generateHr(doc, docY - 70, 285);
   doc
@@ -188,7 +187,7 @@ function generateSummary(doc, subtotalResult) {
   generateHr(doc, doc.y + 10, 285); */
   doc
     .fillColor(color.black)
-    .text("VAT (7%)", 335, docY + 10, { continued: true })
+    .text("VAT (" + vatInPerCent + "%)", 335, docY + 10, { continued: true })
     .text(formatCurrency(subtotalResult.vat), {
       align: "right",
       continued: false,

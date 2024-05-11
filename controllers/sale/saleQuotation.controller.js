@@ -166,8 +166,8 @@ exports.insertSaleQuotation = async (req, res) => {
         quotationStatus,
         extraDiscount,
         documentName,
+        vat,
       } = req.body;
-
       const userData = req.body.authData.userInfo.userData;
 
       const LeadResult = await SaleLeadModel.getSaleLeadById(
@@ -209,7 +209,7 @@ exports.insertSaleQuotation = async (req, res) => {
             products.length == productResult.data.length
           ) {
             var totalDiscount = 0;
-            var vat = 7;
+            var vatDefault = typeof vat != "undefined" ? vat : 7;
             var totalPrice = 0;
 
             for (var i = 0; i < productResult.data.length; i++) {
@@ -239,7 +239,7 @@ exports.insertSaleQuotation = async (req, res) => {
             totalDiscount += extraDiscountFloat;
             totalPrice = totalPrice - totalDiscount;
 
-            var totalVat = (totalPrice * vat) / 100;
+            var totalVat = (totalPrice * vatDefault) / 100;
             totalPrice += totalVat;
 
             // ************* Create pdf and save ****************//
@@ -260,6 +260,7 @@ exports.insertSaleQuotation = async (req, res) => {
               items: productResult.data,
               extraDiscount: extraDiscountFloat,
               note: note,
+              vat: vatDefault,
             };
 
             const pdfName = documentNumber + "-" + Date.now() + ".pdf";
@@ -311,7 +312,7 @@ exports.insertSaleQuotation = async (req, res) => {
               summary: {
                 extraDiscount: extraDiscountFloat,
                 totalDiscount: totalDiscount,
-                vat: vat,
+                vat: vatDefault,
                 totalPrice: totalPrice,
               },
               pdfPath: pdfPath,
