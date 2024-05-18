@@ -28,6 +28,7 @@ router.get(
   verifyToken,
   saleQuotation.getNewQuationId
 );
+router.get("/quotations/count", verifyToken, saleQuotation.getQuotationCount);
 router.put("/quotations", verifyToken, saleQuotation.updateSaleQuotation);
 router.post("/quotations", verifyToken, saleQuotation.insertSaleQuotation);
 router.delete("/quotations", verifyToken, saleQuotation.deleteSaleQuotation);
@@ -36,6 +37,12 @@ router.delete("/quotations", verifyToken, saleQuotation.deleteSaleQuotation);
 
 router.get("/invoices", verifyToken, saleInvoice.getSaleInvoices);
 router.get("/invoices/newInvoiceId", verifyToken, saleInvoice.getNewInvoiceId);
+router.get(
+  "/invoices/invoiceNumber",
+  verifyToken,
+  saleInvoice.getInvoicesByInvoiceNumber
+);
+router.get("/invoices/count", verifyToken, saleInvoice.getInvoiceCount);
 router.post("/invoices", verifyToken, saleInvoice.insertSaleInvoice);
 router.put("/invoices", verifyToken, saleInvoice.updateSaleInvoice);
 router.delete("/invoices", verifyToken, saleInvoice.deleteInvoice);
@@ -61,5 +68,7 @@ router.post("/line/sendInvoice", verifyToken, saleInvoice.sendInvoiceToLine);
 // 👉 Sale Certificate
 router.get("/certificate", verifyToken, saleCertificate.getSaleCertificate);
 router.post("/certificate", verifyToken, saleCertificate.insertSaleCertificate);
+router.delete("/certificate", verifyToken, saleCertificate.deleteCertificate);
+router.put("/certificate", verifyToken, saleCertificate.updateReceipt);
 
 module.exports = router;

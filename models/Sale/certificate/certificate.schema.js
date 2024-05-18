@@ -8,7 +8,8 @@ let SaleCertificateSchema = new Schema(
       required: true,
       unique: true,
     },
-    lead_id: { type: ObjectId, ref: "SaleLeads" },
+    /*   lead_id: { type: ObjectId, ref: "SaleLeads" },
+    quotation_id: { type: ObjectId, ref: "SaleQuotations" }, */
     datePurcharse: {
       type: Date,
       required: true,
@@ -20,10 +21,12 @@ let SaleCertificateSchema = new Schema(
       type: String,
       required: true,
     },
-    quotation_id: { type: ObjectId, ref: "SaleQuotations" },
     warrantyPreriod: {
       from: Date,
       to: Date,
+    },
+    detail: {
+      type: String,
     },
     createdBy: {
       user_id: { type: ObjectId, ref: "Users" },

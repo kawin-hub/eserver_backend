@@ -40,10 +40,10 @@ exports.getSaleCertificate = async (req, res) => {
         const searchRegex = new RegExp(txtSearch, "i");
         orConditions = [
           {
-            documentNumber: searchRegex,
+            customerName: searchRegex,
           },
           {
-            whom: searchRegex,
+            quotationNumber: searchRegex,
           },
         ];
         params.queryCondition["$or"] = orConditions;
@@ -75,21 +75,22 @@ exports.insertSaleCertificate = async (req, res) => {
 
     if (matched) {
       const {
-        lead_id,
         quotation_id,
         customerName,
         datePurcharse,
         productService,
         quotationNumber,
         warrantyPreriod,
+        detail,
       } = req.body;
 
+      const quotationResultDB = await SaleModel.quotation.getSaleQuotationById({
+        _id: quotation_id,
+      });
       const userData = req.body.authData.userInfo.userData;
 
       var insertCertificateParams = {
         customerName: customerName,
-        lead_id: lead_id,
-        quotation_id: quotation_id,
         datePurcharse: datePurcharse,
         productService: productService,
         quotationNumber: quotationNumber,
@@ -97,6 +98,7 @@ exports.insertSaleCertificate = async (req, res) => {
           from: warrantyPreriod.from,
           to: warrantyPreriod.to,
         },
+        detail: detail,
         createdBy: {
           user_id: userData._id,
           firstname: userData.firstname,
@@ -112,6 +114,91 @@ exports.insertSaleCertificate = async (req, res) => {
     }
   } catch (e) {
     console.log(e);
+  }
+
+  res.json(result);
+};
+
+/// 👉 Delete
+exports.deleteCertificate = async (req, res) => {
+  const { _id } = req.body;
+  try {
+    var result = new DataResponse();
+    if (typeof _id !== "undefined") {
+      result = await SaleModel.certificate.deleteSaleCertificate({
+        _id: _id,
+      });
+    } else {
+      result.doError(2, "_id is required.");
+    }
+  } catch (e) {
+    console.log(e);
+  }
+
+  res.json(result);
+};
+
+exports.updateReceipt = async (req, res) => {
+  var result = new DataResponse();
+  try {
+    const validationParams = {
+      customerName: "required",
+      datePurcharse: "required|dateFormat:YYYY-MM-DD",
+      productService: "required",
+      quotationNumber: "required",
+    };
+
+    const validation = new Validator(req.body, validationParams);
+    const matched = await validation.check();
+    if (matched) {
+      const {
+        _id,
+        customerName,
+        datePurcharse,
+        productService,
+        quotationNumber,
+        warrantyPreriod,
+        detail,
+      } = req.body;
+      const updateConditions = {
+        _id: _id,
+      };
+
+      var params = {
+        customerName: customerName,
+      };
+
+      if (typeof customerName != "undefined") {
+        params["customerName"] = customerName;
+      }
+      if (typeof datePurcharse != "undefined") {
+        params["datePurcharse"] = datePurcharse;
+      }
+      if (typeof productService != "undefined") {
+        params["productService"] = productService;
+      }
+      if (typeof quotationNumber != "undefined") {
+        params["quotationNumber"] = quotationNumber;
+      }
+      if (typeof warrantyPreriod != "undefined") {
+        params["warrantyPreriod"] = warrantyPreriod;
+      }
+      if (typeof detail != "undefined") {
+        params["detail"] = detail;
+      }
+
+      const options = { returnOriginal: false };
+
+      result = await SaleModel.certificate.updateSaleCertificate(
+        updateConditions,
+        params,
+        options
+      );
+    } else {
+      result.doError(2, validation.errors);
+    }
+  } catch (error) {
+    console.log(error);
   }
 
   res.json(result);

@@ -93,3 +93,36 @@ exports.insertSaleCertificate = async (params) => {
 
   return result;
 };
+
+exports.deleteSaleCertificate = async (params) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await SaleCertificate.deleteOne(params);
+    result.data.deletedCount == 0
+      ? result.doSuccess(3, "this _id isn't allowed to be removed!")
+      : result.doSuccess(1);
+  } catch (e) {
+    result.doError();
+  }
+
+  return result;
+};
+
+exports.updateSaleCertificate = async (conditions, params, options = {}) => {
+  var result = new DataResponse();
+  try {
+    result.data = await SaleCertificate.findOneAndUpdate(
+      conditions,
+      params,
+      options
+    );
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e);
+    result.doError(0);
+  }
+  return result;
+};
