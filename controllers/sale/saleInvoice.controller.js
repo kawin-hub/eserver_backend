@@ -492,10 +492,7 @@ exports.updateSaleInvoice = async (req, res) => {
           customerInfo: {
             taxId: quotationInfo.data.customerInfo.companyInfo.taxId,
             address: quotationInfo.data.customerInfo.companyInfo.address,
-            name:
-              quotationInfo.data.customerInfo.companyInfo.firstname +
-              " " +
-              quotationInfo.data.customerInfo.companyInfo.lastname,
+            name: quotationInfo.data.customerInfo.companyInfo.companyName,
             contact: quotationInfo.data.customerInfo.companyInfo.contactNumber,
           },
         };
@@ -673,18 +670,32 @@ const createInvoiceParamToLine = async (_id, method) => {
       var documentNumber = dataInfo.documentNumber;
       const quotation_id = quotationResult.data.documentNumber;
       var documentName = documentNumber;
-      const subtotal = dataInfo.amountRecieved.baht;
-      var displayText = "";
 
-      const vat = subtotal * 0.07;
-      const totalPrice = subtotal + vat;
+      const vatInPerCent = quotationResult.data.summary.vat;
+      var backwardInPercent = vatInPerCent / 100 + 1;
+
+      const totalPrice = dataInfo.amountRecieved.baht;
+      const subtotal = totalPrice / backwardInPercent;
+      const vat = totalPrice - subtotal;
+      var displayText = "";
 
       var txtDisplay = "INVOICE";
       var refIDTxtDisplay = "REF QUOTATION ID : ";
       var refIDDisplay = quotation_id;
 
       if (method == "receipt") {
-        pdfURI = process.env.URI + "/api/";
+        const SaleReceiptModel = SaleModel.receipt;
+        const receiptResult = await SaleReceiptModel.getSaleReceiptByConditions(
+          {
+            quotation_id: dataInfo.quotation_id,
+          },
+          {
+            _id: -1,
+            pdfPath: -1,
+          }
+        );
+
+        pdfURI = process.env.URI + "/api/" + receiptResult.data[0].pdfPath;
         txtDisplay = "RECEIPT";
         refIDTxtDisplay = "REF INVOICE ID : ";
         refIDDisplay = dataInfo.invoice.documentNumber;
@@ -764,7 +775,7 @@ const createInvoiceParamToLine = async (_id, method) => {
                   contents: [
                     {
                       type: "text",
-                      text: "VAT ( 7% )",
+                      text: "VAT ( " + vatInPerCent + "% )",
                       size: "sm",
                       color: "#555555",
                     },
