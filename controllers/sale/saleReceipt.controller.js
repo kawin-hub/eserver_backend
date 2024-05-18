@@ -11,7 +11,6 @@ const {
 
 exports.insertSaleReceipt = async (data) => {
   var result = new DataResponse();
-  console.log("In");
   try {
     const { invoice_id, userData, customerInfo, quotation_id } = data;
 
@@ -207,7 +206,6 @@ exports.getSaleReceipts = async (req, res) => {
 };
 
 exports.updateReceipt = async (req, res) => {
-  console.log(134);
   var result = new DataResponse();
   try {
     const validationParams = {

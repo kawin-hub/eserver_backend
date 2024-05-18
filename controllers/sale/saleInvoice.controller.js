@@ -19,7 +19,8 @@ exports.getSaleInvoices = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    const { _id, getby, txtSearch, paymentStatus, lead_id } = req.query;
+    const { _id, getby, txtSearch, paymentStatus, lead_id, invoiceNumber } =
+      req.query;
 
     var SaleInvoiceModel = SaleModel.invoice;
 
@@ -33,6 +34,13 @@ exports.getSaleInvoices = async (req, res) => {
         if (typeof paymentStatus != "undefined") {
           params.paymentStatus = paymentStatus;
         }
+        result = await SaleInvoiceModel.getSaleInvoiceByConditions(params);
+      }
+    } else if (typeof getby != "undefined" && getby == "invoiceNumbers") {
+      if (typeof invoiceNumber != "undefined") {
+        var params = {
+          documentNumber: invoiceNumber,
+        };
         result = await SaleInvoiceModel.getSaleInvoiceByConditions(params);
       }
     } else {
@@ -84,6 +92,29 @@ exports.getSaleInvoices = async (req, res) => {
       }
 
       result = await SaleInvoiceModel.getAllSaleInvoices(params);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+
+  res.json(result);
+};
+
+exports.getInvoicesByInvoiceNumber = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    const { getby, invoiceNumber } = req.query;
+
+    var SaleInvoiceModel = SaleModel.invoice;
+
+    if (typeof getby != "undefined" && getby == "invoiceNumbers") {
+      if (typeof invoiceNumber != "undefined") {
+        var params = {
+          documentNumber: invoiceNumber,
+        };
+        result = await SaleInvoiceModel.getSaleInvoiceByInvoiceNumber(params);
+      }
     }
   } catch (error) {
     console.log(error);
@@ -884,4 +915,34 @@ const createInvoiceParamToLine = async (_id, method) => {
   }
 
   return result;
+};
+
+exports.getInvoiceCount = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    var dbResponse = await SaleModel.invoice.getCountInvoice();
+    if (dbResponse.code == 1) {
+      result.doSuccess(1);
+    }
+    result.data = {
+      all: 0,
+      paid: 0,
+      unpaid: 0,
+    };
+    if (dbResponse.data.length > 0) {
+      result.data = {
+        all: dbResponse.data.length,
+        paid: dbResponse.data.filter((value) => value.paymentStatus === "paid")
+          .length,
+        unpaid: dbResponse.data.filter(
+          (value) => value.paymentStatus === "unpaid"
+        ).length,
+      };
+    }
+  } catch (e) {
+    console.log(e);
+  }
+
+  res.json(result);
 };

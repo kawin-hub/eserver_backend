@@ -37,7 +37,7 @@ exports.getAllSaleQuotations = async (params) => {
           },
         },
       },
-      
+
       {
         $project: {
           _id: 1,
@@ -69,6 +69,7 @@ exports.getAllSaleQuotations = async (params) => {
     var countTotalRow = await SaleQuotation.countDocuments(
       params.queryCondition
     );
+
     result.doSuccess(1);
 
     result.data = {
@@ -209,6 +210,22 @@ exports.deleteSaleQuotation = async (params) => {
       : result.doSuccess(1);
   } catch (e) {
     result.doError();
+  }
+
+  return result;
+};
+
+exports.getCountQuotation = async (params) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await SaleQuotation.find(params, {
+      _id: 1,
+      currentStatus: 1,
+    });
+    result.doSuccess();
+  } catch (e) {
+    result.doError(0);
   }
 
   return result;

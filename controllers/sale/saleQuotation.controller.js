@@ -443,7 +443,6 @@ exports.deleteSaleQuotation = async (req, res) => {
       );
       // ตรวจสอบว่ามี invoice ที่มี quotation_id เท่ากับ _id หรือไม่
       if (invoicesResult.code == 1 && invoicesResult.data.length == 0) {
-        console.log(invoicesResult);
         var resultQuotationDeleted =
           await SaleModel.quotation.getSaleQuotationById({
             _id: new ObjectId(_id),
@@ -842,6 +841,37 @@ exports.sendQuotationToLine = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+  }
+
+  res.json(result);
+};
+
+exports.getQuotationCount = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    var dbResponse = await SaleModel.quotation.getCountQuotation();
+    if (dbResponse.code == 1) {
+      result.doSuccess(1);
+    }
+    result.data = {
+      all: 0,
+      purchased: 0,
+      notYetPurchased: 0,
+    };
+    if (dbResponse.data.length > 0) {
+      result.data = {
+        all: dbResponse.data.length,
+        purchased: dbResponse.data.filter(
+          (value) => value.currentStatus === "purchased"
+        ).length,
+        notYetPurchased: dbResponse.data.filter(
+          (value) => value.currentStatus === "not yet purchased"
+        ).length,
+      };
+    }
+  } catch (e) {
+    console.log(e);
   }
 
   res.json(result);
