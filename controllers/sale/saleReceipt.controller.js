@@ -11,7 +11,6 @@ const {
 
 exports.insertSaleReceipt = async (data) => {
   var result = new DataResponse();
-  console.log("In");
   try {
     const { invoice_id, userData, customerInfo, quotation_id } = data;
 
@@ -25,7 +24,7 @@ exports.insertSaleReceipt = async (data) => {
     if (invoiceResultDB.code == 1 && invoiceResultDB.data.length > 0) {
       const receiptResult = await SaleModel.receipt.getLastestSaleReceiptId();
       const currentDate = new Date();
-      var newDocumentNumber = general.getPreTaxId(currentDate) + "-145";
+      var newDocumentNumber = general.getPreTaxId(currentDate) + "-153";
 
       if (receiptResult.code == 1) {
         var newReceiptId = receiptResult.data.documentNumber.split("-");
@@ -37,7 +36,7 @@ exports.insertSaleReceipt = async (data) => {
       }
 
       const invoiceResult = invoiceResultDB.data[0];
-      var documentNumberTax = "Tax:" + newDocumentNumber;
+      var documentNumberTax = "TAX" + newDocumentNumber;
       const itemDetail =
         invoiceResult.invoiceNumbers +
         ",\ninvoice No: #" +
@@ -111,6 +110,7 @@ exports.insertSaleReceipt = async (data) => {
           firstname: userData.firstname,
           lastname: userData.lastname,
         },
+        vat: vat,
       };
 
       result = await SaleModel.receipt.insertSaleReCeipt(params);
@@ -207,7 +207,6 @@ exports.getSaleReceipts = async (req, res) => {
 };
 
 exports.updateReceipt = async (req, res) => {
-  console.log(134);
   var result = new DataResponse();
   try {
     const validationParams = {
@@ -218,7 +217,6 @@ exports.updateReceipt = async (req, res) => {
     const matched = await validation.check();
     if (matched) {
       const { _id, customerInfo, quotation_id } = req.body;
-      console.log(req.body);
       const receiptResultDB =
         await SaleModel.receipt.getSaleReceiptByConditions({
           _id: _id,
@@ -232,14 +230,12 @@ exports.updateReceipt = async (req, res) => {
 
       if (receiptResultDB.code == 1) {
         const receiptResult = receiptResultDB.data[0];
-        console.log(receiptResult);
         const pdfDefaultName =
           receiptResult.documentNumber + Date.now() + ".pdf";
         var pdfPath = "assets/documents/invoices/" + pdfDefaultName;
         if (typeof receiptResult.pdfPath !== "undefined") {
           pdfPath = receiptResult.pdfPath;
         }
-        console.log(pdfPath);
 
         var backwardInPercent = vat / 100 + 1;
 
@@ -262,9 +258,9 @@ exports.updateReceipt = async (req, res) => {
         const taxInvoice = {
           header: {
             fileType: "TAX INVOICE / RECEIPT",
-            documentNumber: receiptResult.documentNumber,
-            createdDate: receiptResult.createdDate,
-            dueDate: receiptResult.dueDate,
+            documentNumber: "TAX" + receiptResult.documentNumber,
+            createdDate: receiptResult.createdAt.toISOString().split("T")[0],
+            dueDate: receiptResult.createdAt.toISOString().split("T")[0],
           },
           shipping: {
             name: customerInfo.name,
@@ -278,7 +274,6 @@ exports.updateReceipt = async (req, res) => {
           note: "",
           vat: vat,
         };
-        console.log(taxInvoice);
 
         createInvoice(taxInvoice, pdfPath, "receipt");
 

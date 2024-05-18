@@ -511,12 +511,17 @@ exports.sendQuotationToLine = async (req, res) => {
           const pdfURI = process.env.URI + "/api/" + result.data[i].pdfPath;
           const documentName = result.data[i].documentName;
 
+          const vatInPerCent = result.data[i].summary.vat;
+          var backwardInPercent = vatInPerCent / 100 + 1;
+
           const subtotal =
-            result.data[i].summary.totalPrice / 0.07 +
+            result.data[i].summary.totalPrice / backwardInPercent +
             result.data[i].summary.totalDiscount;
 
           const discount = result.data[i].summary.totalDiscount;
-          const vat = result.data[i].summary.totalDiscount * 1.07;
+          const vat =
+            result.data[i].summary.totalPrice -
+            result.data[i].summary.totalPrice / backwardInPercent;
           const totalPrice = result.data[i].summary.totalPrice;
           const items = result.data[i].products.length;
 
@@ -632,7 +637,7 @@ exports.sendQuotationToLine = async (req, res) => {
                       contents: [
                         {
                           type: "text",
-                          text: "VAT ( 7% )",
+                          text: "VAT ( " + vatInPerCent + "% )",
                           size: "sm",
                           color: "#555555",
                         },
