@@ -70,16 +70,21 @@ exports.insertSaleReceipt = async (data) => {
         },
         shipping: {
           name: customerInfo.name,
-          address:
-            customerInfo.address +
-            "\nTaxpayer identification number :" +
-            customerInfo.taxId,
+          address: customerInfo.address,
         },
         items: taxInvoiceDescriptionData,
         extraDiscount: 0,
         note: "",
         vat: vat,
       };
+
+      if (
+        typeof customerInfo.taxId !== "undefined" ||
+        customerInfo.taxId != ""
+      ) {
+        taxInvoice.shipping.address +=
+          "\nTaxpayer identification number :" + customerInfo.taxId;
+      }
 
       const pdfTaxInvoice = newDocumentNumber + "-" + Date.now() + ".pdf";
       const pdfTaxInvoicePath = "assets/documents/taxInvoice/" + pdfTaxInvoice;
@@ -264,16 +269,21 @@ exports.updateReceipt = async (req, res) => {
           },
           shipping: {
             name: customerInfo.name,
-            address:
-              customerInfo.address +
-              "\nTaxpayer identification number :" +
-              customerInfo.taxId,
+            address: customerInfo.address,
           },
           items: receiptDescription,
           extraDiscount: 0,
           note: "",
           vat: vat,
         };
+
+        if (
+          typeof customerInfo.taxId !== "undefined" ||
+          customerInfo.taxId != ""
+        ) {
+          taxInvoice.shipping.address +=
+            "\nTaxpayer identification number :" + customerInfo.taxId;
+        }
 
         createInvoice(taxInvoice, pdfPath, "receipt");
 

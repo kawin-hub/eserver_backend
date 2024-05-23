@@ -212,9 +212,13 @@ exports.insertSaleQuotation = async (req, res) => {
             var vatDefault = typeof vat != "undefined" ? vat : 7;
             var totalPrice = 0;
 
+            console.log(products);
+
             for (var i = 0; i < productResult.data.length; i++) {
               for (var j = 0; j < products.length; j++) {
                 if (productResult.data[i]._id == products[j]._id) {
+                  productResult.data[i].price = products[j].price;
+                  productResult.data[i].description = products[j].name;
                   productResult.data[i].quantity = products[j].quantity;
                   productResult.data[i].discountPercent =
                     (100 * parseFloat(products[j].discountBaht)) /
@@ -262,6 +266,14 @@ exports.insertSaleQuotation = async (req, res) => {
               note: note,
               vat: vatDefault,
             };
+
+            if (
+              typeof companyInfo.taxId !== "undefined" &&
+              companyInfo.taxId !== ""
+            ) {
+              quotation.shipping.address +=
+                "\nTaxpayer identification number :" + companyInfo.taxId;
+            }
 
             const pdfName = documentNumber + "-" + Date.now() + ".pdf";
             const pdfPath = "assets/documents/quotations/" + pdfName;
@@ -880,4 +892,24 @@ exports.getQuotationCount = async (req, res) => {
   }
 
   res.json(result);
+};
+
+//********** For Dashboard ************/
+
+exports.getSaleQuotationTotalByConditions = async (params) => {
+  try {
+    var result = await SaleModel.quotation.getSaleQuotationTotalByConditions(
+      params
+    );
+
+    var myData = 0;
+    if (result.code == 1 && result.data.length > 0) {
+      myData = result.data[0].total;
+    }
+    return {
+      sales: myData,
+    };
+  } catch (error) {
+    console.log(error);
+  }
 };

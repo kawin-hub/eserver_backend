@@ -67,7 +67,7 @@ function generateHeader(doc, data) {
       continued: false,
     })
     .fillColor(color.grey)
-    .text("Tax Identification Number :", 368, margin.top + 70, {
+    .text("Taxpayer Identification Number :", 368, margin.top + 70, {
       continued: true,
     })
     .fillColor(color.black)

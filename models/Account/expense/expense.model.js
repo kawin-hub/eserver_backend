@@ -1,8 +1,6 @@
 const AccountExpense = require("./accountExpenses.schema");
 const { DataResponse } = require("../../general_data.model");
 
-
-
 exports.getAllAccountExpenses = async (params) => {
   var result = new DataResponse();
   try {
@@ -151,6 +149,32 @@ exports.getNewAccountExpenseId = async () => {
     } else {
       result.doError(0);
     }
+  }
+
+  return result;
+};
+
+//******** For dashboard ************/
+
+exports.getExpensesTotalByConditions = async (params) => {
+  var result = new DataResponse();
+  try {
+    result.data = await AccountExpense.aggregate([
+      {
+        $match: params,
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" },
+        },
+      },
+    ]);
+
+    if (result.data) result.doSuccess();
+  } catch (e) {
+    result.doError();
+    console.log(e);
   }
 
   return result;

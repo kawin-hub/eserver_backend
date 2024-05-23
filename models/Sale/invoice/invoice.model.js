@@ -215,3 +215,28 @@ exports.getCountInvoice = async (params) => {
 
   return result;
 };
+
+//********** For Dashboard ************/
+
+exports.getInvoicesTotalByConditions = async (params) => {
+  var result = new DataResponse();
+  try {
+    result.data = await SaleInvoice.aggregate([
+      {
+        $match: params,
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amountRecieved.baht" },
+        },
+      },
+    ]);
+
+    if (result.data) result.doSuccess();
+  } catch (e) {
+    result.doError();
+  }
+
+  return result;
+};
