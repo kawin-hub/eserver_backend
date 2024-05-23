@@ -382,3 +382,23 @@ exports.deleteAccountExpense = async (req, res) => {
 
   res.json(result);
 };
+
+//********** For Dashboard ************/
+
+exports.getExpensesTotalByConditions = async (params) => {
+  try {
+    var result = await AccountModel.expense.getExpensesTotalByConditions(
+      params
+    );
+
+    var myData = 0;
+    if (result.code == 1 && result.data.length > 0) {
+      myData = result.data[0].total;
+    }
+    return {
+      expenses: myData,
+    };
+  } catch (error) {
+    console.log(error);
+  }
+};

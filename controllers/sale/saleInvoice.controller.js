@@ -325,6 +325,15 @@ exports.insertSaleInvoice = async (req, res) => {
             note: note,
             vat: vat,
           };
+
+          if (
+            typeof companyInfo.taxId !== "undefined" &&
+            companyInfo.taxId != ""
+          ) {
+            invoice.shipping.address +=
+              "\nTaxpayer identification number :" + companyInfo.taxId;
+          }
+
           const pdfName = documentNumber + Date.now() + ".pdf";
           const pdfPath = "assets/documents/invoices/" + pdfName;
 
@@ -956,4 +965,22 @@ exports.getInvoiceCount = async (req, res) => {
   }
 
   res.json(result);
+};
+
+//********** For Dashboard ************/
+
+exports.getSaleInvoiceTotalByConditions = async (params) => {
+  try {
+    var result = await SaleModel.invoice.getInvoicesTotalByConditions(params);
+
+    var myData = 0;
+    if (result.code == 1 && result.data.length > 0) {
+      myData = result.data[0].total;
+    }
+    return {
+      revenues: myData,
+    };
+  } catch (error) {
+    console.log(error);
+  }
 };

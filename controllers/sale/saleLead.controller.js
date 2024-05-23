@@ -100,7 +100,6 @@ exports.getSaleLeads = async (req, res) => {
       if (typeof level !== "undefined") {
         params.queryCondition["level"] = level;
       }
-
       result = await SaleLeadModel.getAllSaleLeads(params);
     }
   } catch (error) {
@@ -435,3 +434,21 @@ async function handleLineEvent(event) {
     }
   } catch (error) {}
 }
+
+//********** For Dashboard ************/
+
+exports.getNewCustomerCountByConditions = async (params) => {
+  try {
+    var result = await SaleModel.lead.getNewCustomerCountByConditions(params);
+
+    var myData = 0;
+    if (result.code == 1) {
+      myData = result.data;
+    }
+    return {
+      newCustomers: myData,
+    };
+  } catch (error) {
+    console.log(error);
+  }
+};

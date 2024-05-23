@@ -2,7 +2,6 @@ const SaleLead = require("./saleLeads.schema");
 const CustomerLevel = require("./customerLevel.schema");
 const LineLead = require("./leadLine.schema");
 const { DataResponse } = require("../../general_data.model");
-const { param } = require("express/lib/request");
 
 async function initLead() {
   var result;
@@ -267,6 +266,21 @@ exports.getLineUsersByConditions = async (params) => {
     } else {
       result.doError(0);
     }
+  }
+
+  return result;
+};
+
+//******** For dashboard ************/
+
+exports.getNewCustomerCountByConditions = async (params) => {
+  var result = new DataResponse();
+  try {
+    result.data = await SaleLead.find(params).countDocuments();
+    if (result.data) result.doSuccess();
+  } catch (e) {
+    result.doError();
+    console.log(e);
   }
 
   return result;

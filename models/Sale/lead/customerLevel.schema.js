@@ -7,16 +7,6 @@ let SaleCustomerLevelSchema = new Schema(
       type: String,
       unique: true,
     },
-    createdBy: {
-      user_id: { type: ObjectId, ref: "Users" },
-      firstname: { type: String },
-      lastname: { type: String },
-    },
-    updatedBy: {
-      user_id: { type: ObjectId, ref: "Users" },
-      firstname: { type: String },
-      lastname: { type: String },
-    },
   },
   {
     timestamps: true,

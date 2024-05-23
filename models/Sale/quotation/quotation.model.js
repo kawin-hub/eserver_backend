@@ -230,3 +230,28 @@ exports.getCountQuotation = async (params) => {
 
   return result;
 };
+
+//********** For Dashboard ************/
+
+exports.getSaleQuotationTotalByConditions = async (params) => {
+  var result = new DataResponse();
+  try {
+    result.data = await SaleQuotation.aggregate([
+      {
+        $match: params,
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$summary.totalPrice" },
+        },
+      },
+    ]);
+
+    if (result.data) result.doSuccess();
+  } catch (e) {
+    result.doError();
+  }
+
+  return result;
+};
