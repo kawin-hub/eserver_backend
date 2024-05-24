@@ -26,18 +26,6 @@ exports.formatDate = (date) => {
   return `${year}-${month}-${day}`;
 };
 
-exports.getBangkokDateTime = (format) => {
-  const currentDateTimeUTC = new Date();
-  const bangkokTimeZone = "Asia/Bangkok";
-
-  const formattedDateTime = moment
-    .utc(currentDateTimeUTC)
-    .tz(bangkokTimeZone)
-    .format(format);
-
-  return formattedDateTime;
-};
-
 exports.getDateTimeForDB = () => {
   var dateTime = new Date();
   dateTime.setHours(dateTime.getHours() + 7);
