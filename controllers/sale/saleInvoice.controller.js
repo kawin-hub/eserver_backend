@@ -19,8 +19,18 @@ exports.getSaleInvoices = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    const { _id, getby, txtSearch, paymentStatus, lead_id, invoiceNumber } =
-      req.query;
+    const {
+      _id,
+      getby,
+      txtSearch,
+      paymentStatus,
+      lead_id,
+      invoiceNumber,
+      dateCreatedStart,
+      dateCreatedEnd,
+      dueDateStart,
+      dueDateEnd,
+    } = req.query;
 
     var SaleInvoiceModel = SaleModel.invoice;
 
@@ -91,6 +101,32 @@ exports.getSaleInvoices = async (req, res) => {
         params.queryCondition["customerInfo.lead_id"] = new ObjectId(lead_id);
       }
 
+      if (
+        typeof dateCreatedStart !== "undefined" &&
+        typeof dateCreatedEnd !== "undefined"
+      ) {
+        const startDate = new Date(dateCreatedStart);
+        const endDate = new Date(dateCreatedEnd);
+
+        params.queryCondition["createdAt"] = {
+          $gte: startDate,
+          $lt: endDate,
+        };
+      }
+      if (
+        typeof dueDateStart !== "undefined" &&
+        typeof dueDateEnd !== "undefined"
+      ) {
+        console.log("dueDate");
+        const startDueDate = new Date(dueDateStart);
+        const endDueDate = new Date(dueDateEnd);
+
+        params.queryCondition["dueDate"] = {
+          $gte: startDueDate,
+          $lt: endDueDate,
+        };
+      }
+
       result = await SaleInvoiceModel.getAllSaleInvoices(params);
     }
   } catch (error) {
@@ -114,6 +150,29 @@ exports.getInvoicesByInvoiceNumber = async (req, res) => {
           documentNumber: invoiceNumber,
         };
         result = await SaleInvoiceModel.getSaleInvoiceByInvoiceNumber(params);
+      }
+    }
+  } catch (error) {
+    console.log(error);
+  }
+
+  res.json(result);
+};
+
+exports.getInvoicesByPaymentStatus = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    const { getby, paymentStatus } = req.query;
+    var SaleInvoiceModel = SaleModel.invoice;
+
+    if (typeof getby != "undefined" && getby == "paid") {
+      if (typeof paymentStatus != "undefined") {
+        var params = {
+          paymentStatus: paymentStatus,
+        };
+        console.log(params);
+        result = await SaleInvoiceModel.getSaleInvoiceByPaymentStatus(params);
       }
     }
   } catch (error) {
@@ -483,6 +542,7 @@ exports.updateSaleInvoice = async (req, res) => {
         paymentStatus,
         paymentDocumentsRemove,
         paymentImagesRemove,
+        paidDate,
         invoiceNumbers,
         baht,
         documentNumber,
@@ -524,6 +584,7 @@ exports.updateSaleInvoice = async (req, res) => {
 
       if (typeof paymentStatus !== "undefined" && paymentStatus == "paid") {
         params["$set"].paymentStatus = paymentStatus;
+        params["$set"].paidDate = paidDate;
 
         var receiptParam = {
           quotation_id: quotation_id,
@@ -577,9 +638,13 @@ exports.updateSaleInvoice = async (req, res) => {
       );
 
       if (result.code == 1 && paymentStatus == "paid") {
+        console.log(213);
         await SaleModel.quotation.updateSaleQuotation(
           { _id: quotation_id },
-          { currentStatus: "purchased" }
+          {
+            currentStatus: "purchased",
+            purchesedDate: general.getDateTimeForDB(),
+          }
         );
       }
       if (result.code == 1) {

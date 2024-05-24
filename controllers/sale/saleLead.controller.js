@@ -46,7 +46,8 @@ exports.getSaleLeads = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    const { _id, txtSearch, level } = req.query;
+    const { _id, txtSearch, level, dateCreatedStart, dateCreatedEnd } =
+      req.query;
 
     var SaleLeadModel = SaleModel.lead;
 
@@ -100,6 +101,20 @@ exports.getSaleLeads = async (req, res) => {
       if (typeof level !== "undefined") {
         params.queryCondition["level"] = level;
       }
+
+      if (
+        typeof dateCreatedStart !== "undefined" &&
+        typeof dateCreatedEnd !== "undefined"
+      ) {
+        const startDate = new Date(dateCreatedStart);
+        const endDate = new Date(dateCreatedEnd);
+
+        params.queryCondition["createdAt"] = {
+          $gte: startDate,
+          $lt: endDate,
+        };
+      }
+
       result = await SaleLeadModel.getAllSaleLeads(params);
     }
   } catch (error) {

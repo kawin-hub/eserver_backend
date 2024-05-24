@@ -1,4 +1,5 @@
 const { Schema, model, ObjectId } = require("mongoose");
+const { general } = require("../../../middleware");
 const collection = "SaleQuotations";
 
 let saleQuotationSchema = new Schema(
@@ -43,6 +44,7 @@ let saleQuotationSchema = new Schema(
         productModel_id: { type: ObjectId, ref: "ProductModel" },
         modelCode: { type: String },
         name: { type: String },
+        description: { type: String },
         price: { type: Number },
         quantity: { type: Number },
         discountPercent: { type: Number },
@@ -100,6 +102,9 @@ let saleQuotationSchema = new Schema(
       enum: ["purchased", "not yet purchased"],
       default: "not yet purchased",
     },
+    purchesedDate: {
+      type: Date,
+    },
   },
   {
     timestamps: true,
@@ -107,5 +112,27 @@ let saleQuotationSchema = new Schema(
     collection,
   }
 );
+
+saleQuotationSchema.pre("save", function (next) {
+  var now = general.getDateTimeForDB();
+  this.createdAt = now;
+  this.updatedAt = now;
+  next();
+});
+
+saleQuotationSchema.pre("findOneAndUpdate", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
+
+saleQuotationSchema.pre("updateOne", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
+
+saleQuotationSchema.pre("updateMany", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
 
 module.exports = model(collection, saleQuotationSchema);
