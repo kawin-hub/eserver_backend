@@ -19,8 +19,17 @@ exports.getSaleQuotations = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    const { _id, txtSearch, quotationStatus, currentStatus, lead_id } =
-      req.query;
+    const {
+      _id,
+      txtSearch,
+      quotationStatus,
+      currentStatus,
+      lead_id,
+      dateCreatedStart,
+      dateCreatedEnd,
+      dueDateStart,
+      dueDateEnd,
+    } = req.query;
 
     var SaleQuotationModel = SaleModel.quotation;
 
@@ -77,6 +86,31 @@ exports.getSaleQuotations = async (req, res) => {
 
       if (typeof lead_id !== "undefined") {
         params.queryCondition["customerInfo.lead_id"] = new ObjectId(lead_id);
+      }
+
+      if (
+        typeof dateCreatedStart !== "undefined" &&
+        typeof dateCreatedEnd !== "undefined"
+      ) {
+        const startDate = new Date(dateCreatedStart);
+        const endDate = new Date(dateCreatedEnd);
+
+        params.queryCondition["createdAt"] = {
+          $gte: startDate,
+          $lt: endDate,
+        };
+      }
+      if (
+        typeof dueDateStart !== "undefined" &&
+        typeof dueDateEnd !== "undefined"
+      ) {
+        const startDueDate = new Date(dueDateStart);
+        const endDueDate = new Date(dueDateEnd);
+
+        params.queryCondition["dueDate"] = {
+          $gte: startDueDate,
+          $lt: endDueDate,
+        };
       }
 
       result = await SaleQuotationModel.getAllSaleQuotations(params);
@@ -218,7 +252,7 @@ exports.insertSaleQuotation = async (req, res) => {
               for (var j = 0; j < products.length; j++) {
                 if (productResult.data[i]._id == products[j]._id) {
                   productResult.data[i].price = products[j].price;
-                  productResult.data[i].description = products[j].name;
+                  productResult.data[i].description = products[j].description;
                   productResult.data[i].quantity = products[j].quantity;
                   productResult.data[i].discountPercent =
                     (100 * parseFloat(products[j].discountBaht)) /

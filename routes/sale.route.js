@@ -42,6 +42,11 @@ router.get(
   verifyToken,
   saleInvoice.getInvoicesByInvoiceNumber
 );
+router.get(
+  "/invoices/paymentStatus",
+  verifyToken,
+  saleInvoice.getInvoicesByPaymentStatus
+);
 router.get("/invoices/count", verifyToken, saleInvoice.getInvoiceCount);
 router.post("/invoices", verifyToken, saleInvoice.insertSaleInvoice);
 router.put("/invoices", verifyToken, saleInvoice.updateSaleInvoice);

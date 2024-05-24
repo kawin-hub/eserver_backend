@@ -136,7 +136,8 @@ exports.getSaleReceipts = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    const { _id, getby, txtSearch, lead_id } = req.query;
+    const { _id, getby, txtSearch, lead_id, dateCreatedStart, dateCreatedEnd } =
+      req.query;
 
     var SaleReceiptModel = SaleModel.receipt;
 
@@ -201,6 +202,20 @@ exports.getSaleReceipts = async (req, res) => {
       if (typeof lead_id !== "undefined") {
         params.queryCondition["customerInfo.lead_id"] = new ObjectId(lead_id);
       }
+
+      if (
+        typeof dateCreatedStart !== "undefined" &&
+        typeof dateCreatedEnd !== "undefined"
+      ) {
+        const startDate = new Date(dateCreatedStart);
+        const endDate = new Date(dateCreatedEnd);
+
+        params.queryCondition["createdAt"] = {
+          $gte: startDate,
+          $lt: endDate,
+        };
+      }
+
       result = await SaleReceiptModel.getAllSaleInvoices(params);
     } else {
     }

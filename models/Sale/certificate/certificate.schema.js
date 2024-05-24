@@ -1,4 +1,5 @@
 const { Schema, model, ObjectId } = require("mongoose");
+const { general } = require("../../../middleware");
 const collection = "SaleCertificate";
 
 let SaleCertificateSchema = new Schema(
@@ -28,6 +29,10 @@ let SaleCertificateSchema = new Schema(
     detail: {
       type: String,
     },
+    warrantyStatus: {
+      type: String,
+      enum: ["warranty", "nonWarranty"],
+    },
     createdBy: {
       user_id: { type: ObjectId, ref: "Users" },
       firstname: { type: String },
@@ -45,5 +50,27 @@ let SaleCertificateSchema = new Schema(
     collection,
   }
 );
+
+SaleCertificateSchema.pre("save", function (next) {
+  var now = general.getDateTimeForDB();
+  this.createdAt = now;
+  this.updatedAt = now;
+  next();
+});
+
+SaleCertificateSchema.pre("findOneAndUpdate", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
+
+SaleCertificateSchema.pre("updateOne", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
+
+SaleCertificateSchema.pre("updateMany", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
 
 module.exports = model(collection, SaleCertificateSchema);
