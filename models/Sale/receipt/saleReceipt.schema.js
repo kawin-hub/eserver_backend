@@ -64,6 +64,9 @@ let saleReceiptSchema = new Schema(
       firstname: { type: String },
       lastname: { type: String },
     },
+    paidDate: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

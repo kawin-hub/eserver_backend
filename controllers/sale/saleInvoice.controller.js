@@ -588,6 +588,7 @@ exports.updateSaleInvoice = async (req, res) => {
 
         var receiptParam = {
           quotation_id: quotation_id,
+          paidDate: paidDate,
           invoice_id: _id,
           userData: userData,
           customerInfo: {
@@ -638,7 +639,6 @@ exports.updateSaleInvoice = async (req, res) => {
       );
 
       if (result.code == 1 && paymentStatus == "paid") {
-        console.log(213);
         await SaleModel.quotation.updateSaleQuotation(
           { _id: quotation_id },
           {

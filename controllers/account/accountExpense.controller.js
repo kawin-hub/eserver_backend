@@ -11,7 +11,8 @@ exports.getAccountExpenses = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    const { _id, txtSearch, category, type } = req.query;
+    const { _id, txtSearch, type, dateCreatedStart, dateCreatedEnd } =
+      req.query;
 
     var AccountExpenseModel = AccountModel.expense;
 
@@ -46,12 +47,21 @@ exports.getAccountExpenses = async (req, res) => {
         params.queryCondition["$or"] = orConditions;
       }
 
-      if (typeof category !== "undefined") {
-        params.queryCondition["category"] = category;
-      }
-
       if (typeof type !== "undefined") {
         params.queryCondition["type"] = type;
+      }
+
+      if (
+        typeof dateCreatedStart !== "undefined" &&
+        typeof dateCreatedEnd !== "undefined"
+      ) {
+        const startDate = new Date(dateCreatedStart);
+        const endDate = new Date(dateCreatedEnd);
+
+        params.queryCondition["createdAt"] = {
+          $gte: startDate,
+          $lt: endDate,
+        };
       }
 
       result = await AccountExpenseModel.getAllAccountExpenses(params);
@@ -120,7 +130,6 @@ exports.insertAccountExpense = async (req, res) => {
       const validation = new Validator(req.body, {
         documentNumber: "required",
         expenseDate: "required|dateFormat:YYYY-MM-DD",
-        category: "required|in:stock,nonstock",
         amount: "required",
         whom: "required",
       });
@@ -130,16 +139,8 @@ exports.insertAccountExpense = async (req, res) => {
       var AccountExpenseModel = AccountModel.expense;
 
       if (matched) {
-        const {
-          documentNumber,
-          expenseDate,
-          category,
-          type,
-          amount,
-          whom,
-          tag,
-          remark,
-        } = req.body;
+        const { documentNumber, expenseDate, type, amount, whom, tag, remark } =
+          req.body;
 
         const userData = req.body.authData.userInfo.userData;
 
@@ -162,7 +163,6 @@ exports.insertAccountExpense = async (req, res) => {
         var params = {
           documentNumber: documentNumber,
           expenseDate: expenseDate,
-          category: typeof category != "undefined" ? category : "",
           type: type,
           amount: amount,
           whom: whom,
@@ -228,7 +228,6 @@ exports.updateAccountExpense = async (req, res) => {
         _id: "required",
         documentNumber: "required",
         expenseDate: "required|dateFormat:YYYY-MM-DD",
-        category: "required|in:stock,nonstock",
         amount: "required",
         whom: "required",
       });
@@ -240,7 +239,6 @@ exports.updateAccountExpense = async (req, res) => {
           _id,
           documentNumber,
           expenseDate,
-          category,
           type,
           amount,
           whom,
@@ -276,7 +274,6 @@ exports.updateAccountExpense = async (req, res) => {
           _id: _id,
           documentNumber: documentNumber,
           expenseDate: expenseDate,
-          category: typeof category != "undefined" ? category : "",
           type: type,
           amount: amount,
           whom: whom,

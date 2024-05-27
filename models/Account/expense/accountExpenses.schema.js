@@ -13,11 +13,6 @@ let accountExpenseSchema = new Schema(
       type: Date,
       required: true,
     },
-    category: {
-      type: String,
-      enum: ["stock", "nonstock"],
-      default: "stock",
-    },
     type: {
       type: String,
       default: "others",
