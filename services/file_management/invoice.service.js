@@ -22,7 +22,7 @@ const font = {
 function createInvoice(data, path, type = "quotation") {
   let doc = new PDFDocument({ size: "A4", margin: 30 });
 
-  generateHeader(doc, data);
+  generateHeader(doc, data, type);
   const subtotalResult = generateInvoiceTable(doc, data);
   generatePaymentMethod(doc, data);
   generateSummary(doc, subtotalResult, data.vat);
@@ -32,7 +32,7 @@ function createInvoice(data, path, type = "quotation") {
   doc.pipe(fs.createWriteStream(path));
 }
 
-function generateHeader(doc, data) {
+function generateHeader(doc, data, type) {
   doc
     .font(font.thin)
     .image("./system/images/logo.png", margin.left, margin.top + 10, {
@@ -59,15 +59,20 @@ function generateHeader(doc, data) {
     .text("Created date :", 428, margin.top + 40, { continued: true })
     .fillColor(color.black)
     .text(data.header.createdDate, { align: "right", continued: false })
+    .fillColor(color.grey);
+  if (type != "receipt") {
+    doc
+      .text("Due date :", 439, margin.top + 55, { continued: true })
+      .fillColor(color.black)
+      .text(data.header.dueDate, {
+        align: "right",
+        continued: false,
+      });
+  }
+
+  doc
     .fillColor(color.grey)
-    .text("Due date :", 439, margin.top + 55, { continued: true })
-    .fillColor(color.black)
-    .text(data.header.dueDate, {
-      align: "right",
-      continued: false,
-    })
-    .fillColor(color.grey)
-    .text("Taxpayer Identification Number :", 368, margin.top + 70, {
+    .text("Taxpayer Identification Number :", 348, margin.top + 70, {
       continued: true,
     })
     .fillColor(color.black)

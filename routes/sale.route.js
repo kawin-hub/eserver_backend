@@ -74,6 +74,6 @@ router.post("/line/sendInvoice", verifyToken, saleInvoice.sendInvoiceToLine);
 router.get("/certificate", verifyToken, saleCertificate.getSaleCertificate);
 router.post("/certificate", verifyToken, saleCertificate.insertSaleCertificate);
 router.delete("/certificate", verifyToken, saleCertificate.deleteCertificate);
-router.put("/certificate", verifyToken, saleCertificate.updateReceipt);
+router.put("/certificate", verifyToken, saleCertificate.updateCertificate);
 
 module.exports = router;

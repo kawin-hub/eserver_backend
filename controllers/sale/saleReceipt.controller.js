@@ -8,11 +8,12 @@ const fs = require("fs");
 const {
   createInvoice,
 } = require("../../services/file_management/invoice.service");
+const { updateInvoice } = require("../../models/Sale/invoice/invoice.model");
 
 exports.insertSaleReceipt = async (data) => {
   var result = new DataResponse();
   try {
-    const { invoice_id, userData, customerInfo, quotation_id } = data;
+    const { invoice_id, userData, customerInfo, quotation_id, paidDate } = data;
 
     const invoiceResultDB = await SaleModel.invoice.getSaleInvoiceByConditions({
       _id: invoice_id,
@@ -65,7 +66,7 @@ exports.insertSaleReceipt = async (data) => {
         header: {
           fileType: "TAX INVOICE / RECEIPT",
           documentNumber: documentNumberTax,
-          createdDate: today,
+          createdDate: paidDate,
           dueDate: today,
         },
         shipping: {
@@ -116,6 +117,7 @@ exports.insertSaleReceipt = async (data) => {
           lastname: userData.lastname,
         },
         vat: vat,
+        paidDate: paidDate,
       };
 
       result = await SaleModel.receipt.insertSaleReCeipt(params);
@@ -236,7 +238,7 @@ exports.updateReceipt = async (req, res) => {
     const validation = new Validator(req.body, validationParams);
     const matched = await validation.check();
     if (matched) {
-      const { _id, customerInfo, quotation_id } = req.body;
+      const { _id, customerInfo, quotation_id, paidDate, invoice } = req.body;
       const receiptResultDB =
         await SaleModel.receipt.getSaleReceiptByConditions({
           _id: _id,
@@ -245,8 +247,16 @@ exports.updateReceipt = async (req, res) => {
       const quotationResultDB = await SaleModel.quotation.getSaleQuotationById({
         _id: quotation_id,
       });
-
       const vat = quotationResultDB.data.summary.vat;
+
+      var invoice_id = invoice.invoice_id;
+      const updateConditionsInvoice = { _id: invoice_id };
+      var paramsInvoice = {};
+      if (typeof paidDate != "undefined") {
+        paramsInvoice["paidDate"] = paidDate;
+      }
+
+      updateInvoice(updateConditionsInvoice, paramsInvoice);
 
       if (receiptResultDB.code == 1) {
         const receiptResult = receiptResultDB.data[0];
@@ -279,7 +289,7 @@ exports.updateReceipt = async (req, res) => {
           header: {
             fileType: "TAX INVOICE / RECEIPT",
             documentNumber: "TAX" + receiptResult.documentNumber,
-            createdDate: receiptResult.createdAt.toISOString().split("T")[0],
+            createdDate: paidDate,
             dueDate: receiptResult.createdAt.toISOString().split("T")[0],
           },
           shipping: {
@@ -321,6 +331,9 @@ exports.updateReceipt = async (req, res) => {
         }
         if (typeof customerInfo.contactNumber != "undefined") {
           params["customerInfo.contactNumber"] = customerInfo.contactNumber;
+        }
+        if (typeof paidDate != "undefined") {
+          params["paidDate"] = paidDate;
         }
 
         const options = { returnOriginal: false };

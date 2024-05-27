@@ -16,8 +16,16 @@ exports.getSaleCertificate = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    const { _id, txtSearch } = req.query;
-
+    const {
+      _id,
+      txtSearch,
+      dateNonWarrantyStart,
+      dateNonWarrantyEnd,
+      dateWarrantyStart,
+      dateWarrantyEnd,
+      typeSelect,
+    } = req.query;
+    
     if (typeof _id != "undefined") {
       result = await SaleModel.certificate.getCertificateById({
         _id: new Object(_id),
@@ -49,6 +57,44 @@ exports.getSaleCertificate = async (req, res) => {
         params.queryCondition["$or"] = orConditions;
       }
 
+      var currentDate = new Date();
+
+      if (typeSelect == "expired") {
+        params.queryCondition["warrantyPreriod.to"] = {
+          $lt: currentDate,
+        };
+      } else if (typeSelect == "available") {
+        params.queryCondition["warrantyPreriod.to"] = {
+          $gte: currentDate,
+        };
+
+        console.log(params);
+      } else {
+        // Query from date
+        if (
+          typeof dateWarrantyStart !== "undefined" &&
+          typeof dateWarrantyEnd !== "undefined"
+        ) {
+          const startWarrantyDate = new Date(dateWarrantyStart);
+          const endWarrantyDate = new Date(dateWarrantyEnd);
+
+          params.queryCondition["warrantyPreriod.from"] = {
+            $gte: startWarrantyDate,
+            $lt: endWarrantyDate,
+          };
+        } else if (
+          typeof dateNonWarrantyStart !== "undefined" &&
+          typeof dateNonWarrantyEnd !== "undefined"
+        ) {
+          const startNonWarrantyDate = new Date(dateNonWarrantyStart);
+          const endNonWarrantyDate = new Date(dateNonWarrantyEnd);
+
+          params.queryCondition["warrantyPreriod.to"] = {
+            $gte: startNonWarrantyDate,
+            $lt: endNonWarrantyDate,
+          };
+        }
+      }
       result = await SaleModel.certificate.getAllCertificate(params);
     }
   } catch (error) {
@@ -138,7 +184,7 @@ exports.deleteCertificate = async (req, res) => {
   res.json(result);
 };
 
-exports.updateReceipt = async (req, res) => {
+exports.updateCertificate = async (req, res) => {
   var result = new DataResponse();
   try {
     const validationParams = {
