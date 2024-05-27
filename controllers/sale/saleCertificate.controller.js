@@ -25,7 +25,7 @@ exports.getSaleCertificate = async (req, res) => {
       dateWarrantyEnd,
       typeSelect,
     } = req.query;
-    console.log(req.query);
+    
     if (typeof _id != "undefined") {
       result = await SaleModel.certificate.getCertificateById({
         _id: new Object(_id),
@@ -95,7 +95,6 @@ exports.getSaleCertificate = async (req, res) => {
           };
         }
       }
-
       result = await SaleModel.certificate.getAllCertificate(params);
     }
   } catch (error) {
