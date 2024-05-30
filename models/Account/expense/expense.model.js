@@ -21,6 +21,7 @@ exports.getAllAccountExpenses = async (params) => {
       amount: 1,
       type: 1,
       createdBy: 1,
+      receipt: 1,
     })
       .skip(skip)
       .limit(limit)

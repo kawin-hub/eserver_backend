@@ -32,6 +32,10 @@ let accountExpenseSchema = new Schema(
     remark: {
       type: String,
     },
+    receipt: {
+      type: String,
+      enum: ["receipt", "nonReceipt"],
+    },
     images: [
       {
         name: String,
