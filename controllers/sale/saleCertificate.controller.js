@@ -11,6 +11,9 @@ dotenv.config();
 const {
   createInvoice,
 } = require("../../services/file_management/invoice.service");
+const {
+  createWarranty,
+} = require("../../services/file_management/warranty.service");
 
 exports.getSaleCertificate = async (req, res) => {
   var result = new DataResponse();
@@ -25,7 +28,7 @@ exports.getSaleCertificate = async (req, res) => {
       dateWarrantyEnd,
       typeSelect,
     } = req.query;
-    
+
     if (typeof _id != "undefined") {
       result = await SaleModel.certificate.getCertificateById({
         _id: new Object(_id),
@@ -249,3 +252,13 @@ exports.updateCertificate = async (req, res) => {
 
   res.json(result);
 };
+
+/* var data = {
+  issuedDate: "2024/05/29",
+  body: "INHOUSE TECHNOLOGY CO., LTD. issues this warranty certificate to Mr. Kawin Sinwathanakasem for the Smart Film. This warranty is valid from 2024/05/30 to 2026/05/30 and covers issues related to the inability of the Smart Film to switch on or off, electrical system problems, transformer faults, and installation issues. Refer to quotation #765-01481 for full details.",
+};
+
+const pdfName = "warranty" + ".pdf";
+const path = "assets/documents/warranties/" + pdfName;
+
+createWarranty(data, path); */
