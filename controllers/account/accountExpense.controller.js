@@ -11,8 +11,14 @@ exports.getAccountExpenses = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    const { _id, txtSearch, type, dateCreatedStart, dateCreatedEnd } =
-      req.query;
+    const {
+      _id,
+      txtSearch,
+      type,
+      typeReceipt,
+      dateCreatedStart,
+      dateCreatedEnd,
+    } = req.query;
 
     var AccountExpenseModel = AccountModel.expense;
 
@@ -49,6 +55,10 @@ exports.getAccountExpenses = async (req, res) => {
 
       if (typeof type !== "undefined") {
         params.queryCondition["type"] = type;
+      }
+
+      if (typeof typeReceipt !== "undefined") {
+        params.queryCondition["receipt"] = typeReceipt;
       }
 
       if (
@@ -139,8 +149,16 @@ exports.insertAccountExpense = async (req, res) => {
       var AccountExpenseModel = AccountModel.expense;
 
       if (matched) {
-        const { documentNumber, expenseDate, type, amount, whom, tag, remark } =
-          req.body;
+        const {
+          documentNumber,
+          expenseDate,
+          type,
+          amount,
+          whom,
+          tag,
+          remark,
+          receipt,
+        } = req.body;
 
         const userData = req.body.authData.userInfo.userData;
 
@@ -168,6 +186,7 @@ exports.insertAccountExpense = async (req, res) => {
           whom: whom,
           tag: typeof tag != "undefined" ? tag : "",
           remark: typeof remark != "undefined" ? remark : "",
+          receipt: typeof receipt != "undefined" ? receipt : "",
           images: images,
           documents: documents,
           createdBy: {
@@ -246,6 +265,7 @@ exports.updateAccountExpense = async (req, res) => {
           remark,
           documentsRemove,
           imagesRemove,
+          receipt,
         } = req.body;
         const updateConditions = {
           _id: _id,
@@ -279,6 +299,7 @@ exports.updateAccountExpense = async (req, res) => {
           whom: whom,
           tag: typeof tag != "undefined" ? tag : "",
           remark: typeof remark != "undefined" ? remark : "",
+          receipt: typeof receipt != "undefined" ? receipt : "",
         };
 
         params["$push"] = {}; // add new
