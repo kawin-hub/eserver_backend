@@ -126,6 +126,7 @@ exports.insertSaleCertificate = async (req, res) => {
       const {
         quotation_id,
         customerName,
+        customerInfo,
         datePurcharse,
         productService,
         quotationNumber,
@@ -133,21 +134,34 @@ exports.insertSaleCertificate = async (req, res) => {
         detail,
       } = req.body;
 
-      const quotationResultDB = await SaleModel.quotation.getSaleQuotationById({
-        _id: quotation_id,
-      });
+      var data = {
+        issuedDate: warrantyPreriod.issueDate,
+        body: detail,
+      };
+
+      const pdfName = "warranty" + "-" + Date.now() + ".pdf";
+      const path = "assets/documents/warranties/" + pdfName;
+
+      createWarranty(data, path);
+
       const userData = req.body.authData.userInfo.userData;
 
       var insertCertificateParams = {
         customerName: customerName,
+        customerInfo: {
+          lead_id: customerInfo.lead_id,
+          lineId: customerInfo.lineId,
+        },
         datePurcharse: datePurcharse,
         productService: productService,
         quotationNumber: quotationNumber,
         warrantyPreriod: {
           from: warrantyPreriod.from,
           to: warrantyPreriod.to,
+          issueDate: warrantyPreriod.issueDate,
         },
         detail: detail,
+        pdfPath: path,
         createdBy: {
           user_id: userData._id,
           firstname: userData.firstname,
@@ -209,40 +223,61 @@ exports.updateCertificate = async (req, res) => {
         warrantyPreriod,
         detail,
       } = req.body;
-      const updateConditions = {
+      const warrantyResultDB = await SaleModel.certificate.getCertificateById({
         _id: _id,
-      };
+      });
+      console.log(warrantyResultDB.data);
 
-      var params = {
-        customerName: customerName,
-      };
+      if (warrantyResultDB.code == 1) {
+        const warrantyResult = warrantyResultDB.data;
+        const pdfDefaultName = "warranty" + "-" + Date.now() + ".pdf";
+        var pdfPath = "assets/documents/invoices/" + pdfDefaultName;
+        if (typeof warrantyResult.pdfPath !== "undefined") {
+          pdfPath = warrantyResult.pdfPath;
+        }
 
-      if (typeof customerName != "undefined") {
-        params["customerName"] = customerName;
-      }
-      if (typeof datePurcharse != "undefined") {
-        params["datePurcharse"] = datePurcharse;
-      }
-      if (typeof productService != "undefined") {
-        params["productService"] = productService;
-      }
-      if (typeof quotationNumber != "undefined") {
-        params["quotationNumber"] = quotationNumber;
-      }
-      if (typeof warrantyPreriod != "undefined") {
-        params["warrantyPreriod"] = warrantyPreriod;
-      }
-      if (typeof detail != "undefined") {
-        params["detail"] = detail;
-      }
+        const updateConditions = {
+          _id: _id,
+        };
 
-      const options = { returnOriginal: false };
+        var data = {
+          issuedDate: warrantyPreriod.issueDate,
+          body: detail,
+        };
 
-      result = await SaleModel.certificate.updateSaleCertificate(
-        updateConditions,
-        params,
-        options
-      );
+        createWarranty(data, pdfPath);
+
+        var params = {
+          customerName: customerName,
+        };
+
+        if (typeof customerName != "undefined") {
+          params["customerName"] = customerName;
+        }
+        if (typeof datePurcharse != "undefined") {
+          params["datePurcharse"] = datePurcharse;
+        }
+        if (typeof productService != "undefined") {
+          params["productService"] = productService;
+        }
+        if (typeof quotationNumber != "undefined") {
+          params["quotationNumber"] = quotationNumber;
+        }
+        if (typeof warrantyPreriod != "undefined") {
+          params["warrantyPreriod"] = warrantyPreriod;
+        }
+        if (typeof detail != "undefined") {
+          params["detail"] = detail;
+        }
+
+        const options = { returnOriginal: false };
+
+        result = await SaleModel.certificate.updateSaleCertificate(
+          updateConditions,
+          params,
+          options
+        );
+      }
     } else {
       result.doError(2, validation.errors);
     }

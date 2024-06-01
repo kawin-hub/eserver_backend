@@ -23,6 +23,8 @@ exports.getAllCertificate = async (params) => {
       quotationNumber: 1,
       warrantyPreriod: 1,
       createdBy: 1,
+      pdfPath: 1,
+      customerInfo: 1,
     })
       .skip(skip)
       .limit(limit)
