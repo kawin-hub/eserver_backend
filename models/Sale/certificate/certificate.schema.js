@@ -15,6 +15,10 @@ let SaleCertificateSchema = new Schema(
       type: Date,
       required: true,
     },
+    customerInfo: {
+      lead_id: { type: ObjectId, ref: "SaleLeads" },
+      lineId: { type: String },
+    },
     productService: {
       type: String,
     },
@@ -25,6 +29,7 @@ let SaleCertificateSchema = new Schema(
     warrantyPreriod: {
       from: Date,
       to: Date,
+      issueDate: Date,
     },
     detail: {
       type: String,
@@ -32,6 +37,9 @@ let SaleCertificateSchema = new Schema(
     warrantyStatus: {
       type: String,
       enum: ["warranty", "nonWarranty"],
+    },
+    pdfPath: {
+      type: String,
     },
     createdBy: {
       user_id: { type: ObjectId, ref: "Users" },
