@@ -359,23 +359,16 @@ exports.updateAccountExpense = async (req, res) => {
   res.json(result);
 };
 
-exports.deleteAccountExpense = async (req, res) => {
+exports.deleteExpense = async (req, res) => {
   const { _id } = req.body;
-  console.log(_id);
-  console.log("in controller");
   try {
     var result = new DataResponse();
-    console.log(result);
     if (typeof _id !== "undefined") {
       // เรียกใช้เมธอดเพื่อดึงข้อมูล invoice จาก _id
 
       result = await AccountModel.expense.deleteAccountExpense({
         _id: _id,
       });
-
-      if (result.code == 3) {
-        result.doError(3, "To delete invoice the status must be 'unpaid'");
-      }
 
       if (result.code == 1) {
         for (let i = 0; i < result.data.documents?.length; i++) {

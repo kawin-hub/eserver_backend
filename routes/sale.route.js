@@ -50,12 +50,18 @@ router.get(
 router.get("/invoices/count", verifyToken, saleInvoice.getInvoiceCount);
 router.post("/invoices", verifyToken, saleInvoice.insertSaleInvoice);
 router.put("/invoices", verifyToken, saleInvoice.updateSaleInvoice);
+router.put(
+  "/invoices/changeStatus",
+  verifyToken,
+  saleInvoice.updatePaymentStatus
+);
 router.delete("/invoices", verifyToken, saleInvoice.deleteInvoice);
 
 // 👉 Sale Receipt
 
 router.get("/receipt", verifyToken, saleReceipt.getSaleReceipts);
 router.put("/receipt", verifyToken, saleReceipt.updateReceipt);
+router.delete("/receipt", verifyToken, saleReceipt.deleteReceipt);
 
 // 👉 Line
 

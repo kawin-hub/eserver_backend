@@ -16,6 +16,6 @@ router.get(
 );
 router.post("/expenses", verifyToken, accountExpense.insertAccountExpense);
 router.put("/expenses", verifyToken, accountExpense.updateAccountExpense);
-router.delete("/expenses", verifyToken, accountExpense.deleteAccountExpense);
+router.delete("/expenses", verifyToken, accountExpense.deleteExpense);
 
 module.exports = router;

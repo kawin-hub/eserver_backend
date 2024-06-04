@@ -559,7 +559,6 @@ exports.updateSaleInvoice = async (req, res) => {
         });
       }
       //Update
-
       const conditions = { _id: _id, quotation_id: quotation_id };
       var params = {};
 
@@ -687,6 +686,49 @@ exports.updateSaleInvoice = async (req, res) => {
     console.log(error);
   }
 
+  res.json(result);
+};
+
+exports.updatePaymentStatus = async (req, res) => {
+  var result = new DataResponse();
+  try {
+    var { _id, quotation_id, paymentStatus } = req.body;
+
+    var quotationInfo = null;
+    if (typeof quotation_id !== "undefined") {
+      quotationInfo = await SaleModel.quotation.getSaleQuotationById({
+        _id: quotation_id,
+      });
+
+      const conditions = { _id: _id, quotation_id: quotation_id };
+      var params = {};
+      params["$set"] = {};
+      if (typeof paymentStatus !== "undefined" && paymentStatus == "unpaid") {
+        params["$set"].paymentStatus = paymentStatus;
+
+        result = await SaleModel.invoice.updateInvoice(conditions, params);
+      }
+
+      if (result.code == 1) {
+        var params = {
+          "invoice.invoice_id": new Object(_id),
+        };
+        var resultReceiptDeleted =
+          await SaleModel.receipt.getSaleReceiptByConditions(params);
+        if (resultReceiptDeleted.data.length > 0) {
+          if (resultReceiptDeleted.data[0]?.pdfPath) {
+            upload.deleteFiles([resultReceiptDeleted.data[0].pdfPath]);
+          }
+          var receiptParams = {
+            _id: resultReceiptDeleted.data[0]._id,
+          };
+          await SaleModel.receipt.deleteSaleReceipt(receiptParams);
+        }
+      }
+    } else result.doError(3, "quotation_id is required. ");
+  } catch (e) {
+    console.log(e);
+  }
   res.json(result);
 };
 

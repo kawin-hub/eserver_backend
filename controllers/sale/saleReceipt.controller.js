@@ -238,7 +238,14 @@ exports.updateReceipt = async (req, res) => {
     const validation = new Validator(req.body, validationParams);
     const matched = await validation.check();
     if (matched) {
-      const { _id, customerInfo, quotation_id, paidDate, invoice } = req.body;
+      const {
+        _id,
+        customerInfo,
+        quotation_id,
+        paidDate,
+        invoice,
+        documentNumber,
+      } = req.body;
       const receiptResultDB =
         await SaleModel.receipt.getSaleReceiptByConditions({
           _id: _id,
@@ -260,8 +267,7 @@ exports.updateReceipt = async (req, res) => {
 
       if (receiptResultDB.code == 1) {
         const receiptResult = receiptResultDB.data[0];
-        const pdfDefaultName =
-          receiptResult.documentNumber + Date.now() + ".pdf";
+        const pdfDefaultName = documentNumber + Date.now() + ".pdf";
         var pdfPath = "assets/documents/invoices/" + pdfDefaultName;
         if (typeof receiptResult.pdfPath !== "undefined") {
           pdfPath = receiptResult.pdfPath;
@@ -288,7 +294,7 @@ exports.updateReceipt = async (req, res) => {
         const taxInvoice = {
           header: {
             fileType: "TAX INVOICE / RECEIPT",
-            documentNumber: "TAX" + receiptResult.documentNumber,
+            documentNumber: "TAX" + documentNumber,
             createdDate: paidDate,
             dueDate: receiptResult.createdAt.toISOString().split("T")[0],
           },
@@ -335,6 +341,9 @@ exports.updateReceipt = async (req, res) => {
         if (typeof paidDate != "undefined") {
           params["paidDate"] = paidDate;
         }
+        if (typeof documentNumber != "undefined") {
+          params["documentNumber"] = documentNumber;
+        }
 
         const options = { returnOriginal: false };
 
@@ -349,6 +358,24 @@ exports.updateReceipt = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+  }
+
+  res.json(result);
+};
+
+exports.deleteReceipt = async (req, res) => {
+  const { _id } = req.body;
+  try {
+    var result = new DataResponse();
+    if (typeof _id !== "undefined") {
+      result = await SaleModel.receipt.deleteSaleReceipt({
+        _id: _id,
+      });
+    } else {
+      result.doError(2, "_id is required.");
+    }
+  } catch (e) {
+    console.log(e);
   }
 
   res.json(result);
