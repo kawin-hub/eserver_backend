@@ -246,8 +246,6 @@ exports.insertSaleQuotation = async (req, res) => {
             var vatDefault = typeof vat != "undefined" ? vat : 7;
             var totalPrice = 0;
 
-            console.log(products);
-
             for (var i = 0; i < productResult.data.length; i++) {
               for (var j = 0; j < products.length; j++) {
                 if (productResult.data[i]._id == products[j]._id) {

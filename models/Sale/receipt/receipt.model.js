@@ -139,7 +139,24 @@ exports.updateSaleReceipt = async (conditions, params, options = {}) => {
       : result.doSuccess(1);
   } catch (e) {
     console.log(e);
-    result.doError(0);
+    e.code == 11000
+      ? result.doError(6, "Tax document number duplicate!")
+      : result.doError();
+  }
+
+  return result;
+};
+
+exports.deleteSaleReceipt = async (params) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await SaleReceipt.deleteOne(params);
+    result.data.deletedCount == 0
+      ? result.doSuccess(3, "this _id isn't allowed to be removed!")
+      : result.doSuccess(1);
+  } catch (e) {
+    result.doError();
   }
 
   return result;
