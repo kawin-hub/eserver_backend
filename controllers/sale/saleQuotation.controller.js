@@ -557,8 +557,6 @@ exports.sendQuotationToLine = async (req, res) => {
 
     if (resUpload.success) {
       const { quotation_ids } = req.body;
-      console.log(req.files);
-      console.log(req.body);
 
       if (typeof quotation_ids != "undefined") {
         var SaleQuotationModel = SaleModel.quotation;

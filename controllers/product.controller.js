@@ -3,6 +3,7 @@ let productModel = require("../models/Products");
 let dotenv = require("dotenv");
 let { upload } = require("../middleware");
 let SaleModel = require("../models/Sale");
+let ProductModel = require("../models/Products/index");
 let { general } = require("../middleware");
 const fs = require("fs");
 const { filter } = require("compression");
@@ -846,6 +847,87 @@ const updateDiscountGroup = async (req, res, next) => {
   res.json(result);
 };
 
+const getBestSellingInProduct = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    var { startDate, endDate } = req.query;
+    if (typeof startDate !== "undefined" && typeof endDate !== "undefined") {
+      if (typeof startDate === "undefined") {
+        var beginDate = new Date();
+        beginDate.setDate(1);
+        startDate = general.formatDate(beginDate);
+      }
+
+      if (typeof endDate === "undefined") {
+        endDate = general.formatDate(new Date());
+      }
+
+      startDate = new Date(startDate);
+      endDate = new Date(endDate);
+
+      var params = {
+        purchesedDate: {
+          $gte: startDate,
+          $lt: endDate,
+        },
+      };
+
+      result = await SaleModel.quotation.getBestSellingProduct(params);
+    } else {
+      result = await SaleModel.quotation.getBestSellingProduct();
+    }
+    if (result.code == 1) {
+      var resultProduct = result.data;
+      var productModelCodeInArray = [];
+      for (var i = 0; i < resultProduct.length; i++) {
+        productModelCodeInArray = resultProduct[i].modelCode;
+        await ProductModel.getProductModels(productModelCodeInArray);
+        // ไปสร้าง Model ให้ get.find เฉยๆ แลว้เรียกใช้ตัว model ตรงนี้ โดยส่งค่า productModelCodeInArray ไป //
+      }
+    }
+  } catch (e) {
+    console.log(e);
+  }
+  res.json(result);
+};
+
+const getTopBuyers = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    var { startDate, endDate } = req.query;
+    if (typeof startDate !== "undefined" && typeof endDate !== "undefined") {
+      if (typeof startDate === "undefined") {
+        var beginDate = new Date();
+        beginDate.setDate(1);
+        startDate = general.formatDate(beginDate);
+      }
+
+      if (typeof endDate === "undefined") {
+        endDate = general.formatDate(new Date());
+      }
+
+      startDate = new Date(startDate);
+      endDate = new Date(endDate);
+
+      var params = {
+        purchesedDate: {
+          $gte: startDate,
+          $lt: endDate,
+        },
+      };
+
+      result = await SaleModel.quotation.getTopBuyer(params);
+    } else {
+      result = await SaleModel.quotation.getTopBuyer();
+    }
+  } catch (e) {
+    console.log(e);
+  }
+  res.json(result);
+};
+
 module.exports = {
   insertProductCategory,
   getAllProductCategories,
@@ -860,4 +942,6 @@ module.exports = {
   deleteProductModel,
   updateProductModel,
   updateDiscountGroup,
+  getBestSellingInProduct,
+  getTopBuyers,
 };

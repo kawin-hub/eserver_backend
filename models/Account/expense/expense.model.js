@@ -116,10 +116,8 @@ exports.updateAccountExpense = async (params, conditions) => {
 exports.deleteAccountExpense = async (params) => {
   var result = new DataResponse();
 
-  console.log(" in model");
   try {
     result.data = await AccountExpense.deleteOne(params);
-    console.log(result.data);
     result.data.deletedCount == 0
       ? result.doSuccess(3, "this _id isn't allowed to be removed!")
       : result.doSuccess(1);
@@ -127,7 +125,6 @@ exports.deleteAccountExpense = async (params) => {
     console.log(e);
     result.doError();
   }
-  console.log(result);
   return result;
 };
 

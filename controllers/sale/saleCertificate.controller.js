@@ -71,7 +71,6 @@ exports.getSaleCertificate = async (req, res) => {
           $gte: currentDate,
         };
 
-        console.log(params);
       } else {
         // Query from date
         if (
@@ -226,7 +225,6 @@ exports.updateCertificate = async (req, res) => {
       const warrantyResultDB = await SaleModel.certificate.getCertificateById({
         _id: _id,
       });
-      console.log(warrantyResultDB.data);
 
       if (warrantyResultDB.code == 1) {
         const warrantyResult = warrantyResultDB.data;

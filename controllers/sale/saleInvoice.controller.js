@@ -117,7 +117,6 @@ exports.getSaleInvoices = async (req, res) => {
         typeof dueDateStart !== "undefined" &&
         typeof dueDateEnd !== "undefined"
       ) {
-        console.log("dueDate");
         const startDueDate = new Date(dueDateStart);
         const endDueDate = new Date(dueDateEnd);
 
@@ -171,7 +170,6 @@ exports.getInvoicesByPaymentStatus = async (req, res) => {
         var params = {
           paymentStatus: paymentStatus,
         };
-        console.log(params);
         result = await SaleInvoiceModel.getSaleInvoiceByPaymentStatus(params);
       }
     }

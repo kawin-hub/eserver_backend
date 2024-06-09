@@ -221,7 +221,6 @@ const getProductsbyArrayId = async (product_ids, projection = {}) => {
 };
 
 const updateProductDiscountGroup = async (conditions, params) => {
-  console.log("In Model ");
   var result = new DataResponse();
   try {
     result.data = await ProductModel.findOneAndUpdate(conditions, params);

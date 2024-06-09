@@ -85,7 +85,6 @@ exports.getAccountExpenses = async (req, res) => {
 
 exports.getNewExpenseId = async (req, res) => {
   var result = new DataResponse();
-  console.log("In controller");
   try {
     result = await AccountModel.expense.getNewAccountExpenseId();
 
