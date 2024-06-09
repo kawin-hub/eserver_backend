@@ -129,18 +129,32 @@ exports.getNewQuationId = async (req, res) => {
   try {
     result = await SaleModel.quotation.getNewSaleQuationId();
 
-    var newDocumentNumber = "759-01388";
+    const formattedDate = new Date(
+      new Date().setFullYear(new Date().getFullYear() + 543)
+    )
+      .toISOString()
+      .slice(2, 7)
+      .replace(/-/g, "");
+
+    var preDoc = formattedDate;
+    var newDocumentNumber = preDoc + "-" + "0001";
 
     if (result.data != null) {
-      var documentNumberParseInt = parseInt(
-        result.data.documentNumber.replace(/-/g, "")
-      );
+      var oldDocumentInArray = result.data.documentNumber.split("-");
 
-      newDocumentNumber = documentNumberParseInt + 1;
-      newDocumentNumber =
-        newDocumentNumber.toString().slice(0, 3) +
-        "-" +
-        newDocumentNumber.toString().slice(3);
+      if (
+        typeof oldDocumentInArray[0] != "undefined" &&
+        oldDocumentInArray[0] == formattedDate
+      ) {
+        // Still in the same year and mounth
+        preDoc = oldDocumentInArray[0];
+        newDocumentNumber = parseInt(oldDocumentInArray[1]) + 1;
+        newDocumentNumber = String(newDocumentNumber).padStart(4, "0");
+      } else {
+        newDocumentNumber = "0001";
+      }
+
+      newDocumentNumber = preDoc + "-" + newDocumentNumber;
     } else {
       result.data._id = null;
     }

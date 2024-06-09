@@ -12,6 +12,11 @@ mongoose.set("strictQuery", false);
 mongoose
   .connect(mongodb.db, {
     dbName: mongodb.dbName,
+    maxPoolSize: 10,
+    minPoolSize: 2,
+    socketTimeoutMS: 4500,
+    connectTimeoutMS: 10000,
+    serverSelectionTimeoutMS: 5000,
     /* useNewUrlParser: true,
     useUnifiedTopology: true, */
   })
