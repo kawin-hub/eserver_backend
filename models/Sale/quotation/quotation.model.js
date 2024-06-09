@@ -255,3 +255,79 @@ exports.getSaleQuotationTotalByConditions = async (params) => {
 
   return result;
 };
+
+exports.getBestSellingProduct = async (params) => {
+  var result = new DataResponse();
+  try {
+    result.data = await SaleQuotation.aggregate([
+      {
+        $match: {
+          currentStatus: "purchased",
+          purchesedDate: params?.purchesedDate,
+        },
+      },
+      {
+        $unwind: "$products",
+      },
+      {
+        $group: {
+          _id: "$products.modelCode",
+          totalQuantity: { $sum: "$products.quantity" },
+          totalPrice: { $sum: "$products.price" },
+          name: { $first: "$products.name" },
+          modelCode: { $first: "$products.modelCode" },
+        },
+      },
+      {
+        $sort: {
+          totalPrice: -1,
+        },
+      },
+    ]);
+    if (result.data) result.doSuccess();
+  } catch (e) {
+    console.log(e);
+    result.doError();
+  }
+
+  return result;
+};
+
+exports.getTopBuyer = async (params) => {
+  var result = new DataResponse();
+  try {
+    result.data = await SaleQuotation.aggregate([
+      {
+        $match: {
+          currentStatus: "purchased",
+          purchesedDate: params?.purchesedDate,
+        },
+      },
+      {
+        $unwind: "$products",
+      },
+      {
+        $group: {
+          _id: "$customerInfo.lead_id",
+          totalQuantity: { $sum: "$products.quantity" },
+          totalPrice: { $sum: "$products.price" },
+          totalDiscount: { $sum: "$products.discountBaht" },
+          companyName: { $first: "$customerInfo.companyInfo.companyName" },
+          name: { $first: "$customerInfo.companyInfo.firstname" },
+          countPurchesed: { $sum: 1 },
+        },
+      },
+      {
+        $sort: {
+          totalPrice: -1,
+        },
+      },
+    ]);
+    if (result.data) result.doSuccess();
+  } catch (e) {
+    console.log(e);
+    result.doError();
+  }
+
+  return result;
+};

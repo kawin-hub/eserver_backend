@@ -18,6 +18,8 @@ const {
   deleteProductModel,
   updateProductModel,
   updateDiscountGroup,
+  getBestSellingInProduct,
+  getTopBuyers,
 } = require("../controllers/product.controller");
 
 // ProductCategories
@@ -38,5 +40,8 @@ router.get("/models", verifyToken, getProductModels);
 router.put("/models", verifyToken, updateProductModel);
 router.put("/models/updateDiscountGroup", verifyToken, updateDiscountGroup);
 router.delete("/models", verifyToken, deleteProductModel);
+
+router.get("/bestSellingProduct", verifyToken, getBestSellingInProduct);
+router.get("/topBuyers", verifyToken, getTopBuyers);
 
 module.exports = router;

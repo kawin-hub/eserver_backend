@@ -29,6 +29,7 @@ router.get(
   saleQuotation.getNewQuationId
 );
 router.get("/quotations/count", verifyToken, saleQuotation.getQuotationCount);
+
 router.put("/quotations", verifyToken, saleQuotation.updateSaleQuotation);
 router.post("/quotations", verifyToken, saleQuotation.insertSaleQuotation);
 router.delete("/quotations", verifyToken, saleQuotation.deleteSaleQuotation);

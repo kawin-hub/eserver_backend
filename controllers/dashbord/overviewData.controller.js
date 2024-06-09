@@ -3,16 +3,23 @@ let { general, upload } = require("../../middleware");
 const { Validator } = require("node-input-validator");
 const SaleController = require("../sale");
 const AccountController = require("../account");
+let SaleModel = require("../../models/Sale");
 
 const dotenv = require("dotenv");
 dotenv.config();
 
 exports.getTransetions = async (req, res) => {
   var result = new DataResponse();
-
   try {
-    var { sales, revenues, expenses, newCustomers, startDate, endDate } =
-      req.query;
+    var {
+      bestSellingProduct,
+      sales,
+      revenues,
+      expenses,
+      newCustomers,
+      startDate,
+      endDate,
+    } = req.query;
 
     if (typeof startDate === "undefined") {
       var beginDate = new Date();
@@ -41,10 +48,7 @@ exports.getTransetions = async (req, res) => {
       functionToDo[functionToDo.length] = getExpenses({ startDate, endDate });
     }
     if (typeof newCustomers !== "undefined") {
-      functionToDo[functionToDo.length] = getNewCustomers({
-        startDate,
-        endDate,
-      });
+      functionToDo[functionToDo.length] = getNewCustomers({});
     }
 
     var myResult = await Promise.all(functionToDo);
@@ -75,7 +79,7 @@ async function getSales(queryDate) {
     console.log(error);
   }
 
-  return result;
+  res.json(result);
 }
 
 async function getRevenues(queryDate) {
