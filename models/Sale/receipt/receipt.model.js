@@ -50,7 +50,6 @@ exports.getLastestSaleReceiptId = async () => {
 
 exports.getSaleReceiptByConditions = async (params, projection = {}) => {
   var result = new DataResponse();
-  console.log("In model");
   try {
     result.data = await SaleReceipt.find(params, projection).lean();
     result.data == null
