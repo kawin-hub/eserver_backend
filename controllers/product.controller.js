@@ -928,6 +928,78 @@ const getTopBuyers = async (req, res) => {
   res.json(result);
 };
 
+const getBestSellingInCategory = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    var { startDate, endDate } = req.query;
+    if (typeof startDate !== "undefined" && typeof endDate !== "undefined") {
+      if (typeof startDate === "undefined") {
+        var beginDate = new Date();
+        beginDate.setDate(1);
+        startDate = general.formatDate(beginDate);
+      }
+
+      if (typeof endDate === "undefined") {
+        endDate = general.formatDate(new Date());
+      }
+
+      startDate = new Date(startDate);
+      endDate = new Date(endDate);
+
+      var params = {
+        purchesedDate: {
+          $gte: startDate,
+          $lt: endDate,
+        },
+      };
+
+      result = await SaleModel.quotation.getBestSellingCategory(params);
+    } else {
+      result = await SaleModel.quotation.getBestSellingCategory();
+    }
+  } catch (e) {
+    console.log(e);
+  }
+  res.json(result);
+};
+
+const getBestSellingInBrand = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    var { startDate, endDate } = req.query;
+    if (typeof startDate !== "undefined" && typeof endDate !== "undefined") {
+      if (typeof startDate === "undefined") {
+        var beginDate = new Date();
+        beginDate.setDate(1);
+        startDate = general.formatDate(beginDate);
+      }
+
+      if (typeof endDate === "undefined") {
+        endDate = general.formatDate(new Date());
+      }
+
+      startDate = new Date(startDate);
+      endDate = new Date(endDate);
+
+      var params = {
+        purchesedDate: {
+          $gte: startDate,
+          $lt: endDate,
+        },
+      };
+
+      result = await SaleModel.quotation.getBestSellingBrand(params);
+    } else {
+      result = await SaleModel.quotation.getBestSellingBrand();
+    }
+  } catch (e) {
+    console.log(e);
+  }
+  res.json(result);
+};
+
 module.exports = {
   insertProductCategory,
   getAllProductCategories,
@@ -944,4 +1016,6 @@ module.exports = {
   updateDiscountGroup,
   getBestSellingInProduct,
   getTopBuyers,
+  getBestSellingInCategory,
+  getBestSellingInBrand,
 };
