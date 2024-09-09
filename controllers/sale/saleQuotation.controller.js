@@ -172,237 +172,271 @@ exports.insertSaleQuotation = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    var validationParams = {
-      documentNumber: "required",
-      issuedDate: "required|dateFormat:YYYY-MM-DD",
-      dueDate: "required|dateFormat:YYYY-MM-DD",
-      lead_id: "required",
-      products: "required",
-      quotationStatus: "required|in:warm,hot,cold,done",
-      extraDiscount: "numeric",
-    };
+    var imagesName = "images";
 
-    /* if (typeof req.body.discountPercent != "undefined") {
-      validationParams.discountPercent = "required|numeric";
-    }
+    var resUpload = await upload.uploadFiles(req, res, [
+      {
+        name: imagesName,
+        path: "./assets/images/temp",
+        maxCount: 10,
+        allowType: ["jpeg", "jpg", "png"],
+      },
+    ]);
+    if (resUpload.success) {
+      var validationParams = {
+        documentNumber: "required",
+        issuedDate: "required|dateFormat:YYYY-MM-DD",
+        dueDate: "required|dateFormat:YYYY-MM-DD",
+        lead_id: "required",
+        products: "required",
+        quotationStatus: "required|in:warm,hot,cold,done",
+        extraDiscount: "numeric",
+      };
 
-    if (typeof req.body.discountBaht != "undefined") {
-      validationParams.discountBaht = "required|numeric";
-    } */
+      /* if (typeof req.body.discountPercent != "undefined") {
+        validationParams.discountPercent = "required|numeric";
+      }
+  
+      if (typeof req.body.discountBaht != "undefined") {
+        validationParams.discountBaht = "required|numeric";
+      } */
 
-    const validation = new Validator(req.body, validationParams);
+      const validation = new Validator(req.body, validationParams);
 
-    const matched = await validation.check();
+      const matched = await validation.check();
 
-    var SaleLeadModel = SaleModel.lead;
-    var SaleQuotationModel = SaleModel.quotation;
+      var SaleLeadModel = SaleModel.lead;
+      var SaleQuotationModel = SaleModel.quotation;
 
-    if (matched) {
-      const {
-        documentNumber,
-        issuedDate,
-        dueDate,
-        lead_id,
-        companyInfo_id,
-        firstname,
-        lastname,
-        address,
-        contactNumber,
-        products,
-        paymentMethod,
-        note,
-        quotationStatus,
-        extraDiscount,
-        documentName,
-        vat,
-      } = req.body;
-      const userData = req.body.authData.userInfo.userData;
+      if (matched) {
+        var {
+          documentNumber,
+          issuedDate,
+          dueDate,
+          lead_id,
+          companyInfo_id,
+          firstname,
+          lastname,
+          address,
+          contactNumber,
+          products_id,
+          productsPrice,
+          productsDescription,
+          productsQuantity,
+          productsDiscountBaht,
+          paymentMethod,
+          note,
+          quotationStatus,
+          extraDiscount,
+          documentName,
+          vat,
+        } = req.body;
 
-      const LeadResult = await SaleLeadModel.getSaleLeadById(
-        { _id: lead_id },
-        {
-          _id: 1,
-          companyName: 1,
-          branch: 1,
-          taxId: 1,
-          lineId: 1,
+        if (typeof products_id == "string") {
+          products_id = [products_id];
+          productsPrice = [productsPrice];
+          productsDescription = [productsDescription];
+          productsQuantity = [productsQuantity];
+          productsDiscountBaht = [productsDiscountBaht];
         }
-      );
+        const userData = req.body.authData.userInfo.userData;
 
-      if (LeadResult.code == 1) {
-        const companyInfo = LeadResult.data.companyInfo.find(
-          (info) => info._id.toString() === companyInfo_id
+        const LeadResult = await SaleLeadModel.getSaleLeadById(
+          { _id: lead_id },
+          {
+            _id: 1,
+            companyName: 1,
+            branch: 1,
+            taxId: 1,
+            lineId: 1,
+          }
         );
 
-        if (companyInfo) {
-          var productModel_ids = [];
-
-          for (var i = 0; i < products.length; i++) {
-            productModel_ids[i] = products[i]._id;
-          }
-
-          const productResult = await ProductModel.getProductsbyArrayId(
-            productModel_ids,
-            {
-              _id: 1,
-              name: 1,
-              description: 1,
-              modelCode: 1,
-              price: 1,
-            }
+        if (LeadResult.code == 1) {
+          const companyInfo = LeadResult.data.companyInfo.find(
+            (info) => info._id.toString() === companyInfo_id
           );
 
-          if (
-            productResult.code == 1 &&
-            products.length == productResult.data.length
-          ) {
-            var totalDiscount = 0;
-            var vatDefault = typeof vat != "undefined" ? vat : 7;
-            var totalPrice = 0;
+          if (companyInfo) {
+            var productModel_ids = [];
 
-            for (var i = 0; i < productResult.data.length; i++) {
-              for (var j = 0; j < products.length; j++) {
-                if (productResult.data[i]._id == products[j]._id) {
-                  productResult.data[i].price = products[j].price;
-                  productResult.data[i].description = products[j].description;
-                  productResult.data[i].quantity = products[j].quantity;
-                  productResult.data[i].discountPercent =
-                    (100 * parseFloat(products[j].discountBaht)) /
-                    parseFloat(productResult.data[i].price);
-                  productResult.data[i].discountBaht = parseFloat(
-                    products[j].discountBaht
-                  );
-                  totalDiscount +=
-                    parseFloat(products[j].discountBaht) *
-                    parseFloat(products[j].quantity);
-                  totalPrice +=
-                    parseFloat(productResult.data[i].price) *
-                    parseFloat(products[j].quantity);
-                  break;
-                }
-              }
+            for (var i = 0; i < products_id.length; i++) {
+              productModel_ids[i] = products_id[i];
             }
-            const extraDiscountFloat = parseFloat(
-              typeof extraDiscount == "undefined" ? 0 : extraDiscount
+
+            const productResult = await ProductModel.getProductsbyArrayId(
+              productModel_ids,
+              {
+                _id: 1,
+                name: 1,
+                description: 1,
+                modelCode: 1,
+                price: 1,
+              }
             );
-
-            totalDiscount += extraDiscountFloat;
-            totalPrice = totalPrice - totalDiscount;
-
-            var totalVat = (totalPrice * vatDefault) / 100;
-            totalPrice += totalVat;
-
-            // ************* Create pdf and save ****************//
-            const quotation = {
-              header: {
-                fileType: "Quatation",
-                documentNumber: documentNumber,
-                createdDate: issuedDate,
-                dueDate: dueDate,
-              },
-              shipping: {
-                name:
-                  companyInfo.companyName != ""
-                    ? companyInfo.companyName
-                    : companyInfo.firstname + " " + companyInfo.lastname,
-                address: companyInfo.address,
-              },
-              items: productResult.data,
-              extraDiscount: extraDiscountFloat,
-              note: note,
-              vat: vatDefault,
-            };
 
             if (
-              typeof companyInfo.taxId !== "undefined" &&
-              companyInfo.taxId !== ""
+              productResult.code == 1 &&
+              products_id.length == productResult.data.length
             ) {
-              quotation.shipping.address +=
-                "\nTaxpayer identification number :" + companyInfo.taxId;
-            }
+              var totalDiscount = 0;
+              var vatDefault = typeof vat != "undefined" ? vat : 7;
+              var totalPrice = 0;
 
-            const pdfName = documentNumber + "-" + Date.now() + ".pdf";
-            const pdfPath = "assets/documents/quotations/" + pdfName;
-            createInvoice(quotation, pdfPath);
-            ///////////////////////
+              for (var i = 0; i < productResult.data.length; i++) {
+                for (var j = 0; j < products_id.length; j++) {
+                  if (productResult.data[i]._id == products_id[j]) {
+                    productResult.data[i].price = productsPrice[j];
+                    productResult.data[i].description = productsDescription[j];
+                    productResult.data[i].quantity = productsQuantity[j];
+                    productResult.data[i].discountPercent =
+                      (100 * parseFloat(productsDiscountBaht[j])) /
+                      parseFloat(productResult.data[i].price);
+                    productResult.data[i].discountBaht = parseFloat(
+                      productsDiscountBaht[j]
+                    );
+                    totalDiscount +=
+                      parseFloat(productsDiscountBaht[j]) *
+                      parseFloat(productsQuantity[j]);
+                    totalPrice +=
+                      parseFloat(productResult.data[i].price) *
+                      parseFloat(productsQuantity[j]);
+                    break;
+                  }
+                }
+              }
+              const extraDiscountFloat = parseFloat(
+                typeof extraDiscount == "undefined" ? 0 : extraDiscount
+              );
 
-            var insertQuotationparams = {
-              documentNumber: documentNumber,
-              issuedDate: issuedDate,
-              dueDate: dueDate,
-              customerInfo: {
-                lead_id: LeadResult.data._id,
-                lineId: LeadResult.data.lineId,
-                companyInfo: {
-                  companyInfo_id: companyInfo._id,
-                  firstname:
-                    typeof firstname != "undefined"
-                      ? firstname
-                      : companyInfo.firstname,
-                  lastname:
-                    typeof lastname != "undefined"
-                      ? lastname
-                      : companyInfo.lastname,
-                  contactNumber:
-                    typeof contactNumber != "undefined"
-                      ? contactNumber
-                      : companyInfo.contactNumber,
-                  companyName: companyInfo.companyName,
-                  taxId: companyInfo.taxId,
-                  branch: companyInfo.branch,
-                  address:
-                    typeof address != "undefined"
-                      ? address
-                      : companyInfo.address,
+              totalDiscount += extraDiscountFloat;
+              totalPrice = totalPrice - totalDiscount;
+
+              var totalVat = (totalPrice * vatDefault) / 100;
+              totalPrice += totalVat;
+
+              // ************* Create pdf and save ****************//
+              const quotation = {
+                header: {
+                  fileType: "Quatation",
+                  documentNumber: documentNumber,
+                  createdDate: issuedDate,
+                  dueDate: dueDate,
                 },
-              },
-              customerLevel: LeadResult.data.customerLevel,
-              products: productResult.data,
-              paymentMethod:
-                typeof paymentMethod != "undefined" ? paymentMethod : "",
-              note: typeof note != "undefined" ? note : "",
-              quotationStatus: quotationStatus,
-              createdBy: {
-                user_id: userData._id,
-                firstname: userData.firstname,
-                lastname: userData.lastname,
-              },
-              summary: {
+                shipping: {
+                  name:
+                    companyInfo.companyName != ""
+                      ? companyInfo.companyName
+                      : companyInfo.firstname + " " + companyInfo.lastname,
+                  address: companyInfo.address,
+                },
+                items: productResult.data,
                 extraDiscount: extraDiscountFloat,
-                totalDiscount: totalDiscount,
+                note: note,
                 vat: vatDefault,
-                totalPrice: totalPrice,
-              },
-              pdfPath: pdfPath,
-              documentName:
-                typeof documentName != "undefined" ? documentName : "",
-            };
+              };
 
-            result = await SaleQuotationModel.insertSaleQuotation(
-              insertQuotationparams
-            );
+              if (
+                typeof companyInfo.taxId !== "undefined" &&
+                companyInfo.taxId !== ""
+              ) {
+                quotation.shipping.address +=
+                  "\nTaxpayer identification number :" + companyInfo.taxId;
+              }
 
-            if (result.code != 1) {
-              fs.rmSync(pdfPath, {
-                force: true,
-              });
+              const pdfName = documentNumber + "-" + Date.now() + ".pdf";
+              const pdfPath = "assets/documents/quotations/" + pdfName;
+              createInvoice(quotation, pdfPath);
+              ///////////////////////
+
+              var insertQuotationparams = {
+                documentNumber: documentNumber,
+                issuedDate: issuedDate,
+                dueDate: dueDate,
+                customerInfo: {
+                  lead_id: LeadResult.data._id,
+                  lineId: LeadResult.data.lineId,
+                  companyInfo: {
+                    companyInfo_id: companyInfo._id,
+                    firstname:
+                      typeof firstname != "undefined"
+                        ? firstname
+                        : companyInfo.firstname,
+                    lastname:
+                      typeof lastname != "undefined"
+                        ? lastname
+                        : companyInfo.lastname,
+                    contactNumber:
+                      typeof contactNumber != "undefined"
+                        ? contactNumber
+                        : companyInfo.contactNumber,
+                    companyName: companyInfo.companyName,
+                    taxId: companyInfo.taxId,
+                    branch: companyInfo.branch,
+                    address:
+                      typeof address != "undefined"
+                        ? address
+                        : companyInfo.address,
+                  },
+                },
+                customerLevel: LeadResult.data.customerLevel,
+                products: productResult.data,
+                paymentMethod:
+                  typeof paymentMethod != "undefined" ? paymentMethod : "",
+                note: typeof note != "undefined" ? note : "",
+                quotationStatus: quotationStatus,
+                createdBy: {
+                  user_id: userData._id,
+                  firstname: userData.firstname,
+                  lastname: userData.lastname,
+                },
+                summary: {
+                  extraDiscount: extraDiscountFloat,
+                  totalDiscount: totalDiscount,
+                  vat: vatDefault,
+                  totalPrice: totalPrice,
+                },
+                pdfPath: pdfPath,
+                documentName:
+                  typeof documentName != "undefined" ? documentName : "",
+              };
+
+              result = await SaleQuotationModel.insertSaleQuotation(
+                insertQuotationparams
+              );
+
+              if (result.code != 1) {
+                fs.rmSync(pdfPath, {
+                  force: true,
+                });
+              }
+            } else {
+              result.doError(5, "product_id is not found!");
             }
           } else {
-            result.doError(5, "product_id is not found!");
+            result.doError(5, "companyInfo_id is not found!");
           }
         } else {
-          result.doError(5, "companyInfo_id is not found!");
+          result.doError(5, "lead_id is not found!");
         }
       } else {
-        result.doError(5, "lead_id is not found!");
+        result.doError(2, validation.errors);
       }
     } else {
-      result.doError(2, validation.errors);
+      result.doError(7, "Files or images are wrong format, please check!");
     }
   } catch (error) {
     console.log(error);
+  } finally {
+    // ไม่ว่าจะเกิดอะไรขึ้นให้สั่งลบรูป //
+    if (req.files[imagesName]) {
+      /* for (let i = 0; i < req.files[imagesName]?.length; i++) {
+        fs.rmSync(req.files[imagesName][i].path, {
+          force: true,
+        });
+      } */
+    }
   }
-
   res.json(result);
 };
 
