@@ -188,11 +188,11 @@ const deleteProductModel = async (data) => {
 
 const updateProductModel = async (_id, update) => {
   var model = null;
-
   try {
     model = await ProductModel.findByIdAndUpdate(_id, update);
   } catch (e) {
     model = e;
+    /* console.log(e); */
   }
 
   return model;
@@ -221,7 +221,6 @@ const getProductsbyArrayId = async (product_ids, projection = {}) => {
 };
 
 const updateProductDiscountGroup = async (conditions, params) => {
-  console.log("In Model ");
   var result = new DataResponse();
   try {
     result.data = await ProductModel.findOneAndUpdate(conditions, params);

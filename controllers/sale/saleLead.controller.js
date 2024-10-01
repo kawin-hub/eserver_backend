@@ -4,7 +4,7 @@ let { general } = require("../../middleware");
 const { DataResponse } = require("../../models/general_data.model");
 const { Validator } = require("node-input-validator");
 const { LineClient } = require("../../services/third_party/line");
-
+const { ObjectId } = require("mongodb");
 // 👉 Get CustomerLevel all or by ID
 
 exports.getCustomerLevels = async (req, res) => {
@@ -46,7 +46,8 @@ exports.getSaleLeads = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    const { _id, txtSearch, level } = req.query;
+    const { _id, txtSearch, level, dateCreatedStart, dateCreatedEnd } =
+      req.query;
 
     var SaleLeadModel = SaleModel.lead;
 
@@ -74,6 +75,7 @@ exports.getSaleLeads = async (req, res) => {
           tag: 1,
           companyInfo: 1,
           createdBy: 1,
+          customerLevel: 1,
         },
       };
 
@@ -98,6 +100,19 @@ exports.getSaleLeads = async (req, res) => {
 
       if (typeof level !== "undefined") {
         params.queryCondition["level"] = level;
+      }
+
+      if (
+        typeof dateCreatedStart !== "undefined" &&
+        typeof dateCreatedEnd !== "undefined"
+      ) {
+        const startDate = new Date(dateCreatedStart);
+        const endDate = new Date(dateCreatedEnd);
+
+        params.queryCondition["createdAt"] = {
+          $gte: startDate,
+          $lt: endDate,
+        };
       }
 
       result = await SaleLeadModel.getAllSaleLeads(params);
@@ -316,7 +331,33 @@ exports.deleteSaleLead = async (req, res) => {
   try {
     var result = new DataResponse();
     if (typeof _id != "undefined") {
-      result = await SaleModel.lead.deleteSaleLead({ _id: _id });
+      const quotationResult =
+        await SaleModel.quotation.getSaleQuotationByCondition({
+          "customerInfo.lead_id": _id,
+        });
+
+      if (quotationResult.code == 1 && quotationResult.data.length == 0) {
+        var resultLeadDelete = await SaleModel.lead.getSaleLeadById({
+          _id: new ObjectId(_id),
+        });
+
+        result = await SaleModel.lead.deleteSaleLead({ _id: _id });
+
+        if (result.code == 1) {
+          if (resultLeadDelete.data?.pdfPath) {
+            upload.deleteFiles([resultLeadDelete.data.pdfPath]);
+          }
+        }
+      } else {
+        // ถ้ามี invoice ที่มี quotation_id เท่ากับ _id ให้แจ้งเตือนว่าไม่สามารถลบได้
+        result.doError(
+          3,
+          "Lead cannot be deleted because it contains related Quotation."
+        );
+        result.data = {
+          documentNumber: quotationResult.data[0].documentNumber,
+        };
+      }
     } else {
       result.doError(2, "_id is required.");
     }
@@ -377,4 +418,52 @@ exports.getLineUserFromLineDeveloper = async (req, res) => {
   }
 
   res.json(result);
+};
+
+exports.lineWebHook = async (req, res) => {
+  try {
+    Promise.all(req.body.events.map(handleLineEvent))
+      .then((result) => res.json(result))
+      .catch((err) => {
+        console.error(err);
+        res.status(500).end();
+      });
+  } catch (error) {}
+};
+
+async function handleLineEvent(event) {
+  var result = new DataResponse();
+  try {
+    if (event.type === "message") {
+      const userId = event.source.userId;
+      const profile = await LineClient.getProfile(userId);
+
+      var SaleLeadModel = SaleModel.lead;
+      result = await SaleLeadModel.insertLineLead({
+        lineId: userId,
+        name: profile.displayName,
+        pictureUrl: profile.pictureUrl,
+      });
+
+      return { message: "success" };
+    }
+  } catch (error) {}
+}
+
+//********** For Dashboard ************/
+
+exports.getNewCustomerCountByConditions = async (params) => {
+  try {
+    var result = await SaleModel.lead.getNewCustomerCountByConditions(params);
+
+    var myData = 0;
+    if (result.code == 1) {
+      myData = result.data;
+    }
+    return {
+      newCustomers: myData,
+    };
+  } catch (error) {
+    console.log(error);
+  }
 };

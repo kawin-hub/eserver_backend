@@ -11,7 +11,14 @@ exports.getAccountExpenses = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    const { _id, txtSearch, category, type } = req.query;
+    const {
+      _id,
+      txtSearch,
+      type,
+      typeReceipt,
+      dateCreatedStart,
+      dateCreatedEnd,
+    } = req.query;
 
     var AccountExpenseModel = AccountModel.expense;
 
@@ -46,12 +53,25 @@ exports.getAccountExpenses = async (req, res) => {
         params.queryCondition["$or"] = orConditions;
       }
 
-      if (typeof category !== "undefined") {
-        params.queryCondition["category"] = category;
-      }
-
       if (typeof type !== "undefined") {
         params.queryCondition["type"] = type;
+      }
+
+      if (typeof typeReceipt !== "undefined") {
+        params.queryCondition["receipt"] = typeReceipt;
+      }
+
+      if (
+        typeof dateCreatedStart !== "undefined" &&
+        typeof dateCreatedEnd !== "undefined"
+      ) {
+        const startDate = new Date(dateCreatedStart);
+        const endDate = new Date(dateCreatedEnd);
+
+        params.queryCondition["createdAt"] = {
+          $gte: startDate,
+          $lt: endDate,
+        };
       }
 
       result = await AccountExpenseModel.getAllAccountExpenses(params);
@@ -65,7 +85,6 @@ exports.getAccountExpenses = async (req, res) => {
 
 exports.getNewExpenseId = async (req, res) => {
   var result = new DataResponse();
-  console.log("In controller");
   try {
     result = await AccountModel.expense.getNewAccountExpenseId();
 
@@ -120,7 +139,6 @@ exports.insertAccountExpense = async (req, res) => {
       const validation = new Validator(req.body, {
         documentNumber: "required",
         expenseDate: "required|dateFormat:YYYY-MM-DD",
-        category: "required|in:stock,nonstock",
         amount: "required",
         whom: "required",
       });
@@ -133,12 +151,12 @@ exports.insertAccountExpense = async (req, res) => {
         const {
           documentNumber,
           expenseDate,
-          category,
           type,
           amount,
           whom,
           tag,
           remark,
+          receipt,
         } = req.body;
 
         const userData = req.body.authData.userInfo.userData;
@@ -162,12 +180,12 @@ exports.insertAccountExpense = async (req, res) => {
         var params = {
           documentNumber: documentNumber,
           expenseDate: expenseDate,
-          category: typeof category != "undefined" ? category : "",
           type: type,
           amount: amount,
           whom: whom,
           tag: typeof tag != "undefined" ? tag : "",
           remark: typeof remark != "undefined" ? remark : "",
+          receipt: typeof receipt != "undefined" ? receipt : "",
           images: images,
           documents: documents,
           createdBy: {
@@ -228,7 +246,6 @@ exports.updateAccountExpense = async (req, res) => {
         _id: "required",
         documentNumber: "required",
         expenseDate: "required|dateFormat:YYYY-MM-DD",
-        category: "required|in:stock,nonstock",
         amount: "required",
         whom: "required",
       });
@@ -240,7 +257,6 @@ exports.updateAccountExpense = async (req, res) => {
           _id,
           documentNumber,
           expenseDate,
-          category,
           type,
           amount,
           whom,
@@ -248,6 +264,7 @@ exports.updateAccountExpense = async (req, res) => {
           remark,
           documentsRemove,
           imagesRemove,
+          receipt,
         } = req.body;
         const updateConditions = {
           _id: _id,
@@ -276,12 +293,12 @@ exports.updateAccountExpense = async (req, res) => {
           _id: _id,
           documentNumber: documentNumber,
           expenseDate: expenseDate,
-          category: typeof category != "undefined" ? category : "",
           type: type,
           amount: amount,
           whom: whom,
           tag: typeof tag != "undefined" ? tag : "",
           remark: typeof remark != "undefined" ? remark : "",
+          receipt: typeof receipt != "undefined" ? receipt : "",
         };
 
         params["$push"] = {}; // add new
@@ -341,23 +358,16 @@ exports.updateAccountExpense = async (req, res) => {
   res.json(result);
 };
 
-exports.deleteAccountExpense = async (req, res) => {
+exports.deleteExpense = async (req, res) => {
   const { _id } = req.body;
-  console.log(_id);
-  console.log("in controller");
   try {
     var result = new DataResponse();
-    console.log(result);
     if (typeof _id !== "undefined") {
       // เรียกใช้เมธอดเพื่อดึงข้อมูล invoice จาก _id
 
       result = await AccountModel.expense.deleteAccountExpense({
         _id: _id,
       });
-
-      if (result.code == 3) {
-        result.doError(3, "To delete invoice the status must be 'unpaid'");
-      }
 
       if (result.code == 1) {
         for (let i = 0; i < result.data.documents?.length; i++) {
@@ -381,4 +391,24 @@ exports.deleteAccountExpense = async (req, res) => {
   }
 
   res.json(result);
+};
+
+//********** For Dashboard ************/
+
+exports.getExpensesTotalByConditions = async (params) => {
+  try {
+    var result = await AccountModel.expense.getExpensesTotalByConditions(
+      params
+    );
+
+    var myData = 0;
+    if (result.code == 1 && result.data.length > 0) {
+      myData = result.data[0].total;
+    }
+    return {
+      expenses: myData,
+    };
+  } catch (error) {
+    console.log(error);
+  }
 };

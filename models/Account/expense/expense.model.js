@@ -1,8 +1,6 @@
 const AccountExpense = require("./accountExpenses.schema");
 const { DataResponse } = require("../../general_data.model");
 
-// 👉 Get all
-
 exports.getAllAccountExpenses = async (params) => {
   var result = new DataResponse();
   try {
@@ -23,6 +21,7 @@ exports.getAllAccountExpenses = async (params) => {
       amount: 1,
       type: 1,
       createdBy: 1,
+      receipt: 1,
     })
       .skip(skip)
       .limit(limit)
@@ -117,10 +116,8 @@ exports.updateAccountExpense = async (params, conditions) => {
 exports.deleteAccountExpense = async (params) => {
   var result = new DataResponse();
 
-  console.log(" in model");
   try {
     result.data = await AccountExpense.deleteOne(params);
-    console.log(result.data);
     result.data.deletedCount == 0
       ? result.doSuccess(3, "this _id isn't allowed to be removed!")
       : result.doSuccess(1);
@@ -128,7 +125,6 @@ exports.deleteAccountExpense = async (params) => {
     console.log(e);
     result.doError();
   }
-  console.log(result);
   return result;
 };
 
@@ -151,6 +147,32 @@ exports.getNewAccountExpenseId = async () => {
     } else {
       result.doError(0);
     }
+  }
+
+  return result;
+};
+
+//******** For dashboard ************/
+
+exports.getExpensesTotalByConditions = async (params) => {
+  var result = new DataResponse();
+  try {
+    result.data = await AccountExpense.aggregate([
+      {
+        $match: params,
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" },
+        },
+      },
+    ]);
+
+    if (result.data) result.doSuccess();
+  } catch (e) {
+    result.doError();
+    console.log(e);
   }
 
   return result;

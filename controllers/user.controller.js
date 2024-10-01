@@ -47,7 +47,6 @@ const auth = async (req, res, next) => {
 
   let dataReturn = {};
   let statusCode = 200;
-  console.log(userData);
   if (!userData) {
     dataReturn = { errors: { email: ["Email or Password is Invalid"] } };
     statusCode = 400;

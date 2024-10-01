@@ -1,12 +1,14 @@
 //Quotation model
 let SaleModel = require("../../models/Sale");
 let ProductModel = require("../../models/Products");
-let { general } = require("../../middleware");
+let { general, upload } = require("../../middleware");
 const { DataResponse } = require("../../models/general_data.model");
 const { Validator } = require("node-input-validator");
 const { ObjectId } = require("mongodb");
 const fs = require("fs");
 const { LineClient } = require("../../services/third_party/line");
+const dotenv = require("dotenv");
+dotenv.config();
 
 const {
   createInvoice,
@@ -17,10 +19,30 @@ exports.getSaleQuotations = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    const { _id, txtSearch, quotationStatus, currentStatus, lead_id } =
-      req.query;
+    const {
+      _id,
+      txtSearch,
+      quotationStatus,
+      currentStatus,
+      lead_id,
+      dateCreatedStart,
+      dateCreatedEnd,
+      dueDateStart,
+      dueDateEnd,
+    } = req.query;
 
     var SaleQuotationModel = SaleModel.quotation;
+
+    if (typeof getby != "undefined" && getby == "lead") {
+      // get by quotation_id
+      if (typeof _id != "undefined") {
+        var params = {
+          "customerInfo.lead_id": new Object(_id),
+        };
+
+        result = await SaleQuotationModel.getSaleQuotationByCondition(params);
+      }
+    }
 
     if (typeof _id != "undefined") {
       result = await SaleQuotationModel.getSaleQuotationById({
@@ -66,6 +88,31 @@ exports.getSaleQuotations = async (req, res) => {
         params.queryCondition["customerInfo.lead_id"] = new ObjectId(lead_id);
       }
 
+      if (
+        typeof dateCreatedStart !== "undefined" &&
+        typeof dateCreatedEnd !== "undefined"
+      ) {
+        const startDate = new Date(dateCreatedStart);
+        const endDate = new Date(dateCreatedEnd);
+
+        params.queryCondition["createdAt"] = {
+          $gte: startDate,
+          $lt: endDate,
+        };
+      }
+      if (
+        typeof dueDateStart !== "undefined" &&
+        typeof dueDateEnd !== "undefined"
+      ) {
+        const startDueDate = new Date(dueDateStart);
+        const endDueDate = new Date(dueDateEnd);
+
+        params.queryCondition["dueDate"] = {
+          $gte: startDueDate,
+          $lt: endDueDate,
+        };
+      }
+
       result = await SaleQuotationModel.getAllSaleQuotations(params);
     }
   } catch (error) {
@@ -82,18 +129,32 @@ exports.getNewQuationId = async (req, res) => {
   try {
     result = await SaleModel.quotation.getNewSaleQuationId();
 
-    var newDocumentNumber = "759-01388";
+    const formattedDate = new Date(
+      new Date().setFullYear(new Date().getFullYear() + 543)
+    )
+      .toISOString()
+      .slice(2, 7)
+      .replace(/-/g, "");
+
+    var preDoc = formattedDate;
+    var newDocumentNumber = preDoc + "-" + "0001";
 
     if (result.data != null) {
-      var documentNumberParseInt = parseInt(
-        result.data.documentNumber.replace(/-/g, "")
-      );
+      var oldDocumentInArray = result.data.documentNumber.split("-");
 
-      newDocumentNumber = documentNumberParseInt + 1;
-      newDocumentNumber =
-        newDocumentNumber.toString().slice(0, 3) +
-        "-" +
-        newDocumentNumber.toString().slice(3);
+      if (
+        typeof oldDocumentInArray[0] != "undefined" &&
+        oldDocumentInArray[0] == formattedDate
+      ) {
+        // Still in the same year and mounth
+        preDoc = oldDocumentInArray[0];
+        newDocumentNumber = parseInt(oldDocumentInArray[1]) + 1;
+        newDocumentNumber = String(newDocumentNumber).padStart(4, "0");
+      } else {
+        newDocumentNumber = "0001";
+      }
+
+      newDocumentNumber = preDoc + "-" + newDocumentNumber;
     } else {
       result.data._id = null;
     }
@@ -111,231 +172,295 @@ exports.insertSaleQuotation = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    var validationParams = {
-      documentNumber: "required",
-      issuedDate: "required|dateFormat:YYYY-MM-DD",
-      dueDate: "required|dateFormat:YYYY-MM-DD",
-      lead_id: "required",
-      products: "required",
-      quotationStatus: "required|in:warm,hot,cold,done",
-      extraDiscount: "numeric",
-    };
+    var imagesName = "images";
 
-    /* if (typeof req.body.discountPercent != "undefined") {
-      validationParams.discountPercent = "required|numeric";
-    }
+    var resUpload = await upload.uploadFiles(req, res, [
+      {
+        name: imagesName,
+        path: "./assets/images/temp",
+        maxCount: 10,
+        allowType: ["jpeg", "jpg", "png"],
+      },
+    ]);
+    if (resUpload.success) {
+      var validationParams = {
+        documentNumber: "required",
+        issuedDate: "required|dateFormat:YYYY-MM-DD",
+        dueDate: "required|dateFormat:YYYY-MM-DD",
+        lead_id: "required",
+        products: "required",
+        quotationStatus: "required|in:warm,hot,cold,done",
+        extraDiscount: "numeric",
+      };
 
-    if (typeof req.body.discountBaht != "undefined") {
-      validationParams.discountBaht = "required|numeric";
-    } */
+      /* if (typeof req.body.discountPercent != "undefined") {
+        validationParams.discountPercent = "required|numeric";
+      }
+  
+      if (typeof req.body.discountBaht != "undefined") {
+        validationParams.discountBaht = "required|numeric";
+      } */
 
-    const validation = new Validator(req.body, validationParams);
+      const validation = new Validator(req.body, validationParams);
 
-    const matched = await validation.check();
+      const matched = await validation.check();
 
-    var SaleLeadModel = SaleModel.lead;
-    var SaleQuotationModel = SaleModel.quotation;
+      var SaleLeadModel = SaleModel.lead;
+      var SaleQuotationModel = SaleModel.quotation;
 
-    if (matched) {
-      const {
-        documentNumber,
-        issuedDate,
-        dueDate,
-        lead_id,
-        companyInfo_id,
-        firstname,
-        lastname,
-        address,
-        contactNumber,
-        products,
-        paymentMethod,
-        note,
-        quotationStatus,
-        extraDiscount,
-      } = req.body;
+      if (matched) {
+        var {
+          documentNumber,
+          issuedDate,
+          dueDate,
+          lead_id,
+          companyInfo_id,
+          firstname,
+          lastname,
+          address,
+          contactNumber,
+          products_id,
+          productsPrice,
+          productsDescription,
+          productsQuantity,
+          productsDiscountBaht,
+          paymentMethod,
+          note,
+          quotationStatus,
+          extraDiscount,
+          documentName,
+          vat,
+        } = req.body;
 
-      const userData = req.body.authData.userInfo.userData;
-
-      const LeadResult = await SaleLeadModel.getSaleLeadById(
-        { _id: lead_id },
-        {
-          _id: 1,
-          companyName: 1,
-          branch: 1,
-          taxId: 1,
-          lineId: 1,
+        if (typeof products_id == "string") {
+          products_id = [products_id];
+          productsPrice = [productsPrice];
+          productsDescription = [productsDescription];
+          productsQuantity = [productsQuantity];
+          productsDiscountBaht = [productsDiscountBaht];
         }
-      );
 
-      if (LeadResult.code == 1) {
-        const companyInfo = LeadResult.data.companyInfo.find(
-          (info) => info._id.toString() === companyInfo_id
+        const userData = req.body.authData.userInfo.userData;
+
+        const LeadResult = await SaleLeadModel.getSaleLeadById(
+          { _id: lead_id },
+          {
+            _id: 1,
+            companyName: 1,
+            branch: 1,
+            taxId: 1,
+            lineId: 1,
+          }
         );
 
-        if (companyInfo) {
-          var productModel_ids = [];
-
-          for (var i = 0; i < products.length; i++) {
-            productModel_ids[i] = products[i]._id;
-          }
-
-          const productResult = await ProductModel.getProductsbyArrayId(
-            productModel_ids,
-            {
-              _id: 1,
-              name: 1,
-              description: 1,
-              modelCode: 1,
-              price: 1,
-            }
+        if (LeadResult.code == 1) {
+          const companyInfo = LeadResult.data.companyInfo.find(
+            (info) => info._id.toString() === companyInfo_id
           );
 
-          if (
-            productResult.code == 1 &&
-            products.length == productResult.data.length
-          ) {
-            var totalDiscount = 0;
-            var vat = 7;
-            var totalPrice = 0;
+          if (companyInfo) {
+            var productModel_ids = [];
 
-            for (var i = 0; i < productResult.data.length; i++) {
-              for (var j = 0; j < products.length; j++) {
-                if (productResult.data[i]._id == products[j]._id) {
-                  productResult.data[i].quantity = products[j].quantity;
-                  productResult.data[i].discountPercent =
-                    (100 * parseFloat(products[j].discountBaht)) /
-                    parseFloat(productResult.data[i].price);
-                  productResult.data[i].discountBaht = parseFloat(
-                    products[j].discountBaht
-                  );
-                  totalDiscount +=
-                    parseFloat(products[j].discountBaht) *
-                    parseFloat(products[j].quantity);
-                  totalPrice +=
-                    parseFloat(productResult.data[i].price) *
-                    parseFloat(products[j].quantity);
-                  break;
+            for (var i = 0; i < products_id.length; i++) {
+              productModel_ids[i] = products_id[i];
+            }
+
+            const productResult = await ProductModel.getProductsbyArrayId(
+              productModel_ids,
+              {
+                _id: 1,
+                name: 1,
+                description: 1,
+                modelCode: 1,
+                price: 1,
+              }
+            );
+
+            /* let duplicates = productModel_ids.reduce(
+              (acc, val) => ((acc[val] = (acc[val] || 0) + 1), acc),
+              {}
+            );
+
+            duplicates = Object.fromEntries(
+              Object.entries(duplicates).filter(([_, count]) => count > 1)
+            );
+
+            console.log(productResult.data);
+            console.log(productModel_ids);
+            console.log(duplicates);
+
+            let tmpProductResult = productResult.data;
+
+            Object.entries(duplicates).forEach(([id, quantity]) => {
+              tmpProductResult.forEach((val) => {
+                if (id == val._id) {
+                  console.log(id);
+                }
+              });
+            }); */
+
+            if (
+              productResult.code == 1 &&
+              products_id.length == productResult.data.length
+            ) {
+              var totalDiscount = 0;
+              var vatDefault = typeof vat != "undefined" ? vat : 7;
+              var totalPrice = 0;
+
+              for (var i = 0; i < productResult.data.length; i++) {
+                for (var j = 0; j < products_id.length; j++) {
+                  if (productResult.data[i]._id == products_id[j]) {
+                    productResult.data[i].price = productsPrice[j];
+                    productResult.data[i].description = productsDescription[j];
+                    productResult.data[i].quantity = productsQuantity[j];
+                    productResult.data[i].discountPercent =
+                      (100 * parseFloat(productsDiscountBaht[j])) /
+                      parseFloat(productResult.data[i].price);
+                    productResult.data[i].discountBaht = parseFloat(
+                      productsDiscountBaht[j]
+                    );
+                    totalDiscount +=
+                      parseFloat(productsDiscountBaht[j]) *
+                      parseFloat(productsQuantity[j]);
+                    totalPrice +=
+                      parseFloat(productResult.data[i].price) *
+                      parseFloat(productsQuantity[j]);
+                    break;
+                  }
                 }
               }
-            }
-            const extraDiscountFloat = parseFloat(
-              typeof extraDiscount == "undefined" ? 0 : extraDiscount
-            );
+              const extraDiscountFloat = parseFloat(
+                typeof extraDiscount == "undefined" ? 0 : extraDiscount
+              );
 
-            totalDiscount += extraDiscountFloat;
-            totalPrice = totalPrice - totalDiscount;
+              totalDiscount += extraDiscountFloat;
+              totalPrice = totalPrice - totalDiscount;
 
-            var totalVat = (totalPrice * vat) / 100;
-            totalPrice += totalVat;
+              var totalVat = (totalPrice * vatDefault) / 100;
+              totalPrice += totalVat;
 
-            // ************* Create pdf and save ****************//
-            const quotation = {
-              header: {
-                fileType: "Quatation",
-                documentNumber: documentNumber,
-                createdDate: issuedDate,
-                dueDate: dueDate,
-              },
-              shipping: {
-                name:
-                  companyInfo.companyName != ""
-                    ? companyInfo.companyName
-                    : companyInfo.firstname + " " + companyInfo.lastname,
-                address: companyInfo.address,
-              },
-              items: productResult.data,
-              extraDiscount: extraDiscountFloat,
-              note: note,
-            };
-
-            const pdfName =
-              documentNumber +
-              "-" +
-              (companyInfo.companyName != ""
-                ? companyInfo.companyName
-                : companyInfo.firstname) +
-              "-" +
-              Date.now() +
-              ".pdf";
-            const pdfPath = "assets/documents/quotations/" + pdfName;
-            createInvoice(quotation, pdfPath);
-            ///////////////////////
-
-            var insertQuotationparams = {
-              documentNumber: documentNumber,
-              issuedDate: issuedDate,
-              dueDate: dueDate,
-              customerInfo: {
-                lead_id: LeadResult.data._id,
-                lineId: LeadResult.data.lineId,
-                companyInfo: {
-                  companyInfo_id: companyInfo._id,
-                  firstname:
-                    typeof firstname != "undefined"
-                      ? firstname
-                      : companyInfo.firstname,
-                  lastname:
-                    typeof lastname != "undefined"
-                      ? lastname
-                      : companyInfo.lastname,
-                  contactNumber:
-                    typeof contactNumber != "undefined"
-                      ? contactNumber
-                      : companyInfo.contactNumber,
-                  companyName: companyInfo.companyName,
-                  taxId: companyInfo.taxId,
-                  branch: companyInfo.branch,
-                  address:
-                    typeof address != "undefined"
-                      ? address
-                      : companyInfo.address,
+              // ************* Create pdf and save ****************//
+              const quotation = {
+                header: {
+                  fileType: "Quatation",
+                  documentNumber: documentNumber,
+                  createdDate: issuedDate,
+                  dueDate: dueDate,
                 },
-              },
-              customerLevel: LeadResult.data.customerLevel,
-              products: productResult.data,
-              paymentMethod:
-                typeof paymentMethod != "undefined" ? paymentMethod : "",
-              note: typeof note != "undefined" ? note : "",
-              quotationStatus: quotationStatus,
-              createdBy: {
-                user_id: userData._id,
-                firstname: userData.firstname,
-                lastname: userData.lastname,
-              },
-              summary: {
+                shipping: {
+                  name:
+                    companyInfo.companyName != ""
+                      ? companyInfo.companyName
+                      : companyInfo.firstname + " " + companyInfo.lastname,
+                  address: companyInfo.address,
+                },
+                items: productResult.data,
                 extraDiscount: extraDiscountFloat,
-                totalDiscount: totalDiscount,
-                vat: vat,
-                totalPrice: totalPrice,
-              },
-              pdfPath: pdfPath,
-            };
+                note: note,
+                vat: vatDefault,
+              };
 
-            result = await SaleQuotationModel.insertSaleQuotation(
-              insertQuotationparams
-            );
+              if (
+                typeof companyInfo.taxId !== "undefined" &&
+                companyInfo.taxId !== ""
+              ) {
+                quotation.shipping.address +=
+                  "\nTaxpayer identification number :" + companyInfo.taxId;
+              }
 
-            if (result.code != 1) {
-              fs.rmSync(pdfPath, {
-                force: true,
-              });
+              const pdfName = documentNumber + "-" + Date.now() + ".pdf";
+              const pdfPath = "assets/documents/quotations/" + pdfName;
+              createInvoice(quotation, pdfPath);
+              ///////////////////////
+
+              var insertQuotationparams = {
+                documentNumber: documentNumber,
+                issuedDate: issuedDate,
+                dueDate: dueDate,
+                customerInfo: {
+                  lead_id: LeadResult.data._id,
+                  lineId: LeadResult.data.lineId,
+                  companyInfo: {
+                    companyInfo_id: companyInfo._id,
+                    firstname:
+                      typeof firstname != "undefined"
+                        ? firstname
+                        : companyInfo.firstname,
+                    lastname:
+                      typeof lastname != "undefined"
+                        ? lastname
+                        : companyInfo.lastname,
+                    contactNumber:
+                      typeof contactNumber != "undefined"
+                        ? contactNumber
+                        : companyInfo.contactNumber,
+                    companyName: companyInfo.companyName,
+                    taxId: companyInfo.taxId,
+                    branch: companyInfo.branch,
+                    address:
+                      typeof address != "undefined"
+                        ? address
+                        : companyInfo.address,
+                  },
+                },
+                customerLevel: LeadResult.data.customerLevel,
+                products: productResult.data,
+                paymentMethod:
+                  typeof paymentMethod != "undefined" ? paymentMethod : "",
+                note: typeof note != "undefined" ? note : "",
+                quotationStatus: quotationStatus,
+                createdBy: {
+                  user_id: userData._id,
+                  firstname: userData.firstname,
+                  lastname: userData.lastname,
+                },
+                summary: {
+                  extraDiscount: extraDiscountFloat,
+                  totalDiscount: totalDiscount,
+                  vat: vatDefault,
+                  totalPrice: totalPrice,
+                },
+                pdfPath: pdfPath,
+                documentName:
+                  typeof documentName != "undefined" ? documentName : "",
+              };
+
+              result = await SaleQuotationModel.insertSaleQuotation(
+                insertQuotationparams
+              );
+
+              if (result.code != 1) {
+                fs.rmSync(pdfPath, {
+                  force: true,
+                });
+              }
+            } else {
+              result.doError(5, "product_id is not found!");
             }
           } else {
-            result.doError(5, "product_id is not found!");
+            result.doError(5, "companyInfo_id is not found!");
           }
         } else {
-          result.doError(5, "companyInfo_id is not found!");
+          result.doError(5, "lead_id is not found!");
         }
       } else {
-        result.doError(5, "lead_id is not found!");
+        result.doError(2, validation.errors);
       }
     } else {
-      result.doError(2, validation.errors);
+      result.doError(7, "Files or images are wrong format, please check!");
     }
   } catch (error) {
     console.log(error);
+  } finally {
+    // ไม่ว่าจะเกิดอะไรขึ้นให้สั่งลบรูป //
+    if (req.files[imagesName]) {
+      /* for (let i = 0; i < req.files[imagesName]?.length; i++) {
+        fs.rmSync(req.files[imagesName][i].path, {
+          force: true,
+        });
+      } */
+    }
   }
-
   res.json(result);
 };
 
@@ -432,13 +557,22 @@ exports.deleteSaleQuotation = async (req, res) => {
           quotation_id: _id,
         }
       );
-
       // ตรวจสอบว่ามี invoice ที่มี quotation_id เท่ากับ _id หรือไม่
       if (invoicesResult.code == 1 && invoicesResult.data.length == 0) {
-        // ถ้าไม่มี invoice ที่มี quotation_id เท่ากับ _id ให้ลบ quotation
+        var resultQuotationDeleted =
+          await SaleModel.quotation.getSaleQuotationById({
+            _id: new ObjectId(_id),
+          });
+
         result = await SaleModel.quotation.deleteSaleQuotation({
           _id: _id,
         });
+
+        if (result.code == 1) {
+          if (resultQuotationDeleted.data?.pdfPath) {
+            upload.deleteFiles([resultQuotationDeleted.data.pdfPath]);
+          }
+        }
       } else {
         // ถ้ามี invoice ที่มี quotation_id เท่ากับ _id ให้แจ้งเตือนว่าไม่สามารถลบได้
         result.doError(
@@ -460,58 +594,452 @@ exports.deleteSaleQuotation = async (req, res) => {
 
 exports.sendQuotationToLine = async (req, res) => {
   var result = new DataResponse();
-
   try {
-    const { quotation_id } = req.body;
+    var imagesName = "picture";
+    var docsName = "pdfFile";
 
-    if (typeof quotation_id != "undefined") {
-      var SaleQuotationModel = SaleModel.quotation;
-      result = await SaleQuotationModel.getSaleQuotationById({
-        _id: quotation_id,
-      });
+    var resUpload = await upload.uploadFiles(req, res, [
+      {
+        name: imagesName,
+        path: "./assets/images/quotations/typeFile",
+        maxCount: 5,
+        allowType: ["jpeg", "jpg", "png"],
+      },
+      {
+        name: docsName,
+        path: "./assets/documents/quotations/typeFile",
+        maxCount: 5,
+        allowType: ["pdf"],
+      },
+    ]);
 
-      if (result.code == 1) {
-        const line_id = result.data.customerInfo.lineId;
-        const pdfPath = result.data.pdfPath;
+    if (resUpload.success) {
+      var { quotation_ids } = req.body;
 
-        await LineClient.pushMessage(line_id, {
-          type: "template",
-          altText: "ใบเสนอราคา ฟิล์มไฟฟ้า",
-          template: {
-            type: "buttons",
-            title: "ใบเสนอราคา",
-            text: "กดปุ่มด้านล่างเพื่อดูใบเสนอราคา",
-            actions: [
-              {
-                type: "uri",
-                label: "ใบเสนอราคา 83%",
-                uri: "https://inhouse.co.th",
-              },
-              {
-                type: "uri",
-                label: "ใบเสนอราคา 89%",
-                uri: "http://example.com/page/123",
-              },
-              {
-                type: "uri",
-                label: "ใบเสนอราคา 92%",
-                uri: "http://example.com/page/123",
-              },
-              {
-                type: "uri",
-                label: "ใบเสนอราคา 93%",
-                uri: "http://example.com/page/123",
-              },
-            ],
+      if (typeof quotation_ids != "undefined") {
+        var SaleQuotationModel = SaleModel.quotation;
+
+        if (typeof quotation_ids === "string") {
+          quotation_ids = [quotation_ids];
+        }
+
+        result = await SaleQuotationModel.getSaleQuotationByCondition(
+          {
+            _id: { $in: quotation_ids.map((id) => new ObjectId(id)) },
           },
-        });
-      } else {
-        result.doError(5, "This quotation_id is not exist!");
+          {
+            _id: -1,
+            documentNumber: -1,
+            customerInfo: -1,
+            pdfPath: -1,
+            documentName: -1,
+            products: -1,
+            summary: -1,
+          }
+        );
+
+        if (result.code == 1 && result.data.length > 0) {
+          const line_id = result.data[0].customerInfo.lineId;
+          var contents = [];
+
+          var colors = ["#FFBE98", "#96B6C5", "#94A684", "#8E7AB5"];
+
+          for (var i = 0; i < result.data.length; i++) {
+            const quotation_id = result.data[i].documentNumber;
+            const pdfURI = process.env.URI + "/api/" + result.data[i].pdfPath;
+            const documentName = result.data[i].documentName;
+
+            const vatInPerCent = result.data[i].summary.vat;
+            var backwardInPercent = vatInPerCent / 100 + 1;
+
+            const subtotal =
+              result.data[i].summary.totalPrice / backwardInPercent +
+              result.data[i].summary.totalDiscount;
+
+            const discount = result.data[i].summary.totalDiscount;
+            const vat =
+              result.data[i].summary.totalPrice -
+              result.data[i].summary.totalPrice / backwardInPercent;
+            const totalPrice = result.data[i].summary.totalPrice;
+            const items = result.data[i].products.length;
+
+            contents[contents.length] = {
+              type: "bubble",
+              body: {
+                type: "box",
+                layout: "vertical",
+                contents: [
+                  {
+                    type: "text",
+                    text: "QUOTATION",
+                    weight: "bold",
+                    color: colors[contents.length % colors.length],
+                    size: "sm",
+                  },
+                  {
+                    type: "text",
+                    text: documentName,
+                    weight: "bold",
+                    size: "xl",
+                    margin: "md",
+                  },
+                  {
+                    type: "text",
+                    text: "To view full quotation detail, please click download quotation below.",
+                    size: "xs",
+                    color: "#aaaaaa",
+                    margin: "sm",
+                    wrap: true,
+                  },
+                  {
+                    type: "separator",
+                    margin: "xxl",
+                  },
+                  {
+                    type: "box",
+                    layout: "vertical",
+                    margin: "none",
+                    spacing: "sm",
+                    contents: [
+                      {
+                        type: "box",
+                        layout: "horizontal",
+                        margin: "xxl",
+                        contents: [
+                          {
+                            type: "text",
+                            text: "ITEMS",
+                            size: "sm",
+                            color: "#555555",
+                          },
+                          {
+                            type: "text",
+                            text: items.toString(),
+                            size: "sm",
+                            color: "#111111",
+                            align: "end",
+                          },
+                        ],
+                      },
+                      {
+                        type: "box",
+                        layout: "horizontal",
+                        contents: [
+                          {
+                            type: "text",
+                            text: "SUBTOTAL",
+                            size: "sm",
+                            color: "#555555",
+                          },
+                          {
+                            type: "text",
+                            text:
+                              "฿" +
+                              subtotal.toLocaleString("en-US", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }),
+                            size: "sm",
+                            color: "#111111",
+                            align: "end",
+                          },
+                        ],
+                      },
+                      {
+                        type: "box",
+                        layout: "horizontal",
+                        contents: [
+                          {
+                            type: "text",
+                            text: "DISCOUNT",
+                            size: "sm",
+                            color: "#555555",
+                          },
+                          {
+                            type: "text",
+                            text:
+                              "฿" +
+                              discount.toLocaleString("en-US", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }),
+                            size: "sm",
+                            color: "#111111",
+                            align: "end",
+                          },
+                        ],
+                      },
+                      {
+                        type: "box",
+                        layout: "horizontal",
+                        contents: [
+                          {
+                            type: "text",
+                            text: "VAT ( " + vatInPerCent + "% )",
+                            size: "sm",
+                            color: "#555555",
+                          },
+                          {
+                            type: "text",
+                            text:
+                              "฿" +
+                              vat.toLocaleString("en-US", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }),
+                            size: "sm",
+                            color: "#111111",
+                            align: "end",
+                          },
+                        ],
+                      },
+                      {
+                        type: "box",
+                        layout: "horizontal",
+                        contents: [
+                          {
+                            type: "text",
+                            text: "TOTAL",
+                            size: "sm",
+                            color: "#555555",
+                          },
+                          {
+                            type: "text",
+                            text:
+                              "฿" +
+                              totalPrice.toLocaleString("en-US", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }),
+                            align: "end",
+                            color: "#111111",
+                            size: "sm",
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    type: "separator",
+                    margin: "xxl",
+                  },
+                  {
+                    type: "box",
+                    layout: "horizontal",
+                    margin: "xxl",
+                    contents: [
+                      {
+                        type: "text",
+                        text: "QUOTATION ID",
+                        size: "xs",
+                        color: "#aaaaaa",
+                        flex: 0,
+                      },
+                      {
+                        type: "text",
+                        text: "#" + quotation_id,
+                        color: "#aaaaaa",
+                        size: "xs",
+                        align: "end",
+                      },
+                    ],
+                  },
+                  {
+                    type: "separator",
+                    margin: "xxl",
+                  },
+                  {
+                    type: "box",
+                    margin: "xxl",
+                    layout: "vertical",
+                    contents: [
+                      {
+                        type: "button",
+                        action: {
+                          type: "uri",
+                          label: "DOWNLOAD QUOTATION",
+                          uri: pdfURI,
+                        },
+                        style: "primary",
+                        color: colors[contents.length % colors.length],
+                      },
+                    ],
+                  },
+                ],
+              },
+              styles: {
+                footer: {
+                  separator: true,
+                },
+              },
+            };
+          }
+
+          contents[contents.length] = {
+            type: "bubble",
+            body: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: "SPEC SHEET",
+                  weight: "bold",
+                  color: "#CA8787",
+                  size: "sm",
+                },
+                {
+                  type: "text",
+                  text: "SMART FILM",
+                  weight: "bold",
+                  size: "xl",
+                  margin: "md",
+                },
+                {
+                  type: "text",
+                  text: "To view full spec sheet, please click download quotation below.",
+                  size: "xs",
+                  color: "#aaaaaa",
+                  margin: "md",
+                  wrap: true,
+                },
+                {
+                  type: "box",
+                  layout: "vertical",
+                  margin: "0px",
+                  spacing: "none",
+                  contents: [
+                    {
+                      type: "image",
+                      url: "https://inhouse.co.th/assets/images/system/smartfilm.png",
+                      size: "full",
+                      position: "relative",
+                      aspectMode: "cover",
+                      aspectRatio: "20:10",
+                      margin: "xxl",
+                    },
+                  ],
+                },
+                {
+                  type: "separator",
+                  margin: "xl",
+                },
+                {
+                  type: "box",
+                  layout: "vertical",
+                  contents: [
+                    {
+                      type: "button",
+                      action: {
+                        type: "uri",
+                        label: "SPEC SHEET ( ENG )",
+                        uri: "https://inhouse.co.th/assets/pdf/smart-film/thai-version.pdf",
+                      },
+                      style: "primary",
+                      color: "#CA8787",
+                    },
+                  ],
+                  margin: "xxl",
+                },
+                {
+                  type: "box",
+                  layout: "vertical",
+                  contents: [
+                    {
+                      type: "button",
+                      action: {
+                        type: "uri",
+                        label: "เอกสารสินค้า ( ภาษาไทย )",
+                        uri: "https://inhouse.co.th/assets/pdf/smart-film/thai-version.pdf",
+                      },
+                      style: "primary",
+                      color: "#CA8787",
+                    },
+                  ],
+                  margin: "lg",
+                },
+              ],
+            },
+            styles: {
+              footer: {
+                separator: true,
+              },
+            },
+          };
+
+          const message = {
+            type: "flex",
+            altText: "ใบเสนอราคา", // Alternative text for accessibility
+            contents: {
+              type: "carousel",
+              contents: contents,
+            }, // Your Flex Message JSON object
+          };
+
+          await LineClient.pushMessage(line_id, message);
+
+          result.doSuccess();
+        } else {
+          result.doError(5, "This quotation_id is not exist!");
+        }
       }
+    } else {
+      result.doError(7, "Files or images are wrong format, please check!");
     }
   } catch (error) {
     console.log(error);
   }
 
   res.json(result);
+};
+
+exports.getQuotationCount = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    var dbResponse = await SaleModel.quotation.getCountQuotation();
+    if (dbResponse.code == 1) {
+      result.doSuccess(1);
+    }
+    result.data = {
+      all: 0,
+      purchased: 0,
+      notYetPurchased: 0,
+    };
+    if (dbResponse.data.length > 0) {
+      result.data = {
+        all: dbResponse.data.length,
+        purchased: dbResponse.data.filter(
+          (value) => value.currentStatus === "purchased"
+        ).length,
+        notYetPurchased: dbResponse.data.filter(
+          (value) => value.currentStatus === "not yet purchased"
+        ).length,
+      };
+    }
+  } catch (e) {
+    console.log(e);
+  }
+
+  res.json(result);
+};
+
+//********** For Dashboard ************/
+
+exports.getSaleQuotationTotalByConditions = async (params) => {
+  try {
+    var result = await SaleModel.quotation.getSaleQuotationTotalByConditions(
+      params
+    );
+
+    var myData = 0;
+    if (result.code == 1 && result.data.length > 0) {
+      myData = result.data[0].total;
+    }
+    return {
+      sales: myData,
+    };
+  } catch (error) {
+    console.log(error);
+  }
 };

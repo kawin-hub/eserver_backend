@@ -1,6 +1,5 @@
 const fs = require("fs");
 const PDFDocument = require("pdfkit");
-const vatInPerCent = 7;
 
 const margin = {
   top: 30,
@@ -17,23 +16,23 @@ const font = {
   bold: "./system/fonts/Kanit/Kanit-Bold.ttf",
   medium: "./system/fonts/Kanit/Kanit-Medium.ttf",
   thin: "./system/fonts/Kanit/Kanit-Light.ttf",
-  extraThin: "./system/fonts/Kanit/Kanit-thin.ttf",
+  extraThin: "./system/fonts/Kanit/Kanit-Thin.ttf",
 };
 
-function createInvoice(data, path) {
+function createInvoice(data, path, type = "quotation") {
   let doc = new PDFDocument({ size: "A4", margin: 30 });
 
-  generateHeader(doc, data);
+  generateHeader(doc, data, type);
   const subtotalResult = generateInvoiceTable(doc, data);
-  generatePaymentMethod(doc);
-  generateSummary(doc, subtotalResult);
-  generateRemarkAndAuthorized(doc, data);
+  generatePaymentMethod(doc, data);
+  generateSummary(doc, subtotalResult, data.vat);
+  generateRemarkAndAuthorized(doc, data, type);
 
   doc.end();
   doc.pipe(fs.createWriteStream(path));
 }
 
-function generateHeader(doc, data) {
+function generateHeader(doc, data, type) {
   doc
     .font(font.thin)
     .image("./system/images/logo.png", margin.left, margin.top + 10, {
@@ -45,7 +44,7 @@ function generateHeader(doc, data) {
     .fillColor(color.black)
     .fontSize(10)
     .text(
-      "Inhouse Technology Co., Ltd.\n77/577 Chatuchot 19,OrNgoen Subdistrict,Sai Mai District, Bangkok 10220",
+      "Inhouse Technology Co., Ltd.\n77/577 OrNgoen Subdistrict,Sai Mai District, Bangkok 10220",
       {
         width: 240,
       }
@@ -60,15 +59,20 @@ function generateHeader(doc, data) {
     .text("Created date :", 428, margin.top + 40, { continued: true })
     .fillColor(color.black)
     .text(data.header.createdDate, { align: "right", continued: false })
+    .fillColor(color.grey);
+  if (type != "receipt") {
+    doc
+      .text("Due date :", 439, margin.top + 55, { continued: true })
+      .fillColor(color.black)
+      .text(data.header.dueDate, {
+        align: "right",
+        continued: false,
+      });
+  }
+
+  doc
     .fillColor(color.grey)
-    .text("Due date :", 439, margin.top + 55, { continued: true })
-    .fillColor(color.black)
-    .text(data.header.dueDate, {
-      align: "right",
-      continued: false,
-    })
-    .fillColor(color.grey)
-    .text("Tax Identification Number :", 368, margin.top + 70, {
+    .text("Taxpayer Identification Number :", 348, margin.top + 70, {
       continued: true,
     })
     .fillColor(color.black)
@@ -135,7 +139,7 @@ function generateInvoiceTable(doc, invoice) {
 
   subtotalResult.discount += invoice.extraDiscount;
   subtotalResult.total = subtotalResult.subtotal - subtotalResult.discount;
-  subtotalResult.vat = (subtotalResult.total * vatInPerCent) / 100;
+  subtotalResult.vat = (subtotalResult.total * invoice.vat) / 100;
   subtotalResult.total += subtotalResult.vat;
 
   return subtotalResult;
@@ -160,7 +164,7 @@ function generatePaymentMethod(doc) {
     .text("171-430192-2", margin.left + 185, doc.y + 5);
 }
 
-function generateSummary(doc, subtotalResult) {
+function generateSummary(doc, subtotalResult, vatInPerCent) {
   const docY = doc.y;
   generateHr(doc, docY - 70, 285);
   doc
@@ -188,7 +192,7 @@ function generateSummary(doc, subtotalResult) {
   generateHr(doc, doc.y + 10, 285); */
   doc
     .fillColor(color.black)
-    .text("VAT (7%)", 335, docY + 10, { continued: true })
+    .text("VAT (" + vatInPerCent + "%)", 335, docY + 10, { continued: true })
     .text(formatCurrency(subtotalResult.vat), {
       align: "right",
       continued: false,
@@ -202,28 +206,36 @@ function generateSummary(doc, subtotalResult) {
     });
 }
 
-function generateRemarkAndAuthorized(doc, data) {
+function generateRemarkAndAuthorized(doc, data, type) {
   const docY = doc.y;
-  const marginTop = 30;
+  const marginTop = 20;
 
-  doc
-    .font(font.medium)
-    .text("Remark", margin.left, docY + marginTop)
-    .font(font.extraThin)
-    .text(
-      data.note != "undefined" ? data.note : "",
+  if (type != "receipt") {
+    doc.font(font.medium).text("Remark", margin.left, docY + marginTop);
+    doc
+      .font(font.extraThin)
+      .text(
+        data.note != "undefined" ? data.note : "",
+        margin.left,
+        docY + marginTop + 20
+      );
+
+    doc.text(
+      "We appreciate your selection of our services.",
       margin.left,
-      docY + marginTop + 20
+      doc.y + 10
     );
-  /* .text("• 50% pre-production payment required for the smart film.\n• Remaining 50% due prior to installation.")
-    .text("• Production and shipping timeframe: 30-45 days.")
-    .text("• Two-years warranty included."); */
-
-  doc.text(
-    "We appreciate your selection of our services.",
-    margin.left,
-    doc.y + 10
-  );
+  } else {
+    doc
+      .font(font.thin)
+      .text("Customer signature", margin.left + 80, docY + marginTop)
+      .text("Date", margin.left + 115, docY + marginTop + 90)
+      .text(
+        ".................../.................../...................",
+        margin.left + 68,
+        docY + marginTop + 110
+      );
+  }
 
   doc
     .font(font.thin)

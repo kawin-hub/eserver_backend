@@ -1,4 +1,5 @@
 const { Schema, model, ObjectId } = require("mongoose");
+const { general } = require("../../../middleware");
 const collection = "AccountExpenses";
 
 let accountExpenseSchema = new Schema(
@@ -11,11 +12,6 @@ let accountExpenseSchema = new Schema(
     expenseDate: {
       type: Date,
       required: true,
-    },
-    category: {
-      type: String,
-      enum: ["stock", "nonstock"],
-      default: "stock",
     },
     type: {
       type: String,
@@ -35,6 +31,10 @@ let accountExpenseSchema = new Schema(
     },
     remark: {
       type: String,
+    },
+    receipt: {
+      type: String,
+      enum: ["receipt", "nonReceipt"],
     },
     images: [
       {
@@ -73,5 +73,27 @@ let accountExpenseSchema = new Schema(
     collection,
   }
 );
+
+accountExpenseSchema.pre("save", function (next) {
+  var now = general.getDateTimeForDB();
+  this.createdAt = now;
+  this.updatedAt = now;
+  next();
+});
+
+accountExpenseSchema.pre("findOneAndUpdate", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
+
+accountExpenseSchema.pre("updateOne", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
+
+accountExpenseSchema.pre("updateMany", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
 
 module.exports = model(collection, accountExpenseSchema);

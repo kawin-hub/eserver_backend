@@ -2,7 +2,6 @@ const SaleLead = require("./saleLeads.schema");
 const CustomerLevel = require("./customerLevel.schema");
 const LineLead = require("./leadLine.schema");
 const { DataResponse } = require("../../general_data.model");
-const { param } = require("express/lib/request");
 
 async function initLead() {
   var result;
@@ -88,7 +87,6 @@ exports.getCustomerLevelById = async (params) => {
       ? result.doSuccess(2, "_id not found in database")
       : result.doSuccess(1);
   } catch (e) {
-    console.log(e.kind);
     if (e.kind == "ObjectId") {
       result.doError(0, "Please check your _id format");
     } else {
@@ -149,7 +147,25 @@ exports.getSaleLeadById = async (params) => {
       ? result.doSuccess(2, "_id not found in database")
       : result.doSuccess(1);
   } catch (e) {
-    console.log(e.kind);
+    if (e.kind == "ObjectId") {
+      result.doError(0, "Please check your _id format");
+    } else {
+      result.doError(0);
+    }
+  }
+
+  return result;
+};
+
+exports.getSaleLeadByCondition = async (params, projector) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await SaleLead.find(params, projector).lean();
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
     if (e.kind == "ObjectId") {
       result.doError(0, "Please check your _id format");
     } else {
@@ -213,6 +229,27 @@ exports.deleteSaleLead = async (params) => {
   return result;
 };
 
+// 👉 insert leadLine
+
+exports.insertLineLead = async (params) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await LineLead.create(params);
+    result.data == null
+      ? result.doSuccess(
+          0,
+          "Can't insert to database, please check your request!"
+        )
+      : result.doSuccess(1);
+  } catch (e) {
+    if (e.code == 11000) console.log("This lineId is already exist!");
+    else console.log(e);
+  }
+
+  return result;
+};
+
 // 👉 Get Line Users
 
 exports.getLineUsersByConditions = async (params) => {
@@ -224,12 +261,26 @@ exports.getLineUsersByConditions = async (params) => {
       ? result.doSuccess(2, "_id not found in database")
       : result.doSuccess(1);
   } catch (e) {
-    console.log(e.kind);
     if (e.kind == "ObjectId") {
       result.doError(0, "Please check your _id format");
     } else {
       result.doError(0);
     }
+  }
+
+  return result;
+};
+
+//******** For dashboard ************/
+
+exports.getNewCustomerCountByConditions = async (params) => {
+  var result = new DataResponse();
+  try {
+    result.data = await SaleLead.find(params).countDocuments();
+    if (result.data) result.doSuccess();
+  } catch (e) {
+    result.doError();
+    console.log(e);
   }
 
   return result;

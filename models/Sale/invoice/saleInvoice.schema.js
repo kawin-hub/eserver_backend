@@ -1,4 +1,5 @@
 const { Schema, model, ObjectId } = require("mongoose");
+const { general } = require("../../../middleware");
 const collection = "SaleInvoices";
 
 let saleInvoiceSchema = new Schema(
@@ -31,6 +32,22 @@ let saleInvoiceSchema = new Schema(
       type: String,
       enum: ["paid", "unpaid"],
       default: "unpaid",
+    },
+
+    paidDate: {
+      type: Date,
+    },
+
+    note: {
+      type: String,
+    },
+
+    invoiceNumbers: {
+      type: String,
+    },
+
+    taxInvoiceNumber: {
+      type: String,
     },
 
     pdfPath: {
@@ -153,5 +170,27 @@ let saleInvoiceSchema = new Schema(
     collection,
   }
 );
+
+saleInvoiceSchema.pre("save", function (next) {
+  var now = general.getDateTimeForDB();
+  this.createdAt = now;
+  this.updatedAt = now;
+  next();
+});
+
+saleInvoiceSchema.pre("findOneAndUpdate", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
+
+saleInvoiceSchema.pre("updateOne", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
+
+saleInvoiceSchema.pre("updateMany", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
 
 module.exports = model(collection, saleInvoiceSchema);

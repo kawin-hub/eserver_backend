@@ -25,6 +25,7 @@ exports.getAllSaleInvoices = async (params) => {
       convertInfo: 1,
       quotation_id: 1,
       createdBy: 1,
+      pdfPath: 1,
     })
       .skip(skip)
       .limit(limit)
@@ -56,9 +57,46 @@ exports.getAllSaleInvoices = async (params) => {
 
 exports.getSaleInvoiceByConditions = async (params) => {
   var result = new DataResponse();
-
   try {
     result.data = await SaleInvoice.findOne(params).lean();
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e.kind);
+    if (e.kind == "ObjectId") {
+      result.doError(0, "Please check your _id format");
+    } else {
+      result.doError(0);
+    }
+  }
+
+  return result;
+};
+
+exports.getSaleInvoiceByInvoiceNumber = async (params) => {
+  var result = new DataResponse();
+  try {
+    result.data = await SaleInvoice.findOne(params).lean();
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e.kind);
+    if (e.kind == "ObjectId") {
+      result.doError(0, "Please check your _id format");
+    } else {
+      result.doError(0);
+    }
+  }
+
+  return result;
+};
+
+exports.getSaleInvoiceByPaymentStatus = async (params) => {
+  var result = new DataResponse();
+  try {
+    result.data = await SaleInvoice.find(params).lean();
     result.data == null
       ? result.doSuccess(2, "_id not found in database")
       : result.doSuccess(1);
@@ -174,6 +212,47 @@ exports.deleteSaleInvoice = async (params) => {
     result.data.deletedCount == 0
       ? result.doSuccess(3, "this _id isn't allowed to be removed!")
       : result.doSuccess(1);
+  } catch (e) {
+    result.doError();
+  }
+
+  return result;
+};
+
+exports.getCountInvoice = async (params) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await SaleInvoice.find(params, {
+      _id: 1,
+      paymentStatus: 1,
+    });
+    result.doSuccess();
+  } catch (e) {
+    result.doError(0);
+  }
+
+  return result;
+};
+
+//********** For Dashboard ************/
+
+exports.getInvoicesTotalByConditions = async (params) => {
+  var result = new DataResponse();
+  try {
+    result.data = await SaleInvoice.aggregate([
+      {
+        $match: params,
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amountRecieved.baht" },
+        },
+      },
+    ]);
+
+    if (result.data) result.doSuccess();
   } catch (e) {
     result.doError();
   }

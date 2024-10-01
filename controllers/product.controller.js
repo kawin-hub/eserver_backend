@@ -3,6 +3,7 @@ let productModel = require("../models/Products");
 let dotenv = require("dotenv");
 let { upload } = require("../middleware");
 let SaleModel = require("../models/Sale");
+let ProductModel = require("../models/Products/index");
 let { general } = require("../middleware");
 const fs = require("fs");
 const { filter } = require("compression");
@@ -142,7 +143,6 @@ const insertProductBrand = async (req, res, next) => {
       allowType: ["jpeg", "jpg", "png"],
     },
   ]);
-  console.log(req.body);
   let { name, description, status, avatar } = req.body;
 
   let result = null;
@@ -403,8 +403,6 @@ const insertProductModel = async (req, res, next) => {
 
       let documents = [];
       try {
-        console.log(req.files.documents);
-
         if (req.files.documents) {
           req.files.documents.forEach((element) => {
             documents[documents.length] = {
@@ -465,10 +463,9 @@ const getProductModels = async (req, res, next) => {
 
   try {
     const { _id, txtSearch, brand_id, category_id } = req.query;
-
     // get all
-    var pageOption = general.checkPageAndLimit(req.query.page, req.query.limit);
 
+    var pageOption = general.checkPageAndLimit(req.query.page, 1000,true);
     var params = {
       page: pageOption.page,
       limit: pageOption.limit,
@@ -484,6 +481,14 @@ const getProductModels = async (req, res, next) => {
         description: 1,
         installationPrice: 1,
         status: 1,
+        relatedModels: 1,
+        images: 1,
+        documents: 1,
+        stock: 1,
+        minimum: 1,
+        maximum: 1,
+        createdAt: 1,
+        updatedAt: 1,
       },
     };
 
@@ -598,7 +603,6 @@ const updateProductModel = async (req, res, next) => {
     deletedImage,
     deletedPdf,
   } = req.body;
-
   var myModel = await productModel.getProductModels({ _id: _id });
 
   let category_ids = [];
@@ -618,9 +622,13 @@ const updateProductModel = async (req, res, next) => {
       subcontractorInstallationPrice !== undefined
         ? subcontractorInstallationPrice
         : 0;
-    minimum = minimum != "" || minimum !== undefined ? minimum : 0;
-    maximum = maximum != "" || maximum !== undefined ? maximum : 0;
-    stock = stock != 0 || stock !== undefined ? stock : 0;
+    minimum = minimum != "" || typeof minimum !== "undefined" ? minimum : 0;
+
+    maximum = maximum != "" || typeof maximum !== "undefined" ? maximum : 0;
+    stock = stock != 0 || typeof stock !== "undefined" ? stock : 0;
+
+    minimum = isNaN(minimum) ? 0 : minimum;
+    maximum = isNaN(maximum) ? 0 : maximum;
 
     defaultWarrantyNumber =
       defaultWarrantyNumber != "" && defaultWarrantyNumber !== undefined
@@ -689,7 +697,7 @@ const updateProductModel = async (req, res, next) => {
       unit: defaultWarrantyUnit,
     };
 
-    if (!myModel.length) {
+    if (!myModel.data.documents.length) {
       // Incorrect _id
     } else {
       let dataUpdate = null;
@@ -787,7 +795,6 @@ const updateProductModel = async (req, res, next) => {
         stock,
         relatedModels,
       };
-
       result = await productModel.updateProductModel(_id, dataUpdate);
     }
 
@@ -839,6 +846,159 @@ const updateDiscountGroup = async (req, res, next) => {
   res.json(result);
 };
 
+const getBestSellingInProduct = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    var { startDate, endDate } = req.query;
+    if (typeof startDate !== "undefined" && typeof endDate !== "undefined") {
+      if (typeof startDate === "undefined") {
+        var beginDate = new Date();
+        beginDate.setDate(1);
+        startDate = general.formatDate(beginDate);
+      }
+
+      if (typeof endDate === "undefined") {
+        endDate = general.formatDate(new Date());
+      }
+
+      startDate = new Date(startDate);
+      endDate = new Date(endDate);
+
+      var params = {
+        purchesedDate: {
+          $gte: startDate,
+          $lt: endDate,
+        },
+      };
+
+      result = await SaleModel.quotation.getBestSellingProduct(params);
+    } else {
+      result = await SaleModel.quotation.getBestSellingProduct();
+    }
+    if (result.code == 1) {
+      var resultProduct = result.data;
+      var productModelCodeInArray = [];
+      for (var i = 0; i < resultProduct.length; i++) {
+        productModelCodeInArray = resultProduct[i].modelCode;
+        await ProductModel.getProductModels(productModelCodeInArray);
+        // ไปสร้าง Model ให้ get.find เฉยๆ แลว้เรียกใช้ตัว model ตรงนี้ โดยส่งค่า productModelCodeInArray ไป //
+      }
+    }
+  } catch (e) {
+    console.log(e);
+  }
+  res.json(result);
+};
+
+const getTopBuyers = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    var { startDate, endDate } = req.query;
+    if (typeof startDate !== "undefined" && typeof endDate !== "undefined") {
+      if (typeof startDate === "undefined") {
+        var beginDate = new Date();
+        beginDate.setDate(1);
+        startDate = general.formatDate(beginDate);
+      }
+
+      if (typeof endDate === "undefined") {
+        endDate = general.formatDate(new Date());
+      }
+
+      startDate = new Date(startDate);
+      endDate = new Date(endDate);
+
+      var params = {
+        purchesedDate: {
+          $gte: startDate,
+          $lt: endDate,
+        },
+      };
+
+      result = await SaleModel.quotation.getTopBuyer(params);
+    } else {
+      result = await SaleModel.quotation.getTopBuyer();
+    }
+  } catch (e) {
+    console.log(e);
+  }
+  res.json(result);
+};
+
+const getBestSellingInCategory = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    var { startDate, endDate } = req.query;
+    if (typeof startDate !== "undefined" && typeof endDate !== "undefined") {
+      if (typeof startDate === "undefined") {
+        var beginDate = new Date();
+        beginDate.setDate(1);
+        startDate = general.formatDate(beginDate);
+      }
+
+      if (typeof endDate === "undefined") {
+        endDate = general.formatDate(new Date());
+      }
+
+      startDate = new Date(startDate);
+      endDate = new Date(endDate);
+
+      var params = {
+        purchesedDate: {
+          $gte: startDate,
+          $lt: endDate,
+        },
+      };
+
+      result = await SaleModel.quotation.getBestSellingCategory(params);
+    } else {
+      result = await SaleModel.quotation.getBestSellingCategory();
+    }
+  } catch (e) {
+    console.log(e);
+  }
+  res.json(result);
+};
+
+const getBestSellingInBrand = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    var { startDate, endDate } = req.query;
+    if (typeof startDate !== "undefined" && typeof endDate !== "undefined") {
+      if (typeof startDate === "undefined") {
+        var beginDate = new Date();
+        beginDate.setDate(1);
+        startDate = general.formatDate(beginDate);
+      }
+
+      if (typeof endDate === "undefined") {
+        endDate = general.formatDate(new Date());
+      }
+
+      startDate = new Date(startDate);
+      endDate = new Date(endDate);
+
+      var params = {
+        purchesedDate: {
+          $gte: startDate,
+          $lt: endDate,
+        },
+      };
+
+      result = await SaleModel.quotation.getBestSellingBrand(params);
+    } else {
+      result = await SaleModel.quotation.getBestSellingBrand();
+    }
+  } catch (e) {
+    console.log(e);
+  }
+  res.json(result);
+};
+
 module.exports = {
   insertProductCategory,
   getAllProductCategories,
@@ -853,4 +1013,8 @@ module.exports = {
   deleteProductModel,
   updateProductModel,
   updateDiscountGroup,
+  getBestSellingInProduct,
+  getTopBuyers,
+  getBestSellingInCategory,
+  getBestSellingInBrand,
 };
