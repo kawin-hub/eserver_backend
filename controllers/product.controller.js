@@ -463,10 +463,9 @@ const getProductModels = async (req, res, next) => {
 
   try {
     const { _id, txtSearch, brand_id, category_id } = req.query;
-
     // get all
-    var pageOption = general.checkPageAndLimit(req.query.page, req.query.limit);
 
+    var pageOption = general.checkPageAndLimit(req.query.page, 1000,true);
     var params = {
       page: pageOption.page,
       limit: pageOption.limit,
