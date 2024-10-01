@@ -239,6 +239,7 @@ exports.insertSaleQuotation = async (req, res) => {
           productsQuantity = [productsQuantity];
           productsDiscountBaht = [productsDiscountBaht];
         }
+
         const userData = req.body.authData.userInfo.userData;
 
         const LeadResult = await SaleLeadModel.getSaleLeadById(
@@ -274,6 +275,29 @@ exports.insertSaleQuotation = async (req, res) => {
                 price: 1,
               }
             );
+
+            /* let duplicates = productModel_ids.reduce(
+              (acc, val) => ((acc[val] = (acc[val] || 0) + 1), acc),
+              {}
+            );
+
+            duplicates = Object.fromEntries(
+              Object.entries(duplicates).filter(([_, count]) => count > 1)
+            );
+
+            console.log(productResult.data);
+            console.log(productModel_ids);
+            console.log(duplicates);
+
+            let tmpProductResult = productResult.data;
+
+            Object.entries(duplicates).forEach(([id, quantity]) => {
+              tmpProductResult.forEach((val) => {
+                if (id == val._id) {
+                  console.log(id);
+                }
+              });
+            }); */
 
             if (
               productResult.code == 1 &&
@@ -590,10 +614,15 @@ exports.sendQuotationToLine = async (req, res) => {
     ]);
 
     if (resUpload.success) {
-      const { quotation_ids } = req.body;
+      var { quotation_ids } = req.body;
 
       if (typeof quotation_ids != "undefined") {
         var SaleQuotationModel = SaleModel.quotation;
+
+        if (typeof quotation_ids === "string") {
+          quotation_ids = [quotation_ids];
+        }
+
         result = await SaleQuotationModel.getSaleQuotationByCondition(
           {
             _id: { $in: quotation_ids.map((id) => new ObjectId(id)) },

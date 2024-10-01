@@ -256,7 +256,7 @@ exports.insertSaleInvoice = async (req, res) => {
       const matched = await validation.check();
 
       if (matched) {
-        const {
+        var {
           documentNumber,
           issuedDate,
           dueDate,
@@ -270,6 +270,8 @@ exports.insertSaleInvoice = async (req, res) => {
           note,
           invoiceNumbers,
         } = req.body;
+
+        baht = parseFloat(baht);
 
         const userData = req.body.authData.userInfo.userData;
         // ดึงต่า QT
@@ -311,7 +313,6 @@ exports.insertSaleInvoice = async (req, res) => {
             async function checkInvoiceTotalPay(params) {
               // ดึงยอดรวมของใบเสนอราคา
               const totalPrice = quotationResult.data.summary.totalPrice;
-
               // กำหนดตัวแปรเริ่มต้น
               var result = [];
               var bahtToShow = 0;
@@ -428,6 +429,7 @@ exports.insertSaleInvoice = async (req, res) => {
               baht: baht,
               percent: [],
             });
+
             if (invoiceInfo.status) {
               var insertSaleParam = {
                 documentNumber: documentNumber,

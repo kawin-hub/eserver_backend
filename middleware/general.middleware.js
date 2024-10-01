@@ -2,8 +2,15 @@ let dotenv = require("dotenv");
 const moment = require("moment-timezone");
 dotenv.config();
 
-exports.checkPageAndLimit = (page = 1, limit = process.env.QUERYROWPERTIME) => {
-  if (parseInt(limit) > parseInt(process.env.QUERYROWPERTIMELimit)) {
+exports.checkPageAndLimit = (
+  page = 1,
+  limit = process.env.QUERYROWPERTIME,
+  forceLimit = false
+) => {
+  if (
+    parseInt(limit) > parseInt(process.env.QUERYROWPERTIMELimit) &&
+    !forceLimit
+  ) {
     limit = process.env.QUERYROWPERTIMELimit;
   }
 
