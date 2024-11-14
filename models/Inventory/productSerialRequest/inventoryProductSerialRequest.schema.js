@@ -1,9 +1,10 @@
 const { Schema, model, ObjectId } = require("mongoose");
 const collection = "InventoryProductSerialRequest";
+const { general } = require("../../../middleware");
 
 let inventoryProductSerailRequestSchema = new Schema(
   {
-    InventoryRequest: {
+    inventoryRequest: {
       request_id: { type: ObjectId, ref: "InventoryRequests" },
       documentNumber: { type: String },
       dueDate: { type: Date },
@@ -19,13 +20,13 @@ let inventoryProductSerailRequestSchema = new Schema(
     inOutStatus: {
       type: String,
     },
-    InventoryProductSerial: [
+    inventoryProductSerial: [
       {
         productSerial_id: { type: ObjectId, ref: "InventoryProductSerial" },
         serialNumber: { type: String },
       },
     ],
-    currentStatus: {
+    /* currentStatus: {
       type: String,
     },
     movements: [
@@ -56,7 +57,7 @@ let inventoryProductSerailRequestSchema = new Schema(
           },
         },
       },
-    ],
+    ], */
     createdBy: {
       user_id: { type: ObjectId, ref: "Users" },
       firstname: { type: String },
@@ -74,5 +75,27 @@ let inventoryProductSerailRequestSchema = new Schema(
     collection,
   }
 );
+
+inventoryProductSerailRequestSchema.pre("save", function (next) {
+  var now = general.getDateTimeForDB();
+  this.createdAt = now;
+  this.updatedAt = now;
+  next();
+});
+
+inventoryProductSerailRequestSchema.pre("findOneAndUpdate", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
+
+inventoryProductSerailRequestSchema.pre("updateOne", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
+
+inventoryProductSerailRequestSchema.pre("updateMany", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
 
 module.exports = model(collection, inventoryProductSerailRequestSchema);

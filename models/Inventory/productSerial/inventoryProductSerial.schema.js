@@ -1,5 +1,6 @@
 const { Schema, model, ObjectId } = require("mongoose");
 const collection = "InventoryProductSerial";
+const { general } = require("../../../middleware");
 
 let inventoryProductSerailSchema = new Schema(
   {
@@ -34,6 +35,10 @@ let inventoryProductSerailSchema = new Schema(
       type: String,
       default: "in stock",
     },
+    active: {
+      type: Boolean,
+      default: false,
+    },
     movements: [
       {
         status: {
@@ -41,6 +46,7 @@ let inventoryProductSerailSchema = new Schema(
           enum: [
             "create lot",
             "in stock",
+            "booked",
             "borrowed",
             "sold",
             "broken",
@@ -55,11 +61,23 @@ let inventoryProductSerailSchema = new Schema(
           default: Date.now,
         },
         docNumber: {
-          type: String,
+          type: Object,
           inventoryLot: { lot_id: { type: ObjectId, ref: "InventoryLots" } },
           inventoryRequest: {
             request_id: { type: ObjectId, ref: "InventoryRequests" },
           },
+          quotation: {
+            quotation_id: { type: ObjectId, ref: "SaleQuotations" },
+          },
+        },
+        inventoryLocation: {
+          location_id: { type: ObjectId, ref: "inventoryLocations" },
+          name: String,
+        },
+        createdBy: {
+          user_id: { type: ObjectId, ref: "Users" },
+          firstname: { type: String },
+          lastname: { type: String },
         },
       },
     ],
@@ -81,5 +99,27 @@ let inventoryProductSerailSchema = new Schema(
     collection,
   }
 );
+
+inventoryProductSerailSchema.pre("save", function (next) {
+  var now = general.getDateTimeForDB();
+  this.createdAt = now;
+  this.updatedAt = now;
+  next();
+});
+
+inventoryProductSerailSchema.pre("findOneAndUpdate", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
+
+inventoryProductSerailSchema.pre("updateOne", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
+
+inventoryProductSerailSchema.pre("updateMany", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
 
 module.exports = model(collection, inventoryProductSerailSchema);

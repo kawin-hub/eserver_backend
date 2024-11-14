@@ -54,6 +54,7 @@ exports.getAllSaleQuotations = async (params) => {
           summary: 1,
           purchased: 1,
           pdfPath: 1,
+          products: 1,
         },
       },
       {

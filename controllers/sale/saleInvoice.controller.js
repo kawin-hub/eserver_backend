@@ -135,6 +135,126 @@ exports.getSaleInvoices = async (req, res) => {
   res.json(result);
 };
 
+exports.getSaleInvoicesAndProductInfo = async (req, res) => {
+  var result = new DataResponse();
+
+  try {
+    const {
+      _id,
+      getby,
+      txtSearch,
+      paymentStatus,
+      lead_id,
+      invoiceNumber,
+      dateCreatedStart,
+      dateCreatedEnd,
+      dueDateStart,
+      dueDateEnd,
+    } = req.query;
+
+    var SaleInvoiceModel = SaleModel.invoice;
+
+    if (typeof getby != "undefined" && getby == "quotation") {
+      // get by quotation_id
+      if (typeof _id != "undefined") {
+        var params = {
+          quotation_id: new Object(_id),
+        };
+
+        if (typeof paymentStatus != "undefined") {
+          params.paymentStatus = paymentStatus;
+        }
+        result = await SaleInvoiceModel.getSaleInvoiceByConditions(params);
+      }
+    } else if (typeof getby != "undefined" && getby == "invoiceNumbers") {
+      if (typeof invoiceNumber != "undefined") {
+        var params = {
+          documentNumber: invoiceNumber,
+        };
+        result = await SaleInvoiceModel.getSaleInvoiceByConditions(params);
+      }
+    } else {
+      // get by invoice_id
+      if (typeof _id != "undefined") {
+        result = await SaleInvoiceModel.getSaleInvoiceByConditions({
+          _id: new Object(_id),
+        });
+      }
+    }
+
+    if (typeof _id === "undefined") {
+      var pageOption = general.checkPageAndLimit(
+        req.query.page,
+        req.query.limit
+      );
+
+      var params = {
+        page: pageOption.page,
+        limit: pageOption.limit,
+        queryCondition: {},
+      };
+
+      var orConditions;
+
+      if (typeof txtSearch !== "undefined") {
+        const searchRegex = new RegExp(txtSearch, "i");
+        orConditions = [
+          {
+            documentNumber: searchRegex,
+          },
+          {
+            "customerInfo.companyInfo.companyName": searchRegex,
+          },
+          {
+            "customerInfo.companyInfo.contactNumber": searchRegex,
+          },
+        ];
+
+        params.queryCondition["$or"] = orConditions;
+      }
+
+      if (typeof paymentStatus !== "undefined") {
+        params.queryCondition["paymentStatus"] = paymentStatus;
+      }
+
+      if (typeof lead_id !== "undefined") {
+        params.queryCondition["customerInfo.lead_id"] = new ObjectId(lead_id);
+      }
+
+      if (
+        typeof dateCreatedStart !== "undefined" &&
+        typeof dateCreatedEnd !== "undefined"
+      ) {
+        const startDate = new Date(dateCreatedStart);
+        const endDate = new Date(dateCreatedEnd);
+
+        params.queryCondition["createdAt"] = {
+          $gte: startDate,
+          $lt: endDate,
+        };
+      }
+      if (
+        typeof dueDateStart !== "undefined" &&
+        typeof dueDateEnd !== "undefined"
+      ) {
+        const startDueDate = new Date(dueDateStart);
+        const endDueDate = new Date(dueDateEnd);
+
+        params.queryCondition["dueDate"] = {
+          $gte: startDueDate,
+          $lt: endDueDate,
+        };
+      }
+
+      result = await SaleInvoiceModel.getAllSaleInvoices(params);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+
+  res.json(result);
+};
+
 exports.getInvoicesByInvoiceNumber = async (req, res) => {
   var result = new DataResponse();
 

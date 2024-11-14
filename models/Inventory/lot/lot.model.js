@@ -45,6 +45,31 @@ exports.getALLInventoryLots = async (params) => {
 
     //totalCount
   } catch (e) {
+    console.log(e);
+    result.doError();
+  }
+
+  return result;
+};
+
+exports.getALLInventoryLotsByJob = async (params) => {
+  var result = new DataResponse();
+  try {
+    const queryCondition = { currentStatus: "request" };
+    result.data = await InventoryLot.find(queryCondition, {
+      _id: 1,
+      lotNumber: 1,
+      currentStatus: 1,
+      status: 1,
+      createdAt: 1,
+      estimatedDate: 1,
+    }).lean();
+
+    result.doSuccess(1);
+
+    //totalCount
+  } catch (e) {
+    console.log(e);
     result.doError();
   }
 
@@ -100,7 +125,7 @@ exports.insertInventoryLot = async (params) => {
 exports.deleteInventoryLot = async (data) => {
   var result = null;
   try {
-    result = await InventoryLot.findByIdAndRemove(data);
+    result = await InventoryLot.findByIdAndDelete(data);
   } catch (e) {
     result = e;
   }
@@ -124,5 +149,22 @@ exports.updateOneInventoryLot = async (conditions, params) => {
     result.doError(0);
   }
 
+  return result;
+};
+
+exports.updateLot = async (conditions, params, options = {}) => {
+  var result = new DataResponse();
+  try {
+    result.data = await InventoryLot.findOneAndUpdate(conditions, params, {
+      ...options,
+      new: true,
+    });
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e);
+    result.doError(0);
+  }
   return result;
 };

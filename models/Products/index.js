@@ -1,6 +1,8 @@
 const ProductCategory = require("./productCategories.schema");
 const ProductBrand = require("./productBrands.schema");
 const ProductModel = require("./productModels.schema");
+const ProductSerial = require("../Inventory/productSerial/inventoryProductSerial.schema");
+const ProductSerialModel = require("../Inventory/productSerial/productSerial.model");
 const { DataResponse } = require("../general_data.model");
 
 // ProductCategories
@@ -42,7 +44,7 @@ const updateProductCategory = async (_id, update) => {
 const deleteProductCategory = async (data) => {
   var result = null;
   try {
-    result = await ProductCategory.findByIdAndRemove(data);
+    result = await ProductCategory.findByIdAndDelete(data);
   } catch (e) {
     result = e;
   }
@@ -89,7 +91,7 @@ const updateProductBrand = async (_id, update) => {
 const deleteProductBrand = async (data) => {
   var result = null;
   try {
-    result = await ProductBrand.findByIdAndRemove(data);
+    result = await ProductBrand.findByIdAndDelete(data);
   } catch (e) {
     result = e;
   }
@@ -177,8 +179,19 @@ const getProductModelsByParams = async (param = {}, projection = {}) => {
 const deleteProductModel = async (data) => {
   var result = null;
   try {
-    result = await ProductModel.findByIdAndRemove(data);
+    var checkInventoryExist =
+      await ProductSerialModel.getProductSerialsbyParams({
+        "productModel.productModel_id": data._id,
+      });
+    if (checkInventoryExist.code == 1) {
+      result = {};
+      result.error = true;
+      result.code = 8;
+    } else {
+      result = await ProductModel.findByIdAndDelete(data);
+    }
   } catch (e) {
+    console.log(e);
     result = e;
     result.error = true;
   }
@@ -190,6 +203,16 @@ const updateProductModel = async (_id, update) => {
   var model = null;
   try {
     model = await ProductModel.findByIdAndUpdate(_id, update);
+
+    await ProductSerialModel.updateInventoryProductSerail(
+      { "productModel.productModel_id": _id },
+      {
+        $set: {
+          "productModel.modelCode": update.modelCode,
+          "productModel.name": update.name,
+        },
+      }
+    );
   } catch (e) {
     model = e;
     /* console.log(e); */

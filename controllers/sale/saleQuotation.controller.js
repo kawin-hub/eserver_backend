@@ -2,6 +2,9 @@
 let SaleModel = require("../../models/Sale");
 let ProductModel = require("../../models/Products");
 let { general, upload } = require("../../middleware");
+let {
+  getAmountOfProductsByArray,
+} = require("../../controllers/product.controller");
 const { DataResponse } = require("../../models/general_data.model");
 const { Validator } = require("node-input-validator");
 const { ObjectId } = require("mongodb");
@@ -14,8 +17,7 @@ const {
   createInvoice,
 } = require("../../services/file_management/invoice.service");
 
-// 👉 Get all or by ID
-exports.getSaleQuotations = async (req, res) => {
+async function getSaleQuotationsInfo(req, res) {
   var result = new DataResponse();
 
   try {
@@ -119,6 +121,39 @@ exports.getSaleQuotations = async (req, res) => {
     result.doError(7, error.message);
     console.log(error);
   }
+
+  return result;
+}
+
+// 👉 Get all or by ID
+exports.getSaleQuotations = async (req, res) => {
+  res.json(await getSaleQuotationsInfo(req, res));
+};
+
+exports.getSaleQuotationsAndProductInfo = async (req, res) => {
+  var result = await getSaleQuotationsInfo(req, res);
+
+  try {
+    if (typeof result.data !== undefined) {
+      const productIds = result.data.products.map(
+        (item) => new ObjectId(item._id.toString())
+      );
+      var productCount = await getAmountOfProductsByArray(productIds);
+
+      for (var i = 0; i < result.data.products.length; i++) {
+        result.data.products[i].stockTotal = 0;
+        for (var k = 0; k < productCount.data.length; k++) {
+          if (result.data.products[i]._id.equals(productCount.data[k]._id)) {
+            result.data.products[i].stockTotal = productCount.data[k].count;
+            break;
+          }
+        }
+      }
+    }
+
+    result.data = result.data;
+    //console.log(result.data.products);
+  } catch (error) {}
 
   res.json(result);
 };
@@ -1042,4 +1077,24 @@ exports.getSaleQuotationTotalByConditions = async (params) => {
   } catch (error) {
     console.log(error);
   }
+};
+
+exports.getProductsQuotationByRequest = async (req, res) => {
+  var result = new DataResponse();
+  try {
+    const { quotation_id } = req.query;
+    if (quotation_id) {
+      result = await SaleModel.quotation.getSaleQuotationByCondition(
+        { _id: new ObjectId(quotation_id) },
+        {
+          products: 1,
+        }
+      );
+    } else {
+      result.doError(0, "quotation_id is require!");
+    }
+  } catch (e) {
+    console.log(e);
+  }
+  res.json(result);
 };

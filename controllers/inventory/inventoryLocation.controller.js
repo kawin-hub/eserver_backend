@@ -11,7 +11,7 @@ exports.getInventoryLocations = async (req, res) => {
   var result = new DataResponse();
 
   try {
-    const { _id } = req.query;
+    const { _id, txtSearch, locationStatus } = req.query;
     var InventoryLocationModel = InventoryModel.location;
 
     if (typeof _id != "undefined") {
@@ -29,6 +29,31 @@ exports.getInventoryLocations = async (req, res) => {
         limit: pageOption.limit,
         queryCondition: {},
       };
+
+      var orConditions;
+
+      if (typeof txtSearch !== "undefined") {
+        const searchRegex = new RegExp(txtSearch, "i");
+        orConditions = [
+          {
+            name: searchRegex,
+          },
+          {
+            adminName: searchRegex,
+          },
+          {
+            contactNumber: searchRegex,
+          },
+          {
+            address: searchRegex,
+          },
+        ];
+        params.queryCondition["$or"] = orConditions;
+      }
+
+      if (typeof locationStatus !== "undefined") {
+        params.queryCondition["locationStatus"] = locationStatus;
+      }
 
       result = await InventoryLocationModel.getAllInventoryLocations(params);
     }
@@ -58,10 +83,16 @@ exports.insertInventoryLocation = async (req, res) => {
     var InventoryLocationModel = InventoryModel.location;
 
     if (matched) {
-      const { name, adminName, contactNumber, address, googleMap, locationStatus } =
-        req.body;
+      const {
+        name,
+        adminName,
+        contactNumber,
+        address,
+        googleMap,
+        locationStatus,
+      } = req.body;
 
-      const userData = req.body.authData.userInfo.userData
+      const userData = req.body.authData.userInfo.userData;
 
       var insertLocationtparams = {
         name: name,
@@ -71,10 +102,10 @@ exports.insertInventoryLocation = async (req, res) => {
         googleMap: googleMap,
         locationStatus: locationStatus,
         createdBy: {
-         user_id: userData._id,
+          user_id: userData._id,
           firstname: userData.firstname,
-          lastname: userData.lastname
-        }
+          lastname: userData.lastname,
+        },
       };
 
       result = await InventoryLocationModel.insertInventoryLocation(
@@ -98,19 +129,37 @@ exports.updateInventoryLocation = async (req, res, next) => {
   let result = null;
   let message = "Update failed";
   let statusCode = 400;
-  let { name, description, status, _id } = req.body;
+  let {
+    name,
+    adminName,
+    locationStatus,
+    _id,
+    contactNumber,
+    address,
+    googleMap,
+  } = req.body;
 
   var InventoryLocationModel = InventoryModel.location;
 
   if (name !== undefined) {
     name = name ? name : "";
-    description = description ? description : "";
-    status = status != "" || status !== undefined ? status : "inactive";
+    adminName = adminName ? adminName : "";
+    contactNumber = contactNumber ? contactNumber : "";
+    address = address ? address : "";
+    googleMap = googleMap ? googleMap : "";
+
+    locationStatus =
+      locationStatus != "" || locationStatus !== undefined
+        ? locationStatus
+        : "inactive";
 
     let dataUpdate = {
       name,
-      description,
-      status,
+      adminName,
+      locationStatus,
+      contactNumber,
+      address,
+      googleMap,
     };
 
     result = await InventoryLocationModel.updateInventoryLocation(
