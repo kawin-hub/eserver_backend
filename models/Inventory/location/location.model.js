@@ -20,7 +20,7 @@ exports.getAllInventoryLocations = async (params) => {
       adminName: 1,
       contactNumber: 1,
       address: 1,
-      status: 1,
+      locationStatus: 1,
       createdBy: 1,
     })
       .skip(skip)
@@ -53,11 +53,11 @@ exports.getAllInventoryLocations = async (params) => {
 
 // 👉 Get by ID
 
-exports.getInventoryLocationById = async (params) => {
+exports.getInventoryLocationById = async (params, projection) => {
   var result = new DataResponse();
 
   try {
-    result.data = await InventoryLocation.findOne(params).lean();
+    result.data = await InventoryLocation.findOne(params, projection).lean();
     result.data == null
       ? result.doSuccess(2, "_id not found in database")
       : result.doSuccess(1);
@@ -115,7 +115,7 @@ exports.updateInventoryLocation = async (_id, update) => {
 exports.deleteInventoryLocation = async (data) => {
   var result = null;
   try {
-    result = await InventoryLocation.findByIdAndRemove(data);
+    result = await InventoryLocation.findByIdAndDelete(data);
   } catch (e) {
     result = e;
   }

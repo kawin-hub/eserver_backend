@@ -9,6 +9,9 @@ const fs = require("fs");
 const { filter } = require("compression");
 const { DataResponse } = require("../models/general_data.model");
 const { Validator } = require("node-input-validator");
+const {
+  getTotalProductSerailsByProductIds,
+} = require("../models/Inventory/productSerial/productSerial.model");
 
 dotenv.config();
 // Insert productCategory
@@ -465,12 +468,13 @@ const getProductModels = async (req, res, next) => {
     const { _id, txtSearch, brand_id, category_id } = req.query;
     // get all
 
-    var pageOption = general.checkPageAndLimit(req.query.page, 1000,true);
+    var pageOption = general.checkPageAndLimit(req.query.page, 1000, true);
     var params = {
       page: pageOption.page,
       limit: pageOption.limit,
       queryCondition: {},
       projector: {
+        avatar: 1,
         _id: 1,
         modelCode: 1,
         name: 1,
@@ -515,46 +519,50 @@ const deleteProductModel = async (req, res, next) => {
   let message = "Delete failed";
   let statusCode = 400;
 
-  if (_id !== undefined) {
-    result = await productModel.deleteProductModel({ _id: _id });
-
-    if (result != null && !result.error) {
-      try {
-        fs.rmSync(result.avatar, {
-          force: true,
-        });
-      } catch (e) {
-        console.log(e);
-      }
-
-      try {
-        for (let i = 0; i < result.images.length; i++) {
-          fs.rmSync(result.images[i].path, {
+  try {
+    if (_id !== undefined) {
+      result = await productModel.deleteProductModel({ _id: _id });
+      if (result != null && !result.error) {
+        try {
+          fs.rmSync(result.avatar, {
             force: true,
           });
+        } catch (e) {
+          console.log(e);
         }
-      } catch (e) {
-        console.log(e);
-      }
 
-      try {
-        for (let i = 0; i < result.documents.length; i++) {
-          fs.rmSync(result.documents[i].path, {
-            force: true,
-          });
+        try {
+          for (let i = 0; i < result.images.length; i++) {
+            fs.rmSync(result.images[i].path, {
+              force: true,
+            });
+          }
+        } catch (e) {
+          console.log(e);
         }
-      } catch (e) {
-        console.log(e);
-      }
 
-      statusCode = 200;
-      message = "Delete product model successfully";
+        try {
+          for (let i = 0; i < result.documents.length; i++) {
+            fs.rmSync(result.documents[i].path, {
+              force: true,
+            });
+          }
+        } catch (e) {
+          console.log(e);
+        }
+
+        statusCode = 200;
+        message = "Delete product model successfully";
+      } else {
+        if (result.code == 8) {
+          statusCode = 200;
+          message = "Product is in inventory, Can't be deleted!";
+        } else message = "Ops!!! something has gone wrong.";
+      }
     } else {
-      message = "Ops!!! something has gone wrong.";
+      message = "_id is required!";
     }
-  } else {
-    message = "_id is required!";
-  }
+  } catch (error) {}
 
   res.status(statusCode).send({ message, result });
 };
@@ -609,6 +617,7 @@ const updateProductModel = async (req, res, next) => {
 
   if (uploadRes.success) {
     name = name ? name : "";
+
     description = description ? description : "";
     status = status != "" || status !== undefined ? status : "inactive";
     brand_id = brand_id ? brand_id : "";
@@ -999,6 +1008,17 @@ const getBestSellingInBrand = async (req, res) => {
   res.json(result);
 };
 
+const getAmountOfProductsByArray = async (productIds) => {
+  var result = new Response();
+  try {
+    result = await getTotalProductSerailsByProductIds(productIds);
+  } catch (error) {
+    console.log(error);
+  }
+
+  return result;
+};
+
 module.exports = {
   insertProductCategory,
   getAllProductCategories,
@@ -1017,4 +1037,5 @@ module.exports = {
   getTopBuyers,
   getBestSellingInCategory,
   getBestSellingInBrand,
+  getAmountOfProductsByArray,
 };

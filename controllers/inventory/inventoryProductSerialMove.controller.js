@@ -131,6 +131,12 @@ exports.insertProductSerialMove = async (req, res) => {
             {
               status: "move",
               docNumber: inventoryMoveResult.data.documentNumber,
+              movementDateTime: Date.now(),
+              createdBy: {
+                user_id: userData._id,
+                firstname: userData.firstname,
+                lastname: userData.lastname,
+              },
             },
           ],
           createdBy: {
@@ -154,5 +160,19 @@ exports.insertProductSerialMove = async (req, res) => {
     console.log(error);
   }
 
+  res.json(result);
+};
+
+exports.getProductSerialMoveByMoveId = async (req, res) => {
+  var result = new DataResponse();
+  const { _id } = req.query;
+  try {
+    var InventoryProductSerialMove = InventoryModel.productSerialMove;
+    result = await InventoryProductSerialMove.getProductSerialMoveByConditions({
+      "inventoryMove.move_id": new Object(_id),
+    });
+  } catch (e) {
+    console.log(e);
+  }
   res.json(result);
 };

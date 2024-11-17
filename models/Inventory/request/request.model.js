@@ -1,5 +1,6 @@
 const InventoryRequest = require("./inventoryRequests.schema");
 const { DataResponse } = require("../../general_data.model");
+const { ObjectId } = require("mongodb");
 
 // 👉 Get all
 
@@ -10,7 +11,6 @@ exports.getAllInventoryRequests = async (params) => {
     var page = parseInt(params.page) ? parseInt(params.page) : 1;
     var skip = (page - 1) * limit;
     skip = skip < 1 ? 0 : skip;
-
     var queryCondition =
       params.queryCondition !== undefined ? params.queryCondition : {};
 
@@ -51,13 +51,36 @@ exports.getAllInventoryRequests = async (params) => {
   return result;
 };
 
+exports.getAllInventoryRequestsByJob = async (params) => {
+  var result = new DataResponse();
+  try {
+    const queryCondition = { currentStatus: "request" };
+
+    result.data = await InventoryRequest.find(queryCondition, {
+      _id: 1,
+      createdAt: 1,
+      dueDate: 1,
+      documentNumber: 1,
+      requestType: 1,
+      currentStatus: 1,
+    }).lean();
+
+    result.doSuccess(1);
+
+    //totalCount
+  } catch (e) {
+    result.doError();
+  }
+  return result;
+};
+
 // 👉 Get by ID
 
-exports.getInventoryRequestById = async (params) => {
+exports.getInventoryRequestById = async (params, projection = {}) => {
   var result = new DataResponse();
 
   try {
-    result.data = await InventoryRequest.findOne(params).lean();
+    result.data = await InventoryRequest.findOne(params, projection).lean();
     result.data == null
       ? result.doSuccess(2, "_id not found in database")
       : result.doSuccess(1);
@@ -93,5 +116,76 @@ exports.insertInventoryRequest = async (params) => {
       : result.doError();
   }
 
+  return result;
+};
+
+exports.getNewInventoryRequestId = async (params) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await InventoryRequest.findOne(
+      params,
+      { documentNumber: -1 },
+      { sort: { _id: -1 } }
+    );
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e.kind);
+    if (e.kind == "ObjectId") {
+      result.doError(0, "Please check your _id format");
+    } else {
+      result.doError(0);
+    }
+  }
+  return result;
+};
+
+exports.deleteInventoryRequest = async (data) => {
+  var result = null;
+  try {
+    result = await InventoryRequest.findByIdAndDelete(data);
+  } catch (e) {
+    result = e;
+  }
+
+  return result;
+};
+
+exports.updateRequest = async (conditions, params, options = {}) => {
+  var result = new DataResponse();
+  try {
+    result.data = await InventoryRequest.findOneAndUpdate(conditions, params, {
+      ...options,
+      new: true,
+    });
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e);
+    result.doError(0);
+  }
+  return result;
+};
+
+exports.getRequestByConditions = async (params, projection = {}) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await InventoryRequest.find(params, projection).lean();
+    result.data.length == 0
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e);
+    if (e.kind == "ObjectId") {
+      result.doError(0, "Please check your _id format");
+    } else {
+      result.doError(0);
+    }
+  }
+  console.log();
   return result;
 };

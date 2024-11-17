@@ -1,5 +1,6 @@
 const { Schema, model, ObjectId } = require("mongoose");
 const collection = "InventoryProductSerialMove";
+const { general } = require("../../../middleware");
 
 let inventoryProductSerailMoveSchema = new Schema(
   {
@@ -26,52 +27,13 @@ let inventoryProductSerailMoveSchema = new Schema(
       modelCode: String,
       name: String,
     },
-    InventoryProductSerial: [
+    inventoryProductSerial: [
       {
         productSerial_id: { type: ObjectId, ref: "InventoryProductSerial" },
         serialNumber: { type: String },
       },
     ],
-    // ข้อมูลที่ต้องเพิ่มตอน Move
-    jobStatus: {
-      type: String,
-    },
-    currentStatus: {
-      type: String,
-      default: "move",
-    },
-    movements: [
-      {
-        status: {
-          type: String,
-          enum: [
-            "create lot",
-            "in stock",
-            "move",
-            "borrowed",
-            "sold",
-            "broken",
-            "r&d",
-            "gift",
-            "others",
-          ],
-          //required: true,
-        },
-        movementDateTime: {
-          type: Date,
-          default: Date.now,
-        },
-        docNumber: {
-          type: String,
-          inventoryMove: {
-            move_id: { type: ObjectId, ref: "InventoryMoves" },
-          },
-          inventoryRequest: {
-            request_id: { type: ObjectId, ref: "InventoryRequests" },
-          },
-        },
-      },
-    ],
+
     //สร้างและอัปเดตโดยใคร
     createdBy: {
       user_id: { type: ObjectId, ref: "Users" },
@@ -90,5 +52,27 @@ let inventoryProductSerailMoveSchema = new Schema(
     collection,
   }
 );
+
+inventoryProductSerailMoveSchema.pre("save", function (next) {
+  var now = general.getDateTimeForDB();
+  this.createdAt = now;
+  this.updatedAt = now;
+  next();
+});
+
+inventoryProductSerailMoveSchema.pre("findOneAndUpdate", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
+
+inventoryProductSerailMoveSchema.pre("updateOne", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
+
+inventoryProductSerailMoveSchema.pre("updateMany", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
 
 module.exports = model(collection, inventoryProductSerailMoveSchema);

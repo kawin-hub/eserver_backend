@@ -55,7 +55,7 @@ exports.getAllSaleInvoices = async (params) => {
 
 // 👉 Get by ID
 
-exports.getSaleInvoiceByConditions = async (params) => {
+/* exports.getSaleInvoiceByConditions = async (params) => {
   var result = new DataResponse();
   try {
     result.data = await SaleInvoice.findOne(params).lean();
@@ -72,7 +72,7 @@ exports.getSaleInvoiceByConditions = async (params) => {
   }
 
   return result;
-};
+}; */
 
 exports.getSaleInvoiceByInvoiceNumber = async (params) => {
   var result = new DataResponse();

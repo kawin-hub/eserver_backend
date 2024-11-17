@@ -1,5 +1,6 @@
 const { Schema, model, ObjectId } = require("mongoose");
 const collection = "InventoryLots";
+const { general } = require("../../../middleware");
 
 let inventoryLotSchema = new Schema(
   {
@@ -18,6 +19,12 @@ let inventoryLotSchema = new Schema(
       category: { type: String },
       type: { type: String },
     },
+
+    inventoryLocation: {
+      location_id: { type: ObjectId, ref: "inventoryLocations" },
+      name: String,
+    },
+
     status: {
       type: String,
       enum: ["active", "inactive", "draft"],
@@ -34,7 +41,8 @@ let inventoryLotSchema = new Schema(
     ],
     currentStatus: {
       type: String,
-      default: "in progress",
+      enum: ["request", "done"],
+      default: "request",
     },
     // Documents for Purchase
     documents: [
@@ -75,5 +83,27 @@ let inventoryLotSchema = new Schema(
     collection,
   }
 );
+
+inventoryLotSchema.pre("save", function (next) {
+  var now = general.getDateTimeForDB();
+  this.createdAt = now;
+  this.updatedAt = now;
+  next();
+});
+
+inventoryLotSchema.pre("findOneAndUpdate", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
+
+inventoryLotSchema.pre("updateOne", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
+
+inventoryLotSchema.pre("updateMany", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
 
 module.exports = model(collection, inventoryLotSchema);
