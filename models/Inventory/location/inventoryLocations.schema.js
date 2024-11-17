@@ -1,5 +1,6 @@
 const { Schema, model, ObjectId } = require("mongoose");
 const collection = "InventoryLocations";
+const { general } = require("../../../middleware");
 
 let inventoryLocationSchema = new Schema(
   {
@@ -46,5 +47,27 @@ let inventoryLocationSchema = new Schema(
     collection,
   }
 );
+
+inventoryLocationSchema.pre("save", function (next) {
+  var now = general.getDateTimeForDB();
+  this.createdAt = now;
+  this.updatedAt = now;
+  next();
+});
+
+inventoryLocationSchema.pre("findOneAndUpdate", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
+
+inventoryLocationSchema.pre("updateOne", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
+
+inventoryLocationSchema.pre("updateMany", function (next) {
+  this._update.updatedAt = general.getDateTimeForDB();
+  next();
+});
 
 module.exports = model(collection, inventoryLocationSchema);

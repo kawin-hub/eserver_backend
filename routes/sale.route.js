@@ -29,7 +29,16 @@ router.get(
   saleQuotation.getNewQuationId
 );
 router.get("/quotations/count", verifyToken, saleQuotation.getQuotationCount);
-
+router.get(
+  "/quotations/request",
+  verifyToken,
+  saleQuotation.getProductsQuotationByRequest
+);
+router.get(
+  "/quotations/getSaleQuotationsAndProductInfo",
+  verifyToken,
+  saleQuotation.getSaleQuotationsAndProductInfo
+);
 router.put("/quotations", verifyToken, saleQuotation.updateSaleQuotation);
 router.post("/quotations", verifyToken, saleQuotation.insertSaleQuotation);
 router.delete("/quotations", verifyToken, saleQuotation.deleteSaleQuotation);
@@ -37,6 +46,7 @@ router.delete("/quotations", verifyToken, saleQuotation.deleteSaleQuotation);
 // 👉 Sale Invoice
 
 router.get("/invoices", verifyToken, saleInvoice.getSaleInvoices);
+
 router.get("/invoices/newInvoiceId", verifyToken, saleInvoice.getNewInvoiceId);
 router.get(
   "/invoices/invoiceNumber",

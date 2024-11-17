@@ -23,6 +23,7 @@ exports.getAllInventoryMoves = async (params) => {
       currentStatus: 1,
       createdBy: 1,
       createdAt: 1,
+      productModel: 1,
     })
       .skip(skip)
       .limit(limit)
@@ -54,11 +55,11 @@ exports.getAllInventoryMoves = async (params) => {
 
 // 👉 Get by ID
 
-exports.getInventoryMoveById = async (params) => {
+exports.getInventoryMoveById = async (params, projection) => {
   var result = new DataResponse();
 
   try {
-    result.data = await InventoryMove.findOne(params).lean();
+    result.data = await InventoryMove.findOne(params, projection).lean();
     result.data == null
       ? result.doSuccess(2, "_id not found in database")
       : result.doSuccess(1);
@@ -71,6 +72,27 @@ exports.getInventoryMoveById = async (params) => {
     }
   }
 
+  return result;
+};
+
+exports.getAllInventoryMoveByJob = async (params) => {
+  var result = new DataResponse();
+  try {
+    const queryCondition = { currentStatus: "request" };
+
+    result.data = await InventoryMove.find(queryCondition, {
+      _id: 1,
+      createdAt: 1,
+      dueDate: 1,
+      documentNumber: 1,
+      requestType: 1,
+      currentStatus: 1,
+    }).lean();
+
+    result.doSuccess(1);
+  } catch (e) {
+    result.doError();
+  }
   return result;
 };
 
@@ -94,5 +116,56 @@ exports.insertInventoryMove = async (params) => {
       : result.doError();
   }
 
+  return result;
+};
+
+exports.getNewInventoryMoveId = async (params) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await InventoryMove.findOne(
+      {},
+      { documentNumber: -1 },
+      { sort: { _id: -1 } }
+    );
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e.kind);
+    if (e.kind == "ObjectId") {
+      result.doError(0, "Please check your _id format");
+    } else {
+      result.doError(0);
+    }
+  }
+  return result;
+};
+
+exports.deleteInventoryMove = async (data) => {
+  var result = null;
+  try {
+    result = await InventoryMove.findByIdAndDelete(data);
+  } catch (e) {
+    result = e;
+  }
+
+  return result;
+};
+
+exports.updateMove = async (conditions, params, options = {}) => {
+  var result = new DataResponse();
+  try {
+    result.data = await InventoryMove.findOneAndUpdate(conditions, params, {
+      ...options,
+      new: true,
+    });
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    console.log(e);
+    result.doError(0);
+  }
   return result;
 };

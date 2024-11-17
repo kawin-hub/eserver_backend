@@ -9,6 +9,8 @@ const request = require("./request/request.model");
 const productSerial = require("./productSerial/productSerial.model");
 const productSerialMove = require("./productSerialMove/productSerialMove.model");
 const productSerialRequest = require("./productSerialRequest/productSerialRequest.model");
+const refund = require("./refund/refund.model");
+const productSerialRefund = require("./productSerialRefund/productSerialRefund.model");
 
 //Inventory Refund
 
@@ -35,7 +37,7 @@ const insertInventoryRefund = async (params) => {
 
 module.exports = {
   insertInventoryRefund,
-
+  refund,
   total,
   location,
   lot,
@@ -44,4 +46,5 @@ module.exports = {
   productSerial,
   productSerialMove,
   productSerialRequest,
+  productSerialRefund,
 };
