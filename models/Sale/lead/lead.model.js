@@ -229,6 +229,27 @@ exports.deleteSaleLead = async (params) => {
   return result;
 };
 
+// Find leadLine
+
+exports.getLineLeadByCondition = async (params) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await LineLead.find(params).lean();
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
+      : result.doSuccess(1);
+  } catch (e) {
+    if (e.kind == "ObjectId") {
+      result.doError(0, "Please check your _id format");
+    } else {
+      result.doError(0);
+    }
+  }
+
+  return result;
+};
+
 // 👉 insert leadLine
 
 exports.insertLineLead = async (params) => {
@@ -241,6 +262,24 @@ exports.insertLineLead = async (params) => {
           0,
           "Can't insert to database, please check your request!"
         )
+      : result.doSuccess(1);
+  } catch (e) {
+    if (e.code == 11000) console.log("This lineId is already exist!");
+    else console.log(e);
+  }
+
+  return result;
+};
+
+// Update lineLead
+
+exports.updateLineLead = async (conditions, params) => {
+  var result = new DataResponse();
+
+  try {
+    result.data = await LineLead.updateOne(conditions, params);
+    result.data == null
+      ? result.doSuccess(2, "_id not found in database")
       : result.doSuccess(1);
   } catch (e) {
     if (e.code == 11000) console.log("This lineId is already exist!");

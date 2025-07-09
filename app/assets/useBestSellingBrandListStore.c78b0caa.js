@@ -1,0 +1,1 @@
+import{L as t}from"./index.40f046e5.js";import{bj as e}from"./index.5b90980c.js";const o=new t({url:e.api.url+"products/bestSellingProduct"}),u=new t({url:e.api.url+"products/topBuyers"}),l=new t({url:e.api.url+"products/bestSellingCategory"}),i=new t({url:e.api.url+"products/bestSellingBrand"});export{u as a,l as b,i as c,o as u};

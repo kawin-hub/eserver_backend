@@ -14,6 +14,12 @@ let LineLeadlSchema = new Schema(
     pictureUrl: {
       type: String,
     },
+    chatHistory: [
+      {
+        message: { type: String, required: true },
+        timestamp: { type: Date, default: Date.now },
+      },
+    ],
   },
   {
     timestamps: true,

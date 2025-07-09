@@ -61,6 +61,9 @@ exports.getSaleLeads = async (req, res) => {
         req.query.page,
         req.query.limit
       );
+      if (req.query.limit >= 1000) {
+        pageOption.limit = 10000; // force to limit 10,000 rows
+      }
 
       var params = {
         page: pageOption.page,
@@ -439,11 +442,58 @@ async function handleLineEvent(event) {
       const profile = await LineClient.getProfile(userId);
 
       var SaleLeadModel = SaleModel.lead;
-      result = await SaleLeadModel.insertLineLead({
+
+      const existingLead = await SaleLeadModel.getLineLeadByCondition({
         lineId: userId,
-        name: profile.displayName,
-        pictureUrl: profile.pictureUrl,
       });
+
+      if (existingLead.data.length > 0) {
+        // ถ้ามีแล้ว → update chatHistory
+        var chatHistoryUpdate = {
+          $push: {
+            chatHistory: {
+              message: event.message.text || JSON.stringify(event.message),
+              timestamp: new Date(),
+            },
+          },
+        };
+
+        if (
+          !existingLead.data[0]?.chatHistory ||
+          existingLead.data[0]?.chatHistory.length === 0
+        ) {
+          chatHistoryUpdate = {
+            $set: {
+              chatHistory: [
+                {
+                  message: event.message.text || JSON.stringify(event.message),
+                  timestamp: new Date(),
+                },
+              ],
+            },
+          };
+        }
+
+        result = await SaleLeadModel.updateLineLead(
+          { lineId: userId },
+          chatHistoryUpdate
+        );
+        console.log("Update lineLead chat history.");
+      } else {
+        // ถ้ายังไม่มี → insert ผู้ใช้ใหม่
+        await SaleLeadModel.insertLineLead({
+          lineId: userId,
+          name: profile.displayName,
+          pictureUrl: profile.pictureUrl,
+          chatHistory: [
+            {
+              message: event.message.text,
+              timestamp: new Date(),
+            },
+          ],
+        });
+        console.log("Insert lineLead");
+      }
 
       return { message: "success" };
     }

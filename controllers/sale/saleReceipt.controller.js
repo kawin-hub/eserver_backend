@@ -36,8 +36,10 @@ exports.insertSaleReceipt = async (data) => {
           general.getPreTaxId(currentDate) + "-" + newReceiptId;
       }
 
+      //newDocumentNumber = "6712-337";
+
       const invoiceResult = invoiceResultDB.data[0];
-      var documentNumberTax = "TAX" + newDocumentNumber;
+      var documentNumberTax = "TAX" + newDocumentNumber; // Change Receive TaxId Here!
       const itemDetail =
         invoiceResult.invoiceNumbers +
         ",\ninvoice No: #" +

@@ -19,17 +19,61 @@ const font = {
   extraThin: "./system/fonts/Kanit/Kanit-Thin.ttf",
 };
 
+const pageSetUp = { size: "A4", margin: 30 };
+const itemPerPage = 5;
+
 function createInvoice(data, path, type = "quotation") {
-  let doc = new PDFDocument({ size: "A4", margin: 30 });
+  var subtotalResult = {
+    subtotal: 0,
+    discount: 0,
+    vat: 0,
+    total: 0,
+  };
 
-  generateHeader(doc, data, type);
-  const subtotalResult = generateInvoiceTable(doc, data);
-  generatePaymentMethod(doc, data);
-  generateSummary(doc, subtotalResult, data.vat);
-  generateRemarkAndAuthorized(doc, data, type);
+  try {
+    let doc = new PDFDocument(pageSetUp);
 
-  doc.end();
-  doc.pipe(fs.createWriteStream(path));
+    const totalPage = Math.ceil(data.items.length / itemPerPage);
+
+    for (var i = 0; i < totalPage; i++) {
+      const dataStart = i * itemPerPage;
+      const dataEnd = dataStart + itemPerPage;
+
+      var invoice = { items: data.items.slice(dataStart, dataEnd) };
+      invoice.extraDiscount = data.extraDiscount;
+      const currentRow = i * itemPerPage + 1;
+
+      generateHeader(doc, data, type);
+      subtotalResult = generateInvoiceTable(
+        doc,
+        invoice,
+        currentRow,
+        subtotalResult
+      );
+      generatePaymentMethod(doc, data);
+
+      if (i < totalPage - 1) {
+        generateRemarkAndAuthorized(doc, data, type);
+        createPageNumber(doc, totalPage,i+1);
+        doc.addPage(pageSetUp);
+      } else {
+        subtotalResult.discount += data.extraDiscount;
+        subtotalResult.total =
+          subtotalResult.subtotal - subtotalResult.discount;
+        subtotalResult.vat = (subtotalResult.total * data.vat) / 100;
+        subtotalResult.total += subtotalResult.vat;
+
+        generateSummary(doc, subtotalResult, data.vat);
+        generateRemarkAndAuthorized(doc, data, type);
+        createPageNumber(doc, totalPage,i+1);
+      }
+    }
+
+    doc.end();
+    doc.pipe(fs.createWriteStream(path));
+  } catch (error) {
+    console.log(error);
+  }
 }
 
 function generateHeader(doc, data, type) {
@@ -84,15 +128,9 @@ function generateHeader(doc, data, type) {
     .moveDown();
 }
 
-function generateInvoiceTable(doc, invoice) {
+function generateInvoiceTable(doc, invoice, currentRow, subtotalResult) {
   let i;
   const invoiceTableTop = 195;
-  var subtotalResult = {
-    subtotal: 0,
-    discount: 0,
-    vat: 0,
-    total: 0,
-  };
 
   doc.font(font.thin);
   generateHr(doc, invoiceTableTop);
@@ -123,7 +161,7 @@ function generateInvoiceTable(doc, invoice) {
     generateTableRow(
       doc,
       position,
-      i + 1,
+      currentRow + i,
       item.name,
       formatCurrency(item.price),
       formatCurrency(item.discountBaht),
@@ -137,11 +175,6 @@ function generateInvoiceTable(doc, invoice) {
     }
   }
 
-  subtotalResult.discount += invoice.extraDiscount;
-  subtotalResult.total = subtotalResult.subtotal - subtotalResult.discount;
-  subtotalResult.vat = (subtotalResult.total * invoice.vat) / 100;
-  subtotalResult.total += subtotalResult.vat;
-
   return subtotalResult;
 }
 
@@ -151,7 +184,7 @@ function generatePaymentMethod(doc) {
   doc
     .fillColor(color.black)
     .font(font.medium)
-    .text("Payment method :", margin.left, docY + 40)
+    .text("Payment method :", margin.left, docY + 30)
     .font(font.thin)
     .text("Bank name :", margin.left, doc.y + 5)
     .text("Account name :", margin.left, doc.y + 5)
@@ -159,47 +192,46 @@ function generatePaymentMethod(doc) {
 
   doc
     .fillColor(color.black)
-    .text("SCB Bank", margin.left + 200, docY + 60)
+    .text("SCB Bank", margin.left + 200, docY + 50)
     .text("Inhouse technology", margin.left + 156, doc.y + 5)
     .text("171-430192-2", margin.left + 185, doc.y + 5);
 }
 
 function generateSummary(doc, subtotalResult, vatInPerCent) {
   const docY = doc.y;
-  generateHr(doc, docY - 70, 285);
+  generateHr(doc, docY - 80, 285);
   doc
-    .text("Sub total", 335, docY - 60, { continued: true })
+    .text("Sub total", 335, docY - 73, { continued: true })
     .text(formatCurrency(subtotalResult.subtotal), {
       align: "right",
       continued: false,
     });
-  generateHr(doc, docY - 35, 285);
+  generateHr(doc, docY - 51, 285);
   doc
     .fillColor(color.orange)
-    .text("Discount", 335, docY - 25, { continued: true })
+    .text("Discount", 335, docY - 44, { continued: true })
     .text(formatCurrency(subtotalResult.discount), {
       align: "right",
       continued: false,
     });
-  generateHr(doc, docY - 0, 285);
-  /* doc
-    .fillColor(color.orange)
-    .text("Extra discount", 335, docY, { continued: true })
-    .text(formatCurrency(subtotalResult.discount), {
-      align: "right",
-      continued: false,
-    });
-  generateHr(doc, doc.y + 10, 285); */
+  generateHr(doc, docY - 22, 285);
   doc
     .fillColor(color.black)
-    .text("VAT (" + vatInPerCent + "%)", 335, docY + 10, { continued: true })
+    .text("Pre VAT Total", 335, docY - 15, { continued: true })
+    .text(formatCurrency(subtotalResult.subtotal - subtotalResult.discount), {
+      align: "right",
+      continued: false,
+    });
+  generateHr(doc, doc.y + 7, 285);
+  doc
+    .text("VAT (" + vatInPerCent + "%)", 335, docY + 14, { continued: true })
     .text(formatCurrency(subtotalResult.vat), {
       align: "right",
       continued: false,
     });
-  generateHr(doc, doc.y + 10, 285);
+  generateHr(doc, doc.y + 7, 285);
   doc
-    .text("Total", 335, docY + 45, { continued: true })
+    .text("Total", 335, docY + 43, { continued: true })
     .text(formatCurrency(subtotalResult.total), {
       align: "right",
       continued: false,
@@ -239,19 +271,19 @@ function generateRemarkAndAuthorized(doc, data, type) {
 
   doc
     .font(font.thin)
-    .text("Authorized person", margin.left + 350, docY + marginTop)
+    .text("Authorized person", margin.left + 390, docY + marginTop)
     .image(
       "./system/images/signature-scan.png",
-      margin.left + 317,
+      margin.left + 357,
       docY + marginTop + 25,
       {
         width: 130,
       }
     )
     .font(font.medium)
-    .text("Siyakon pongpan", margin.left + 350, docY + marginTop + 90)
+    .text("Siyakon pongpan", margin.left + 390, docY + marginTop + 90)
     .font(font.thin)
-    .text("Sale Manager", margin.left + 357, docY + marginTop + 110);
+    .text("Sale Manager", margin.left + 397, docY + marginTop + 110);
 }
 
 function generateTableRow(
@@ -302,6 +334,17 @@ function formatCurrency(price, prefix = "฿") {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })
+  );
+}
+
+function createPageNumber(doc, totalPage, currentPage) {
+  doc.text(
+    currentPage + "/" + totalPage,
+    0,
+    doc.page.height - 30 - doc.currentLineHeight(),
+    {
+      align: "right",
+    }
   );
 }
 
